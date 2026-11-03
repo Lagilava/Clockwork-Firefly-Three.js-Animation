@@ -1,0 +1,16 @@
+{
+  "name": "clockwork-firefly",
+  "private": true,
+  "scripts": {
+    "test": "node tests/film-browser.cjs",
+    "test:animation": "node tests/animation-browser.cjs",
+    "test:characters": "node tests/character-browser.cjs",
+    "view:world": "node tools/worldview.cjs",
+    "build:godview": "node tools/build-godview.cjs",
+    "test:godview": "node tools/gvtest.cjs .validation/godview"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0",
+    "three": "^0.180.0"
+  }
+}

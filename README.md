@@ -1,1 +1,94 @@
-# Clockwork-Firefly-Three.js-Animation
+Open `Clockwork_Firefly_fullfilm.html` in a modern browser. The film remains a standalone HTML file; npm is only needed for the browser regression tests. Three.js and fonts load from their existing CDNs.
+
+The player has an Original color grade and six optional director-inspired looks, including Zack Snyder. Choose a look from the Color grade menu beside the camera menu; the original chapter palettes remain active underneath each preset. The robot's back clockwork now fits its mounting plate, and Ember has a mottled shell, translucent veined wings, and small reflective eyes. Run `npm run test:characters` for a focused browser check of both models, every grade preset, and the portrait control layout. It saves close-view screenshots in `.validation/`.
+
+The film is silent by design: all audio code has been removed, so there is no sound control. The lantern stalk clears the back gears throughout sampled poses. In the rooftop pursuit, Ember faces away from the robot and the robot flies an independent weaving line. Chapters III and IV use wider intimate shots with slow camera pans, arcs and changes in height. A ground-colored local bounce complements the existing sky and room irradiance in all three sets.
+
+Animation now uses one integrated gear phase throughout the robot, with impact torsion shared by the meshed gears. Rooftop birds ease from a perch into flight, and the tower swifts bank while circling. The cat and owl react more smoothly to the robot, and the dawn butterflies have visible bodies and settle their wings when one lands on the robot's head. Ember's flight, landing, antennae and legs, along with the robot's steps and turning wingbeats, have also been refined. Ember's floor glow and the forest swarm lights now use the current animation frame, including after scrubbing.
+
+The Director camera now gives the town, forest canopy, and sunrise valley more space around the characters. Select shots use a mid-distance low angle or a higher view to show where the action takes place. The homeward flight has an open path through both trunks and foliage, and moving camera setups use clear world-space routes through the forest and atrium. Selected action shots have gentle, deterministic handheld motion; quiet holds remain steady. Procedural masonry, stucco, town wall, rock, and canopy textures add surface variation to those wider views. For a focused visual camera check, run `CAMERA_REVIEW=1 npm run test:animation`; for the moving-camera collision scan, run `CAMERA_MOTION=1 npm run test:animation`, with `CAMERA_MOTION_FULL=1` to scan the full timeline (in PowerShell, set the environment variables first). Screenshots are saved in `.validation/`. The animation test serves its pinned Three.js dependency locally, so this validation does not depend on CDN availability.
+
+The black screens had three causes:
+
+- The forest ridgelines used lit materials without surface normals. Their shaders produced NaN colors, and bloom spread those invalid values across the whole image. The ridgelines now have normals, and bloom and grading also reject invalid HDR samples.
+- The film explicitly faded to black around 1:53. Chapter changes now use a 0.85-second dissolve. Exploratory cameras show the scene through the opening and ending fades.
+- The color grade subtracted dark lighting values around an inappropriate linear-light contrast pivot. The new grade preserves low-light detail, with less vignette and grain in the shadows.
+
+Lighting now uses a matched HDR environment for every authored look, smoothly blended reflections, spherical-harmonic diffuse irradiance, and local bounce from practical lights. The sky, fog, moonlight, sunset and morning light follow the same look timeline in all four chapters. This is a real-time GI approximation suitable for interactive playback.
+
+Performance changes include 57 batches of static dressing (181 fewer mesh draws), fewer shadow draws for tiny mechanical parts, half-resolution indoor ambient occlusion, smaller bloom targets, shader/texture/shadow preparation before playback, and automatic resolution scaling toward 60 fps. The animation loop remains uncapped for faster displays. Camera collision checks cover all four modes, and Free orbit follows the actor correctly when a set changes. Each chapter boundary and the return to the atrium dissolve from a saved frame, so a transition renders one live scene. Resolution changes are deferred during the dissolve.
+
+Validation on 7 October 2026 used Chromium with an AMD Radeon integrated GPU through ANGLE/D3D11, at a 1280 × 720 viewport. Five separate playback samples measured approximately 59.94 fps, with 95th-percentile frame times of 16.9–17.0 ms and adaptive render scales of 0.78–0.86. These are measured results on this machine, not a guarantee for every GPU or display.
+
+| Playback sample starts at | Original fps | Updated fps | Updated draw calls |
+| --- | ---: | ---: | ---: |
+| Atrium, 0:12 | 31.6 | 59.94 | 518 |
+| Rooftops, 0:56 | 23.2 | 59.94 | 317 |
+| Glade, 2:08 | 59.9 | 59.94 | 297 |
+| Morning, 4:00 | 59.9 | 59.94 | 213 |
+| Return home, 4:32 | 55.0 | 59.95 | 376 |
+
+The baseline and updated runs both use automatic scaling; this table compares playback behavior rather than equal-resolution GPU benchmarks. Initial loading prepares rendering resources before the start screen; the tested first load took about 49 seconds including CDN loading and preparation.
+
+The browser regression suite passed 112 sampled frames across Director, Follow, Face and Free orbit, all 16 chapter/set transitions, floor/canopy collision checks, desktop resizing and portrait rendering. The formerly failing 2:20 shot now has zero invalid HDR values. There were no browser or WebGL errors. Tests write their detailed results and screenshots to `.validation/`.
+
+To repeat the tests with Node.js 20 or newer:
+
+```powershell
+npm ci
+npx playwright install chromium
+npm test
+npm run test:animation
+```
+
+Optional environment variables `BROWSER_EXECUTABLE` and `PLAYWRIGHT_MODULE` select an existing Chromium executable and Playwright installation. FPS measurements use a fresh rendering session after correctness tests, since pixel readbacks deliberately stall the GPU. The notes panel (`N`) displays live fps, total draw calls and render scale.
+
+The implementation follows the pinned Three.js r180 APIs for [GTAO shader parameters](https://github.com/mrdoob/three.js/blob/r180/examples/jsm/postprocessing/GTAOPass.js) and [HDR environment generation](https://github.com/mrdoob/three.js/blob/r180/src/extras/PMREMGenerator.js).
+
+## Story and animation pass
+
+Chapter titles now carry the theme: I Wound Up, II Running Down, III Borrowed Light, IV The Answer. Chapter cards no longer cover the film's biggest moments: II waits until the rooftop reveal has played, and III appears after the crash has landed.
+
+Story changes:
+
+- Two glints down the oculus shaft now cause the first wind-up, so light is established as what winds the robot from the opening.
+- The robot's first failed attempt to flash like Ember is planted at the passenger beat (about 83 s), before the fizzle at 92 s.
+- Ember's glow fades as morning comes (243 to 251 s), which gives her a reason to stay behind. The robot sends one small goodnight flash up the shaft before it rests, and the final answer now clicks the key one tooth, paying off the borrowed-light rule.
+- Ember punctuates the wide rooftop shots with flashes so her performance reads at distance.
+
+Animation changes:
+
+- Wingbeats now have rhythm. The first flight stutters and glides, the rooftop chase tucks into glides on its dives, and the flight home uses long glides to read as mastery. Peak wingbeat rates are lower, so the robot no longer flaps like a hummingbird.
+- Takeoff wing unfurls and the head-tilt double-takes use overshoot easing (`outBack`) instead of plain eases.
+- The chase has more authored lag moments (about 27 s, 53 s and 66 s), so Ember and the robot move as two different weights.
+- Camera push and arc drift was removed from 19 shots, mostly the held and quiet ones, so the remaining pushes mean something.
+- The cut at 114 s is now a hard cut on the tumble, so the crash lands as authored. The other chapter changes still dissolve.
+
+## God's-eye viewer
+
+`Clockwork_Firefly_godview.html` is the whole film seen from above. Open it next to the film file (it loads the same three.js from the CDN). It starts paused at 0:12.
+
+- Overlays: the robot path coloured by time, Ember's dashed path, 5 s time ticks, beat and shot labels, every authored camera (position, view ray and path), live robot, Ember and camera markers.
+- Views: Atrium, Rooftops, Glade tabs (or follow the film's set), Top / Aerial / Side / South camera (keys 1 to 4), track the robot, cut-away plane, fog off, exposure.
+- Hover a path for its time, click it to jump there. Beats and Shots lists seek the film. `M` opens a map of all three sets at once (top and side views), also click-to-seek.
+- Fog, vignette, fades and exposure are neutralised so you see the set, not the grade.
+
+It is generated, never edited by hand: `npm run build:godview` reads `Clockwork_Firefly_fullfilm.html` and injects `tools/godview.inject.js`, `godview.ui.html` and `godview.css` into a copy. Rebuild it after any edit to the film. `npm run test:godview` boots it in headless Chromium and saves screenshots (set `GV_FILE` and use local three.js for offline runs).
+
+## World viewing rig and town plan
+
+`npm run view:world -- <outDir> [tag]` renders every set from a map (top-down), aerial and ground camera and saves PNGs. It serves the pinned Three.js locally, so it needs no CDN. Set `VIEWS` to a JSON list of `[set, time, name, cameraPos, target, fov, options]` entries to render your own views, and `BROWSER_EXECUTABLE` to use an existing Chromium.
+
+The rooftop town now has a plan instead of a uniform grid of houses:
+
+- An east avenue runs from the terrace to the woods (the road Ember takes) and a cross street frames the clock tower.
+- A fountain plaza sits on the cross street, ringed with lamps.
+- A copper-domed observatory gives the skyline a second landmark.
+- Street lamps along both avenues switch on with the town's dusk lights.
+- The old town rises slightly toward the terrace.
+
+## Forest, last chapter
+
+- Tree trunks were 30 units tall and ended in flat black caps that poked through the canopy, which showed in the top-down descent (about 258 to 261 s). Trunks now taper to a thin tip, are shorter, and every trunk wears a crown. The crowns use their own random stream, so the authored forest layout is unchanged.
+- The distant home town was a pink box and spire hanging in the fog. It now has a belfry, a dial ring, lit windows, gable-roofed houses and its own ground plain, and its windows and roofs warm with the dawn.
+- `tools/directorframes.cjs` renders the director's-cut frame at any film times (`TIMES=244,257 node tools/directorframes.cjs <outDir>`).

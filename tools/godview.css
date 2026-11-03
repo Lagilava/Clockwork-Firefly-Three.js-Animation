@@ -1,0 +1,36 @@
+.hidden{display:none!important}
+body.godview #titleCard,body.godview #chapterCard,body.godview #end,body.godview #start,body.godview #loader,body.godview #selCam,body.godview #selGrade,body.godview #btnNotes,body.godview #notes{display:none!important}
+#gvPanel,#gvSide,#gvReadout,#gvTip,#gvBoot,#gvMap{font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#dfe3ee}
+#gvPanel{position:fixed;left:12px;top:12px;bottom:92px;width:236px;overflow:auto;z-index:20;background:rgba(10,12,18,.84);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px}
+#gvPanel h1{font-size:15px;margin:0 0 8px;color:#f1d9a6;letter-spacing:.02em}
+#gvPanel h2{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#8c97ad;margin:12px 0 6px;font-weight:600}
+#gvPanel .hint{float:right;color:#667088;text-transform:none;letter-spacing:0;font-weight:400}
+.seg{display:flex;gap:4px}.seg button{flex:1;padding:6px 4px;background:#171c28;color:#c9d0e0;border:1px solid #2a3244;border-radius:7px;cursor:pointer;font:inherit;font-size:12px}
+.seg button.on{background:#f1d9a6;color:#1a1408;border-color:#f1d9a6;font-weight:600}
+.seg.four button{font-size:11.5px}
+.chk{display:flex;align-items:center;gap:7px;margin:5px 0;cursor:pointer}.chk input{accent-color:#f1d9a6}
+.sw{display:inline-block;width:28px;height:6px;border-radius:3px;margin-left:auto}
+.rng{display:block;margin-top:6px}.rng b{float:right;font-weight:600}
+#gvPanel input[type=range]{width:100%;accent-color:#f1d9a6}
+#gvPanel .big{width:100%;margin-top:14px;padding:9px;background:#2a3a5a;color:#fff;border:1px solid #3d5380;border-radius:9px;cursor:pointer;font:inherit;font-weight:600}
+#gvPanel .big:hover{background:#344872}
+#gvPanel .foot{font-size:11.5px;color:#7f8aa0;margin:12px 0 0}
+#gvSide{position:fixed;right:12px;top:12px;bottom:92px;width:244px;z-index:20;display:flex;flex-direction:column;background:rgba(10,12,18,.84);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px}
+#gvSide .tabs{display:flex;gap:4px;margin-bottom:6px}
+#gvSide .tabs button{flex:1;padding:6px;background:#171c28;color:#c9d0e0;border:1px solid #2a3244;border-radius:7px;cursor:pointer;font:inherit}
+#gvSide .tabs button.on{background:#f1d9a6;color:#1a1408;font-weight:600;border-color:#f1d9a6}
+#gvSide ul{list-style:none;margin:0;padding:0;overflow:auto;flex:1}
+#gvSide li{display:flex;gap:9px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12.5px}
+#gvSide li:hover{background:#1c2332}#gvSide li.on{background:#2d3a22;color:#e8ffc0}
+#gvSide li .t{color:#8c97ad;font-variant-numeric:tabular-nums;min-width:34px}
+#gvReadout{position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:20;background:rgba(10,12,18,.84);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:7px 14px;text-align:center;max-width:calc(100vw - 540px);font-size:12.5px;font-variant-numeric:tabular-nums}
+#gvReadout .k{color:#8c97ad;margin-left:8px}#gvReadout b{color:#f1d9a6}
+#gvTip{position:fixed;z-index:30;pointer-events:none;background:rgba(10,12,18,.94);border:1px solid #3a4560;border-radius:8px;padding:6px 10px;font-size:12px;font-variant-numeric:tabular-nums}
+.gvCard{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(6,8,12,.9);color:#f1d9a6;font-size:18px}
+#gvMap{position:fixed;inset:0;z-index:50;background:#06080c}
+#gvMap .mapHead{position:absolute;left:0;right:0;top:0;height:58px;box-sizing:border-box;background:#06080c;display:flex;gap:16px;align-items:center;padding:12px 18px;border-bottom:1px solid #1d2433}
+#gvMap .mapHead span{color:#8c97ad;font-size:12px;flex:1}
+#gvMap .mapHead button{padding:6px 12px;background:#171c28;color:#dfe3ee;border:1px solid #2a3244;border-radius:7px;cursor:pointer}
+#gvMapCanvas{position:absolute;left:0;right:0;top:58px;bottom:0;width:100%;height:calc(100% - 58px);cursor:crosshair}
+body.godview #chrome{z-index:25}
+@media (max-width:900px){#gvSide{display:none}#gvReadout{max-width:calc(100vw - 280px)}}
