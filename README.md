@@ -81,7 +81,17 @@ Animation changes:
 - **Timeline (bottom)**: chapters, shots, beats, events and keyframes on one scrubbable, zoomable track, plus any film curve (add from the menu). Drag the grip to resize it.
 - `?` lists every shortcut, `M` opens a map of all three sets at once.
 
-Edits are saved in your browser. To make them permanent, Export, then:
+### Custom projects
+
+The start page (`index.html`) has three buttons: **Custom projects**, **Default film** and **God's eye** (the desk).
+
+- Your work in the desk autosaves as a draft in this browser. Press **Save project** (or Ctrl+S) to keep it as a named project. The project menu in the top bar switches, renames, copies and deletes projects, and imports or downloads a project file.
+- `projects.html` lists the saved projects. **Play in film** opens `Clockwork_Firefly_fullfilm.html?project=<id>`, which plays the film with that project's cameras and colour grade (a small chip at the bottom left says which project is playing and links back to the original). **Edit in desk** opens `Clockwork_Firefly_godview.html?open=<id>`.
+- Projects live in the browser's local storage (`clockwork.projects.v1`), so they are per browser and per device. Download a file to back one up or move it.
+
+### Making a project permanent
+
+To bake the cameras and grade into the film itself for everyone, export a file (project menu, Download file) and run:
 
 ```
 node tools/apply-overrides.cjs clockwork-edits.json   # bakes shot cameras and the colour grade into the film
@@ -90,7 +100,7 @@ npm run build:godview                                  # regenerates the editor 
 
 An overridden shot drops its automatic camera drift and follows your keyframes; the grade appears in the film's grade menu as "Director's grade" and is selected by default.
 
-The editor is generated, never edited by hand: `npm run build:godview` reads `Clockwork_Firefly_fullfilm.html` and injects `tools/godview.inject.js`, `godview.timeline.js`, `godview.ui.html` and `godview.css` into a copy. `npm run test:godview` boots it in headless Chromium and saves screenshots (set `GV_FILE`, `THREE_ROOT`, `PLAYWRIGHT_MODULE`, `GV_STEPS`, `GV_VIEWPORT` for custom runs).
+The editor is generated, never edited by hand: `npm run build:godview` reads `Clockwork_Firefly_fullfilm.html` and injects `tools/godview.inject.js`, `godview.timeline.js`, `godview.ui.html` and `godview.css` into a copy. `npm run test:godview` boots it in headless Chromium and saves screenshots (set `GV_FILE`, `THREE_ROOT`, `PLAYWRIGHT_MODULE`, `GV_STEPS`, `GV_VIEWPORT` for custom runs). `npm run test:projects` checks the whole save, list and play-in-film flow.
 
 ## World viewing rig and town plan
 

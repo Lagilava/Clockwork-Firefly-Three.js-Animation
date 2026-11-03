@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Custom projects · Clockwork Firefly</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#0b0d14;color:#e8e2d2;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:28px 18px 60px}
+header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+h1{font:italic 400 2rem Georgia,serif;margin:0;flex:1}
+a.back{color:#a9a393;text-decoration:none;font-size:.9rem}
+a.back:hover{color:#f1d98f}
+p.lead{color:#a9a393;margin:0 0 22px;font-size:.95rem}
+.card{border:1px solid #2a2f3d;border-radius:12px;background:#11141b;padding:14px 16px;margin:12px 0}
+.card.draft{border-style:dashed;border-color:#6b5a2e}
+.card h2{margin:0;font-size:1.05rem;font-weight:650;color:#f1d98f}
+.meta{color:#8d8877;font-size:.82rem;margin:2px 0 10px}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.btn,a.btn{display:inline-block;padding:7px 13px;border:1px solid #3a4157;border-radius:8px;background:#171b24;color:#e8e2d2;font:inherit;font-size:.9rem;text-decoration:none;cursor:pointer}
+.btn:hover{background:#1f2430}
+.btn.pri{background:#f1d9a6;border-color:#f1d9a6;color:#1a1408;font-weight:600}
+.btn.pri:hover{background:#f6e4bd}
+.btn.warn{border-color:#7a3b32;color:#ffab9c}
+.empty{border:1px dashed #2a2f3d;border-radius:12px;padding:26px 18px;text-align:center;color:#a9a393}
+.empty b{color:#e8e2d2}
+.foot{margin-top:26px;color:#6f6a5c;font-size:.82rem}
+dialog{border:1px solid #3a4157;border-radius:14px;background:#11141b;color:#e8e2d2;padding:18px 20px;width:min(400px,calc(100vw - 32px))}
+dialog::backdrop{background:#000a}
+dialog h3{margin:0 0 8px;color:#f1d98f;font-size:1.05rem}
+dialog input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a4157;background:#0b0d14;color:inherit;font:inherit}
+dialog .row{justify-content:flex-end;margin-top:14px}
+</style></head><body><main>
+<header><h1>Custom projects</h1><a class="back" href="./">← Start page</a></header>
+<p class="lead">Your own cuts of the film: camera moves and colour grades you saved in the Director's desk. They play in the full film.</p>
+<div id="list"></div>
+<div class="row" style="margin-top:18px"><a class="btn pri" href="Clockwork_Firefly_godview.html">Open the Director's desk</a><label class="btn" id="importLbl">Import a project file<input type="file" id="file" accept=".json,application/json" hidden></label></div>
+<p class="foot">Projects are stored in this browser on this device. To move one, download its file and import it on the other device.</p>
+<dialog id="dlg"><form method="dialog" id="dlgForm"><h3 id="dlgTitle"></h3><p id="dlgText" style="margin:0;color:#a9a393"></p><input id="dlgInput" type="text" maxlength="60" autocomplete="off"><div class="row"><button class="btn" value="cancel" id="dlgNo" type="button">Cancel</button><button class="btn pri" id="dlgYes" value="ok">OK</button></div></form></dialog>
+</main>
+<script>
+const KEY = 'clockwork.projects.v1';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const read = () => { try { const x = JSON.parse(localStorage.getItem(KEY) || 'null'); return x && x.projects ? x : { version: 2, draft: null, projects: {} }; } catch (e) { return { version: 2, draft: null, projects: {} }; } };
+const write = (s) => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { alert('This browser is blocking storage, so the change could not be saved.'); } };
+const ago = (t) => { const d = (Date.now() - t) / 1000; return d < 60 ? 'just now' : d < 3600 ? Math.floor(d / 60) + ' min ago' : d < 86400 ? Math.floor(d / 3600) + ' h ago' : new Date(t).toLocaleDateString(); };
+const meta = (p) => { const n = Object.keys(p.overrides || {}).length; return n + ' shot edit' + (n === 1 ? '' : 's') + (p.grade ? ' · colour grade' : '') + ' · ' + ago(p.updated || p.created || Date.now()); };
+const slug = (n) => (n || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
+function ask({ title, text = '', value = null, ok = 'OK', danger = false }) {
+  return new Promise((res) => {
+    const d = $('dlg'); $('dlgTitle').textContent = title; $('dlgText').textContent = text; $('dlgText').hidden = !text;
+    $('dlgInput').hidden = value === null; $('dlgInput').value = value ?? ''; $('dlgYes').textContent = ok; $('dlgYes').className = 'btn ' + (danger ? 'warn' : 'pri');
+    const done = (v) => { d.close(); d.onclose = null; res(v); };
+    $('dlgForm').onsubmit = (e) => { e.preventDefault(); done(value === null ? true : $('dlgInput').value); };
+    $('dlgNo').onclick = () => done(null); d.oncancel = () => res(null);
+    d.showModal();
+  });
+}
+function render() {
+  const s = read(), list = Object.values(s.projects).sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  const dr = s.draft, drEdits = dr && Object.keys(dr.overrides || {}).length + (dr.grade ? 1 : 0) > 0 && !(dr.from && s.projects[dr.from] && JSON.stringify([dr.overrides, dr.grade && dr.grade.vals]) === JSON.stringify([s.projects[dr.from].overrides, s.projects[dr.from].grade && s.projects[dr.from].grade.vals]));
+  let h = '';
+  if (drEdits) h += '<div class="card draft"><h2>Unsaved draft</h2><div class="meta">' + meta(dr) + (dr.from && s.projects[dr.from] ? ' · changes to "' + esc(s.projects[dr.from].name) + '"' : '') + '</div><div class="row"><a class="btn pri" href="Clockwork_Firefly_fullfilm.html?project=draft">Play in film</a><a class="btn" href="Clockwork_Firefly_godview.html">Continue in desk</a></div></div>';
+  h += list.length ? list.map((p) => '<div class="card"><h2>' + esc(p.name) + '</h2><div class="meta">' + meta(p) + '</div><div class="row"><a class="btn pri" href="Clockwork_Firefly_fullfilm.html?project=' + encodeURIComponent(p.id) + '">Play in film</a><a class="btn" href="Clockwork_Firefly_godview.html?open=' + encodeURIComponent(p.id) + '">Edit in desk</a><button class="btn" data-a="dl" data-id="' + p.id + '">Download</button><button class="btn" data-a="rn" data-id="' + p.id + '">Rename</button><button class="btn warn" data-a="rm" data-id="' + p.id + '">Delete</button></div></div>').join('')
+    : (drEdits ? '' : '<div class="empty"><b>No custom projects yet.</b><br>Open the Director\'s desk, change some cameras or the colour grade, then press <b>Save project</b>. It will appear here.</div>');
+  $('list').innerHTML = h;
+}
+$('list').addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-a]'); if (!b) return; const s = read(), p = s.projects[b.dataset.id]; if (!p) return;
+  if (b.dataset.a === 'dl') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 1, name: p.name, overrides: p.overrides, ...(p.grade && p.grade.vals ? { grade: p.grade.vals } : {}) }, null, 1)], { type: 'application/json' })); a.download = slug(p.name) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+  else if (b.dataset.a === 'rn') { const n = await ask({ title: 'Rename project', value: p.name, ok: 'Rename' }); if (n === null) return; p.name = n.trim() || p.name; p.updated = Date.now(); write(s); render(); }
+  else if (b.dataset.a === 'rm') { if (!(await ask({ title: 'Delete "' + p.name + '"?', text: 'This removes the saved project from this browser.', ok: 'Delete project', danger: true }))) return; delete s.projects[p.id]; if (s.draft && s.draft.from === p.id) s.draft.from = null; write(s); render(); }
+});
+$('file').onchange = async (e) => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text()); if (!d.overrides) throw new Error('no cameras in this file');
+    const s = read(), id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    s.projects[id] = { id, name: (d.name || f.name.replace(/\.json$/i, '')).slice(0, 60), created: Date.now(), updated: Date.now(), overrides: d.overrides, grade: d.grade ? (d.grade.vals ? d.grade : { base: 'default', vals: d.grade, exposure: 1, bloom: 1, touched: true }) : null };
+    write(s); render();
+  } catch (err) { await ask({ title: 'Could not import', text: String(err.message || err), ok: 'OK' }); }
+};
+render();
+addEventListener('storage', render);
+</script></body></html>

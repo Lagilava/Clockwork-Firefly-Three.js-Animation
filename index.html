@@ -13,6 +13,13 @@ a small{display:block;color:#8d8877;font-size:.8rem;margin-top:4px;font-family:s
 </style></head><body><main>
 <h1>Clockwork Firefly</h1>
 <p>A five-minute silent animated film in Three.js.</p>
-<a href="Clockwork_Firefly_fullfilm.html">Play the film<small>Fullscreen, no sound by design</small></a>
-<a href="Clockwork_Firefly_godview.html">God's-eye view<small>Paths, cameras and all three sets from above</small></a>
-</main></body></html>
+<a href="projects.html" id="proj">Custom projects<small id="projSub">Your own cuts: camera moves and colour grades you saved</small></a>
+<a href="Clockwork_Firefly_fullfilm.html">Default film<small>The original cut, fullscreen, no sound by design</small></a>
+<a href="Clockwork_Firefly_godview.html">God's eye<small>The Director's desk: every set from above, edit cameras and colour</small></a>
+</main>
+<script>
+try {
+  const st = JSON.parse(localStorage.getItem('clockwork.projects.v1') || 'null'), n = st && st.projects ? Object.keys(st.projects).length : 0;
+  if (n) document.getElementById('projSub').textContent = n + ' saved project' + (n === 1 ? '' : 's') + ' in this browser';
+} catch (e) { /* storage blocked */ }
+</script></body></html>

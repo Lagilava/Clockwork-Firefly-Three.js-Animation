@@ -7,9 +7,12 @@ fs.mkdirSync(out, { recursive: true });
 const three = process.env.THREE_ROOT || path.join(root, 'node_modules', 'three');
 const file = process.env.GV_FILE || 'Clockwork_Firefly_godview.html';
 const server = http.createServer((req, res) => {
-  if (req.url.startsWith('/three/')) { res.setHeader('Content-Type', 'text/javascript'); res.end(fs.readFileSync(path.join(three, req.url.slice(7)))); return; }
-  res.setHeader('Content-Type', 'text/html');
-  res.end(fs.readFileSync(path.join(root, file), 'utf8').replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.180\.0\/build\//g, '/three/build/').replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.180\.0\/examples\/jsm\//g, '/three/examples/jsm/'));
+  const url = decodeURIComponent(req.url.split('?')[0]);
+  if (url.startsWith('/three/')) { res.setHeader('Content-Type', 'text/javascript'); res.end(fs.readFileSync(path.join(three, url.slice(7)))); return; }
+  const f = url === '/' ? file : url.slice(1), full = path.join(root, f);
+  if (!fs.existsSync(full) || !fs.statSync(full).isFile()) { res.statusCode = 404; res.end('not found'); return; }
+  res.setHeader('Content-Type', /\.html$/.test(f) ? 'text/html' : /\.png$/.test(f) ? 'image/png' : 'text/plain');
+  res.end(f.endsWith('.png') ? fs.readFileSync(full) : fs.readFileSync(full, 'utf8').replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.180\.0\/build\//g, '/three/build/').replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.180\.0\/examples\/jsm\//g, '/three/examples/jsm/'));
 });
 (async () => {
   await new Promise((r) => server.listen(0, '127.0.0.1', r));

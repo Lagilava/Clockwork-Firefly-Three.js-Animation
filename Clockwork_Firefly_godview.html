@@ -104,6 +104,9 @@
   #toast.show{opacity:1}
 
   #selGrade{max-width:190px}
+  #projChip{position:fixed;left:12px;bottom:12px;z-index:1000;transition:opacity 1.2s;max-width:calc(100vw - 24px);padding:6px 12px;border-radius:99px;background:rgba(14,12,8,.82);border:1px solid rgba(255,200,120,.45);color:#f3dcb0;font:12px/1.4 system-ui,sans-serif;backdrop-filter:blur(6px)}
+  #projChip b{color:#ffd48a;font-weight:650}
+  #projChip a{color:#ffd48a;margin-left:10px;text-decoration:underline}
   @media (max-width:640px){ .chap,.time,.grow{display:none} .row{gap:2px;flex-wrap:wrap;justify-content:space-between} select{padding:6px 9px} #selGrade{order:2;flex-basis:100%;max-width:none;margin-top:4px} #notes{top:auto;bottom:165px} }
   @media (prefers-reduced-motion:reduce){ #loader .gear{animation:none} .card,#start,#end,#chrome{transition:none} }
 </style>
@@ -293,6 +296,40 @@ textarea.num{height:120px;resize:vertical}
 @media (max-height:980px) and (min-width:901px){.monbar{display:none}}
 #gvIShot .btns .btn{padding:4px 9px;font-size:12.5px}
 @media (max-height:980px) and (min-width:901px){#gvMonCard .monwrap{width:82%;margin:0 auto}}
+
+/* projects */
+#gvProj{position:relative;flex:none}
+#gvProjBtn{display:flex;align-items:center;gap:8px;max-width:300px}
+#gvProjBtn .ic{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#gvProjName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;font-weight:600}
+#gvSave{font-size:11px;color:var(--gv-dim);white-space:nowrap}
+#gvSave.saving{color:var(--gv-gold)}
+#gvSave.blocked{color:#ff9a8a}
+#gvSave::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#58c26f;margin-right:5px;vertical-align:1px}
+#gvSave.saving::before{background:var(--gv-gold)}#gvSave.blocked::before{background:#ff7a66}
+#gvProjMenu{position:fixed;z-index:90;top:44px;left:12px;width:min(380px,calc(100vw - 24px));max-height:calc(100vh - 70px);overflow:auto;background:var(--gv-panel);border:1px solid var(--gv-line2);border-radius:12px;box-shadow:0 18px 50px #000b;padding:10px}
+#gvProjMenu h4{margin:2px 4px 8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--gv-faint);font-weight:650}
+.prow{display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:8px 10px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--gv-text)}
+.prow:hover{background:var(--gv-raise)}
+.prow.on{border-color:var(--gv-gold);background:var(--gv-panel2)}
+.prow .tx{flex:1;min-width:0}
+.prow .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .sb{font-size:11.5px;color:var(--gv-dim)}
+.prow .ck{color:var(--gv-gold);font-weight:700}
+#gvProjMenu .btns{margin:8px 0 2px}
+#gvProjMenu hr{border:0;border-top:1px solid var(--gv-line);margin:10px 0 6px}
+#gvProjMenu .note{margin:6px 4px 2px}
+#gvPlayFilm{border-color:var(--gv-gold);color:var(--gv-gold)}
+#gvDlg{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:rgba(6,8,12,.7)}
+#gvDlg .dlg{width:min(420px,calc(100vw - 32px));background:var(--gv-panel);border:1px solid var(--gv-line2);border-radius:14px;padding:18px 20px;box-shadow:0 24px 70px #000c;font:13px/1.45 var(--gv-font);color:var(--gv-text)}
+#gvDlg h3{margin:0 0 6px;font-size:16px;color:var(--gv-gold)}
+#gvDlg p{margin:0 0 10px;color:var(--gv-dim)}
+#gvDlg input[type=text]{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--gv-line2);background:var(--gv-bg);color:var(--gv-text);font:inherit}
+#gvDlg .btns.r{justify-content:flex-end;margin-top:14px}
+@media (max-width:900px){#gvSave{display:none}#gvProjName{max-width:90px}#gvPlayFilm{display:none}#gvMapBtn{display:none}}
+#gvSaveBtn{background:var(--gv-gold);border-color:var(--gv-gold);color:#1a1408;font-weight:600}
+#gvSaveBtn:disabled,#gvPlayFilm:disabled{opacity:.45;cursor:default}
+@media (max-width:900px){#gvSaveBtn{padding:5px 8px}}
 
 </style>
 </head>
@@ -6120,7 +6157,18 @@ function applyShotOverride(t0, ov) {
   else { s.fn = s.base.fn; if (s.base.drift) DRIFT.set(t0, s.base.drift); }
   return true;
 }
-for (const k in SHOT_OVERRIDES) applyShotOverride(+k, SHOT_OVERRIDES[k]);
+/* A project saved in the Director's desk (same browser) can be played with ?project=<id>.
+   Its camera keys replace the baked ones and its colour grade becomes a "Project" entry in the grade menu. */
+const PROJECT = (() => {
+  try {
+    const q = new URLSearchParams(location.search).get('project'); if (!q) return null;
+    const st = JSON.parse(localStorage.getItem('clockwork.projects.v1') || 'null');
+    const p = q === 'draft' ? (st && st.draft && { ...st.draft, id: 'draft', name: 'Draft' }) : st && st.projects && st.projects[q];
+    return p ? { id: p.id, name: p.name, overrides: p.overrides || {}, grade: p.grade && p.grade.vals ? p.grade.vals : null } : { missing: q };
+  } catch (e) { return { missing: 'unreadable' }; }
+})();
+const ACTIVE_OVERRIDES = PROJECT && !PROJECT.missing ? PROJECT.overrides : SHOT_OVERRIDES;
+for (const k in ACTIVE_OVERRIDES) applyShotOverride(+k, ACTIVE_OVERRIDES[k]);
 
 // A few subjective/action setups carry the camera operator's breathing and reactions.
 // Keep the wides and quiet emotional holds on a stable support.
@@ -6457,6 +6505,7 @@ const GRADE_PRESETS = {
 /* Director's grade: written by the god's-eye editor through tools/apply-overrides.cjs (null until baked). */
 const DIRECTOR_GRADE = /*GRADE-BEGIN*/null/*GRADE-END*/;
 if (DIRECTOR_GRADE) GRADE_PRESETS.directorgrade = DIRECTOR_GRADE;
+if (PROJECT && PROJECT.grade) GRADE_PRESETS.project = PROJECT.grade;
 class Post {
   constructor(renderer, scene, camera, skyScene) {
     this.renderer = renderer;
@@ -6511,7 +6560,7 @@ class Post {
     this.bloomOn = true;
     this.bloomAllowed = true;
     this.aaOn = false; // SMAA produced square artifacts on bright/clipped areas
-    this.preset = DIRECTOR_GRADE ? 'directorgrade' : 'default';
+    this.preset = PROJECT && PROJECT.grade ? 'project' : DIRECTOR_GRADE ? 'directorgrade' : 'default';
   }
   setPreset(name) { this.preset = GRADE_PRESETS[name] ? name : 'default'; }
   setSize(w, h, pr) {
@@ -6691,6 +6740,23 @@ async function boot() {
   const setCam = (m) => { director.setMode(m); $('selCam').value = m; toast(camLabels[m]); };
   $('selCam').onchange = (e) => setCam(e.target.value);
   $('selGrade').onchange = (e) => { post.setPreset(e.target.value); toast(e.target.selectedOptions[0].textContent); };
+  if (PROJECT) {
+    const chip = document.createElement('div'); chip.id = 'projChip';
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const plain = location.pathname;
+    if (PROJECT.missing) chip.innerHTML = 'That project was not found in this browser, so this is the original film. <a href="' + plain + '">Dismiss</a>';
+    else {
+      chip.innerHTML = 'Project <b>' + esc(PROJECT.name) + '</b> <a href="' + plain.replace('fullfilm', 'godview') + '?open=' + encodeURIComponent(PROJECT.id) + '">Edit in desk</a> <a href="' + plain + '">Original film</a>';
+      if (PROJECT.grade) {
+        const sel = $('selGrade'), o = document.createElement('option'); o.value = 'project'; o.textContent = 'Project grade: ' + PROJECT.name;
+        sel.insertBefore(o, sel.firstChild); sel.value = 'project'; post.setPreset('project');
+      }
+    }
+    document.body.appendChild(chip);
+    // Visible on the start card, then it steps aside once the film is playing.
+    const fade = () => { setTimeout(() => { chip.style.opacity = '0'; chip.style.pointerEvents = 'none'; }, 6000); removeEventListener('pointerdown', fade, true); removeEventListener('keydown', fade, true); };
+    addEventListener('pointerdown', fade, true); addEventListener('keydown', fade, true);
+  }
   const full = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); };
   $('btnFull').onclick = full;
   $('again').onclick = () => { st.ended = false; $('end').classList.remove('on'); seekTo(0); setPlaying(true); };
@@ -7124,8 +7190,38 @@ function godViewInstall(film) {
   }
   const round3 = (v) => Math.round(v * 1000) / 1000;
   function applyOv(i) { const t0 = SHOTS[i].t0, ov = gv.ov[t0]; applyShotOverride(t0, ov && ov.keys.length ? ov : null); gv.dirty = true; gv.pv.dirty = true; }
-  function saveEdits() { try { localStorage.setItem(GV_LS.edits, JSON.stringify(gv.ov)); } catch (e) { /* storage may be blocked */ } }
-  function saveGrade() { try { localStorage.setItem(GV_LS.grade, JSON.stringify({ base: G.base, vals: G.vals, exposure: G.exposure, bloom: G.bloom, applyGod: G.applyGod, touched: G.touched })); } catch (e) { /* storage may be blocked */ } }
+  /* ---------- projects: an autosaved draft, plus named projects the user chooses to save ---------- */
+  const PKEY = 'clockwork.projects.v1';
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const G_BASE0 = G.base;
+  let PS = { version: 2, draft: null, projects: {} };
+  let PFROM = null; // id of the saved project the open work came from
+  let storageOk = true, ptimer = 0;
+  const readStore = () => { try { const x = JSON.parse(localStorage.getItem(PKEY) || 'null'); return x && x.projects ? x : null; } catch (e) { return null; } };
+  const writeStore = () => { try { localStorage.setItem(PKEY, JSON.stringify(PS)); storageOk = true; } catch (e) { storageOk = false; } return storageOk; };
+  const gradeState = () => ({ base: G.base, vals: G.vals, exposure: G.exposure, bloom: G.bloom, applyGod: G.applyGod, touched: G.touched });
+  const snapshot = () => ({ overrides: clone(gv.ov), grade: G.touched ? clone(gradeState()) : null });
+  const baseline = () => ({ overrides: clone(SHOT_OVERRIDES), grade: null });
+  const sameWork = (a, b) => JSON.stringify([a.overrides || {}, a.grade ? a.grade.vals : null]) === JSON.stringify([b.overrides || {}, b.grade ? b.grade.vals : null]);
+  const curProject = () => (PFROM && PS.projects[PFROM]) || null;
+  function projState() { // clean: matches the saved project, dirty: changed since saving, draft: edits with no project, empty: nothing yet
+    const w = snapshot(), p = curProject();
+    if (p) return sameWork(w, p) ? 'clean' : 'dirty';
+    return sameWork(w, baseline()) ? 'empty' : 'draft';
+  }
+  function renderProjectBar() {
+    const p = curProject(), st = projState(), el = $g('gvSave');
+    $g('gvProjName').textContent = p ? p.name : 'Untitled draft';
+    el.textContent = !storageOk ? 'Not stored (browser storage blocked)' : st === 'clean' ? 'Saved' : st === 'dirty' ? 'Unsaved changes' : st === 'draft' ? 'Draft, autosaved' : 'No changes yet';
+    el.className = 'save ' + (!storageOk ? 'blocked' : st === 'dirty' || st === 'draft' ? 'saving' : '');
+    $g('gvSaveBtn').disabled = st === 'clean' || st === 'empty'; $g('gvSaveBtn').textContent = p ? 'Save' : 'Save project';
+    $g('gvPlayFilm').disabled = !storageOk;
+  }
+  function persistNow() { clearTimeout(ptimer); ptimer = 0; PS.draft = { ...snapshot(), from: PFROM, updated: Date.now() }; writeStore(); renderProjectBar(); }
+  function schedulePersist() { clearTimeout(ptimer); ptimer = setTimeout(persistNow, 250); }
+  const saveEdits = schedulePersist, saveGrade = schedulePersist;
+  addEventListener('pagehide', () => { if (ptimer) persistNow(); });
+
   function resampleShot(i) {
     const T0 = st.T, was = st.playing; sampleRange(SHOTS[i].t0, SHOTS[i].t1 - DT);
     seekTo(T0); setPlaying(was);
@@ -7468,10 +7564,10 @@ function godViewInstall(film) {
   gradeBox.addEventListener('click', (e) => { if (e.target.id === 'gReset') { G.vals = gradeDefaults(); GRADE_PRESETS.gvcustom = G.vals; G.exposure = 1; G.bloom = 1; G.touched = false; pv.dirty = true; saveGrade(); renderGrade(); renderExport(); } });
 
   /* inspector: export tab */
-  const editsJSON = () => JSON.stringify({ version: 1, overrides: gv.ov, ...(G.touched ? { grade: G.vals } : {}) }, null, 1);
+  const editsJSON = () => JSON.stringify({ version: 1, name: curProject()?.name, overrides: gv.ov, ...(G.touched ? { grade: G.vals } : {}) }, null, 1);
   function renderExport() {
     const keys = Object.keys(gv.ov);
-    let h = `<div class="note">Edits are saved in this browser automatically. Export them to put them in the film itself.</div><div class="sect">Edited shots <span class="hint">${keys.length}</span></div>`;
+    let h = `<div class="note">Your work autosaves as a draft in this browser. Press Save project (top bar) to keep it under Custom projects, or export a file to bake it into the film itself.</div><div class="sect">Edited shots <span class="hint">${keys.length}</span></div>`;
     h += keys.length ? keys.map((t0) => { const idx = SHOTS.findIndex((s) => s.t0 === +t0); return `<div class="srow" data-goshot="${idx}"><div class="tx"><div class="nm">S${idx + 1} · ${gvEsc(gvShotTitle(+t0, idx))}</div><div class="sb">${gv.ov[t0].keys.length} keys${gv.ov[t0].rel ? ' · follows robot' : ''}</div></div><button class="btn sm warn" data-rm="${idx}">Reset</button></div>`; }).join('') : '<div class="note">No camera edits yet. Pick a shot and press Edit camera.</div>';
     h += `<div class="sect">Colour grade</div><div class="note">${G.touched ? `Custom grade based on ${gvEsc(gradeNames[G.base] || G.base)} will be exported.` : 'Unchanged, nothing to export.'}</div>`;
     h += `<div class="btns"><button class="btn pri" id="xDown">Download edits.json</button><button class="btn" id="xCopy">Copy JSON</button></div><div class="sect">Import</div><textarea class="num" id="xText" placeholder="Paste exported JSON here"></textarea><div class="btns"><button class="btn" id="xImport">Import pasted JSON</button><button class="btn warn" id="xClear">Clear all edits</button></div><div class="note">To bake into the film: <code>node tools/apply-overrides.cjs edits.json</code> then <code>npm run build:godview</code>.</div><div id="xMsg" class="lens"></div>`;
@@ -7619,13 +7715,15 @@ function godViewInstall(film) {
 
   // The desk owns the keyboard: the film's own shortcuts (camera modes, notes) must not fire here.
   addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); e.stopImmediatePropagation(); saveProject(false); return; }
+    if (!$g('gvDlg').classList.contains('hidden')) return;
     const tag = e.target.tagName; if (tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') return; if (tag === 'TEXTAREA' || tag === 'SELECT') return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase(); let used = true;
     if (e.code === 'Space') togglePlay();
     else if (k === 'arrowleft') seekTo(st.T - (e.shiftKey ? 1 : 1 / 24)); else if (k === 'arrowright') seekTo(st.T + (e.shiftKey ? 1 : 1 / 24));
     else if (k === 'arrowup') stepShot(-1); else if (k === 'arrowdown') stepShot(1);
-    else if (k === 'm') $g('gvMapBtn').click(); else if (k === 'escape') { mapEl.classList.add('hidden'); $g('gvHelp').classList.add('hidden'); }
+    else if (k === 'm') $g('gvMapBtn').click(); else if (k === 'escape') { mapEl.classList.add('hidden'); $g('gvHelp').classList.add('hidden'); closeProjMenu(); }
     else if (k === '1') setView('top'); else if (k === '2') setView('aerial'); else if (k === '3') setView('side'); else if (k === '4') setView('south');
     else if (k === 'g') { layers.grid = !layers.grid; document.querySelector('[data-layer=grid]').checked = layers.grid; }
     else if (k === 'f') setView(curView); else if (k === 's') frameShot(gv.sel);
@@ -7639,14 +7737,110 @@ function godViewInstall(film) {
     if (used) { e.preventDefault(); e.stopImmediatePropagation(); } else e.stopImmediatePropagation();
   }, true);
 
+  /* ---------- project actions, menu and dialog ---------- */
+  function gvAsk({ title, text = '', value = null, ok = 'OK', danger = false }) {
+    return new Promise((res) => {
+      const dlg = $g('gvDlg'), inp = $g('gvDlgInput'), yes = $g('gvDlgYes'), form = $g('gvDlgForm');
+      $g('gvDlgTitle').textContent = title; $g('gvDlgText').textContent = text; $g('gvDlgText').classList.toggle('hidden', !text);
+      inp.classList.toggle('hidden', value === null); inp.value = value ?? ''; yes.textContent = ok; yes.classList.toggle('warn', danger); yes.classList.toggle('pri', !danger);
+      dlg.classList.remove('hidden'); if (value === null) yes.focus(); else { inp.focus(); inp.select(); }
+      const done = (v) => { dlg.classList.add('hidden'); form.onsubmit = null; $g('gvDlgNo').onclick = null; dlg.onkeydown = null; res(v); };
+      form.onsubmit = (e) => { e.preventDefault(); done(value === null ? true : inp.value); };
+      $g('gvDlgNo').onclick = () => done(null);
+      dlg.onkeydown = (e) => { if (e.key === 'Escape') done(null); };
+    });
+  }
+  function applyWork(w, from) {
+    for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); }
+    for (const [t0, ov] of Object.entries(clone(w.overrides || {}))) if (applyShotOverride(+t0, ov)) gv.ov[t0] = ov;
+    const gs = w.grade; G.bypass = false;
+    if (gs && gs.vals) { Object.assign(G, { base: gs.base || G_BASE0, exposure: gs.exposure ?? 1, bloom: gs.bloom ?? 1, applyGod: !!gs.applyGod, touched: gs.touched !== false }); G.vals = clone(gs.vals); }
+    else { G.base = G_BASE0; G.vals = gradeDefaults(); G.exposure = 1; G.bloom = 1; G.applyGod = false; G.touched = false; }
+    GRADE_PRESETS.gvcustom = G.vals; pv.dirty = true; PFROM = from; gv.editOn = false; gv.pinned = false; gv.selKey = 0;
+  }
+  async function loadWork(w, from) { applyWork(w, from); persistNow(); await resampleAll(); renderGrade(); renderProjectMenu(); }
+  const ago = (t) => { const d = (Date.now() - t) / 1000; return d < 60 ? 'just now' : d < 3600 ? `${Math.floor(d / 60)} min ago` : d < 86400 ? `${Math.floor(d / 3600)} h ago` : new Date(t).toLocaleDateString(); };
+  const gvId = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const nextName = () => { let n = Object.keys(PS.projects).length + 1; const names = Object.values(PS.projects).map((p) => p.name); while (names.includes('Project ' + n)) n++; return 'Project ' + n; };
+  const unsaved = () => { const st = projState(); return st === 'dirty' || st === 'draft'; };
+  async function saveProject(asNew = false) {
+    persistNow(); let p = asNew ? null : curProject();
+    if (!p) {
+      const name = await gvAsk({ title: 'Save as a project', text: 'It will appear under Custom projects on the start page, next to the original film.', value: asNew && curProject() ? curProject().name + ' copy' : nextName(), ok: 'Save project' });
+      if (name === null) return; const id = gvId(); p = PS.projects[id] = { id, name: name.trim() || nextName(), created: Date.now() }; PFROM = id;
+    }
+    Object.assign(p, snapshot(), { updated: Date.now() }); persistNow(); renderProjectMenu(); flashSaved();
+  }
+  function flashSaved() { const el = $g('gvSave'); el.textContent = 'Saved ✓'; setTimeout(renderProjectBar, 1200); }
+  async function openProject(id) {
+    if (!PS.projects[id] || id === PFROM) return;
+    if (unsaved() && !(await gvAsk({ title: 'Leave unsaved changes?', text: 'The work you have open has changes that are not saved as a project.', ok: 'Open anyway', danger: true }))) return;
+    await loadWork(PS.projects[id], id);
+  }
+  async function newProject() {
+    if (unsaved() && !(await gvAsk({ title: 'Start a blank draft?', text: 'The work you have open has changes that are not saved as a project.', ok: 'Start blank', danger: true }))) return;
+    await loadWork(baseline(), null);
+  }
+  async function renameProject() { const p = curProject(); if (!p) return; const n = await gvAsk({ title: 'Rename project', value: p.name, ok: 'Rename' }); if (n === null) return; p.name = n.trim() || p.name; p.updated = Date.now(); persistNow(); renderProjectMenu(); }
+  async function deleteProject() {
+    const p = curProject(); if (!p) return;
+    if (!(await gvAsk({ title: `Delete "${p.name}"?`, text: 'The saved project is removed. The work stays open as a draft until you leave it.', ok: 'Delete project', danger: true }))) return;
+    delete PS.projects[p.id]; PFROM = null; persistNow(); renderProjectMenu();
+  }
+  const downloadJSON = (name, text) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+  const fileSlug = (n) => (n || 'clockwork-edits').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'clockwork-edits';
+  async function importFile(file) {
+    try {
+      const d = JSON.parse(await file.text()); if (!d.overrides) throw new Error('no cameras in this file');
+      const grade = d.grade ? (d.grade.vals ? d.grade : { base: G_BASE0, vals: d.grade, exposure: 1, bloom: 1, touched: true }) : null;
+      const id = gvId(), name = (d.name || file.name.replace(/\.json$/i, '')).slice(0, 60) || nextName();
+      PS.projects[id] = { id, name, created: Date.now(), updated: Date.now(), overrides: d.overrides, grade };
+      await loadWork(PS.projects[id], id);
+    } catch (err) { await gvAsk({ title: 'Could not import', text: String(err.message || err), ok: 'OK' }); }
+  }
+  function renderProjectMenu() {
+    renderProjectBar();
+    const list = Object.values(PS.projects).sort((a, b) => b.updated - a.updated), p = curProject();
+    let h = '<h4>Custom projects</h4>';
+    h += list.length ? list.map((q) => `<button class="prow ${q.id === PFROM ? 'on' : ''}" data-open="${q.id}"><div class="tx"><div class="nm">${gvEsc(q.name)}</div><div class="sb">${Object.keys(q.overrides || {}).length} shot edit${Object.keys(q.overrides || {}).length === 1 ? '' : 's'}${q.grade ? ' · colour grade' : ''} · ${ago(q.updated)}</div></div>${q.id === PFROM ? '<span class="ck">open</span>' : ''}</button>`).join('') : '<div class="note">Nothing saved yet. Edit some cameras or the colour grade, then press Save project. It will show up here and on the start page.</div>';
+    h += `<hr><div class="btns"><button class="btn" data-pa="new">New blank draft</button>${p ? '<button class="btn" data-pa="saveas">Save as copy…</button><button class="btn" data-pa="rename">Rename</button><button class="btn warn" data-pa="delete">Delete</button>' : ''}</div>`;
+    h += '<div class="btns"><button class="btn" data-pa="download">Download file</button><button class="btn" data-pa="import">Import file…</button></div>';
+    h += '<div class="note">Projects are kept in this browser. Download a file to back one up or to move it to another device.</div>';
+    $g('gvProjMenu').innerHTML = h;
+  }
+  const projMenu = $g('gvProjMenu');
+  const closeProjMenu = () => projMenu.classList.add('hidden');
+  $g('gvProjBtn').onclick = (e) => { e.stopPropagation(); renderProjectMenu(); projMenu.classList.toggle('hidden'); };
+  addEventListener('pointerdown', (e) => { if (!projMenu.classList.contains('hidden') && !e.target.closest('#gvProj')) closeProjMenu(); }, true);
+  projMenu.addEventListener('click', async (e) => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.open) { closeProjMenu(); return openProject(t.dataset.open); }
+    const a = t.dataset.pa; if (!a) return;
+    if (a === 'import') return $g('gvFileIn').click();
+    closeProjMenu();
+    if (a === 'new') await newProject(); else if (a === 'saveas') await saveProject(true); else if (a === 'rename') await renameProject(); else if (a === 'delete') await deleteProject();
+    else if (a === 'download') downloadJSON(fileSlug(curProject()?.name) + '.json', editsJSON());
+  });
+  $g('gvFileIn').onchange = (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) importFile(f); };
+  $g('gvSaveBtn').onclick = () => saveProject(false);
+  $g('gvPlayFilm').onclick = () => {
+    persistNow(); const id = PFROM && projState() === 'clean' ? PFROM : 'draft';
+    window.open(location.pathname.replace(/[^/]*$/, '') + 'Clockwork_Firefly_fullfilm.html?project=' + encodeURIComponent(id), '_blank');
+  };
+
   /* ---------- 9. restore saved work, build panels, start ---------- */
   try {
-    const saved = JSON.parse(localStorage.getItem(GV_LS.edits) || 'null');
-    const src = saved || JSON.parse(JSON.stringify(SHOT_OVERRIDES));
-    for (const [t0, ov] of Object.entries(src)) if (applyShotOverride(+t0, ov)) gv.ov[t0] = ov;
-    const gs = JSON.parse(localStorage.getItem(GV_LS.grade) || 'null');
-    if (gs && gs.vals) { Object.assign(G, { base: gs.base, exposure: gs.exposure ?? 1, bloom: gs.bloom ?? 1, applyGod: !!gs.applyGod, touched: !!gs.touched }); G.vals = gs.vals; GRADE_PRESETS.gvcustom = G.vals; }
-  } catch (e) { /* saved edits unreadable: start clean */ }
+    const ps = readStore();
+    if (ps) { PS = ps; PS.projects = PS.projects || {}; }
+    else {
+      const le = JSON.parse(localStorage.getItem(GV_LS.edits) || 'null'), lg = JSON.parse(localStorage.getItem(GV_LS.grade) || 'null');
+      if (le || lg) PS.draft = { overrides: le || clone(SHOT_OVERRIDES), grade: lg && lg.touched ? lg : null, from: null, updated: Date.now() };
+    }
+    const openId = new URLSearchParams(location.search).get('open');
+    if (openId && PS.projects[openId]) applyWork(PS.projects[openId], openId);
+    else if (PS.draft) applyWork(PS.draft, PS.draft.from && PS.projects[PS.draft.from] ? PS.draft.from : null);
+    else applyWork(baseline(), null);
+  } catch (e) { applyWork(baseline(), null); }
   if (Object.keys(gv.ov).length) { for (const t0 of Object.keys(gv.ov)) applyShotOverride(+t0, gv.ov[t0]); sampleRange(0, FILM); computeBounds(); SHOTS.forEach((_, i) => buildShotGlyph(i)); for (const set of Object.keys(GV_RANGES)) buildCamPath(set); }
   gv.tl = gvTimeline(gv);
   renderShotRows(); renderBeatRows(); renderInspector(); renderGrade(); renderExport(); syncChecks();
@@ -7658,6 +7852,8 @@ function godViewInstall(film) {
   $g('gvBoot').classList.add('hidden');
   fitStage();
   Object.assign(gv, { setView, setSet, openMap, frameSet, frameShot, startCapture, shotOfSet, keyWorld, rebuildEdit, renderShotRows, state, layers, sm, bounds, cap });
+  gv.projects = { save: saveProject, open: openProject, create: newProject, state: projState, store: () => PS, from: () => PFROM, persist: persistNow, bar: renderProjectBar };
+  renderProjectBar(); persistNow();
   gv.dbg = { proxyPos, proxyTgt, camera, renderer, THREE };
   window.__godview = gv;
 }
@@ -7887,6 +8083,11 @@ setTimeout(() => {
 <div id="gv">
   <header id="gvTop">
     <div class="brand">Clockwork Firefly<i>Director's desk</i></div>
+    <div id="gvProj">
+      <button class="tbtn" id="gvProjBtn" title="Your projects"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span id="gvProjName">Project</span><span id="gvSave" class="save">Saved</span><svg class="ic car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <div id="gvProjMenu" class="hidden"></div>
+    </div>
+    <button class="tbtn sv" id="gvSaveBtn" title="Save as a project (Ctrl+S)">Save project</button>
     <button class="tbtn narrow" id="gvLeftBtn">Shots</button>
     <div class="grp" id="gvSets">
       <button data-set="atrium">Atrium</button><button data-set="roof">Rooftops</button><button data-set="forest">Glade</button>
@@ -7899,6 +8100,7 @@ setTimeout(() => {
       <select id="gvSpeed" title="Playback speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
     </div>
     <div class="gsp"></div>
+    <button class="tbtn pf" id="gvPlayFilm" title="Open the film with this project's cameras and grade">Play in film</button>
     <button class="tbtn" id="gvMapBtn">Map</button>
     <button class="tbtn" id="gvHelpBtn" title="Shortcuts">?</button>
     <button class="tbtn narrow" id="gvRightBtn">Monitor</button>
@@ -7989,9 +8191,17 @@ setTimeout(() => {
     </div>
     <div id="gvTLWrap"><canvas id="gvTLCanvas"></canvas></div>
   </section>
+<div id="gvDlg" class="hidden"><form class="dlg" id="gvDlgForm">
+  <h3 id="gvDlgTitle"></h3><p id="gvDlgText"></p>
+  <input type="text" id="gvDlgInput" maxlength="60" autocomplete="off" spellcheck="false">
+  <div class="btns r"><button type="button" class="btn" id="gvDlgNo">Cancel</button><button type="submit" class="btn pri" id="gvDlgYes">OK</button></div>
+</form></div>
+<input type="file" id="gvFileIn" accept="application/json,.json" class="hidden">
 </div>
 
 <div id="gvTip" class="hidden"></div>
+
+
 
 <div id="gvMap" class="hidden">
   <div class="mapHead"><b>Whole film, every set at once</b><span>Robot path coloured by time (blue early, red late), Ember dashed, blue squares are authored camera positions. Click a point to jump there.</span><button class="tbtn" id="gvMapClose">Close (Esc)</button></div>
@@ -8015,7 +8225,7 @@ setTimeout(() => {
     <tr><td>Timeline wheel</td><td>Zoom (Shift + wheel scrolls the tracks)</td></tr>
     <tr><td>Esc</td><td>Close map or this sheet</td></tr>
   </table>
-  <p>Edited cameras are saved in this browser. Use Export to download them, then <code>node tools/apply-overrides.cjs edits.json</code> to bake them into the film.</p>
+  <p>Your work lives in a project (top left). Every change is saved automatically in this browser. Use <b>Play in film</b> to watch the film with your cameras and grade, or Export to download a file and bake it into the film with <code>node tools/apply-overrides.cjs edits.json</code>.</p>
   <div class="btns"><button class="btn pri" id="gvHelpClose">Close</button></div>
 </div></div>
 

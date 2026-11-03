@@ -104,6 +104,9 @@
   #toast.show{opacity:1}
 
   #selGrade{max-width:190px}
+  #projChip{position:fixed;left:12px;bottom:12px;z-index:1000;transition:opacity 1.2s;max-width:calc(100vw - 24px);padding:6px 12px;border-radius:99px;background:rgba(14,12,8,.82);border:1px solid rgba(255,200,120,.45);color:#f3dcb0;font:12px/1.4 system-ui,sans-serif;backdrop-filter:blur(6px)}
+  #projChip b{color:#ffd48a;font-weight:650}
+  #projChip a{color:#ffd48a;margin-left:10px;text-decoration:underline}
   @media (max-width:640px){ .chap,.time,.grow{display:none} .row{gap:2px;flex-wrap:wrap;justify-content:space-between} select{padding:6px 9px} #selGrade{order:2;flex-basis:100%;max-width:none;margin-top:4px} #notes{top:auto;bottom:165px} }
   @media (prefers-reduced-motion:reduce){ #loader .gear{animation:none} .card,#start,#end,#chrome{transition:none} }
 </style>
@@ -5928,7 +5931,18 @@ function applyShotOverride(t0, ov) {
   else { s.fn = s.base.fn; if (s.base.drift) DRIFT.set(t0, s.base.drift); }
   return true;
 }
-for (const k in SHOT_OVERRIDES) applyShotOverride(+k, SHOT_OVERRIDES[k]);
+/* A project saved in the Director's desk (same browser) can be played with ?project=<id>.
+   Its camera keys replace the baked ones and its colour grade becomes a "Project" entry in the grade menu. */
+const PROJECT = (() => {
+  try {
+    const q = new URLSearchParams(location.search).get('project'); if (!q) return null;
+    const st = JSON.parse(localStorage.getItem('clockwork.projects.v1') || 'null');
+    const p = q === 'draft' ? (st && st.draft && { ...st.draft, id: 'draft', name: 'Draft' }) : st && st.projects && st.projects[q];
+    return p ? { id: p.id, name: p.name, overrides: p.overrides || {}, grade: p.grade && p.grade.vals ? p.grade.vals : null } : { missing: q };
+  } catch (e) { return { missing: 'unreadable' }; }
+})();
+const ACTIVE_OVERRIDES = PROJECT && !PROJECT.missing ? PROJECT.overrides : SHOT_OVERRIDES;
+for (const k in ACTIVE_OVERRIDES) applyShotOverride(+k, ACTIVE_OVERRIDES[k]);
 
 // A few subjective/action setups carry the camera operator's breathing and reactions.
 // Keep the wides and quiet emotional holds on a stable support.
@@ -6265,6 +6279,7 @@ const GRADE_PRESETS = {
 /* Director's grade: written by the god's-eye editor through tools/apply-overrides.cjs (null until baked). */
 const DIRECTOR_GRADE = /*GRADE-BEGIN*/null/*GRADE-END*/;
 if (DIRECTOR_GRADE) GRADE_PRESETS.directorgrade = DIRECTOR_GRADE;
+if (PROJECT && PROJECT.grade) GRADE_PRESETS.project = PROJECT.grade;
 class Post {
   constructor(renderer, scene, camera, skyScene) {
     this.renderer = renderer;
@@ -6319,7 +6334,7 @@ class Post {
     this.bloomOn = true;
     this.bloomAllowed = true;
     this.aaOn = false; // SMAA produced square artifacts on bright/clipped areas
-    this.preset = DIRECTOR_GRADE ? 'directorgrade' : 'default';
+    this.preset = PROJECT && PROJECT.grade ? 'project' : DIRECTOR_GRADE ? 'directorgrade' : 'default';
   }
   setPreset(name) { this.preset = GRADE_PRESETS[name] ? name : 'default'; }
   setSize(w, h, pr) {
@@ -6499,6 +6514,23 @@ async function boot() {
   const setCam = (m) => { director.setMode(m); $('selCam').value = m; toast(camLabels[m]); };
   $('selCam').onchange = (e) => setCam(e.target.value);
   $('selGrade').onchange = (e) => { post.setPreset(e.target.value); toast(e.target.selectedOptions[0].textContent); };
+  if (PROJECT) {
+    const chip = document.createElement('div'); chip.id = 'projChip';
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const plain = location.pathname;
+    if (PROJECT.missing) chip.innerHTML = 'That project was not found in this browser, so this is the original film. <a href="' + plain + '">Dismiss</a>';
+    else {
+      chip.innerHTML = 'Project <b>' + esc(PROJECT.name) + '</b> <a href="' + plain.replace('fullfilm', 'godview') + '?open=' + encodeURIComponent(PROJECT.id) + '">Edit in desk</a> <a href="' + plain + '">Original film</a>';
+      if (PROJECT.grade) {
+        const sel = $('selGrade'), o = document.createElement('option'); o.value = 'project'; o.textContent = 'Project grade: ' + PROJECT.name;
+        sel.insertBefore(o, sel.firstChild); sel.value = 'project'; post.setPreset('project');
+      }
+    }
+    document.body.appendChild(chip);
+    // Visible on the start card, then it steps aside once the film is playing.
+    const fade = () => { setTimeout(() => { chip.style.opacity = '0'; chip.style.pointerEvents = 'none'; }, 6000); removeEventListener('pointerdown', fade, true); removeEventListener('keydown', fade, true); };
+    addEventListener('pointerdown', fade, true); addEventListener('keydown', fade, true);
+  }
   const full = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); };
   $('btnFull').onclick = full;
   $('again').onclick = () => { st.ended = false; $('end').classList.remove('on'); seekTo(0); setPlaying(true); };
