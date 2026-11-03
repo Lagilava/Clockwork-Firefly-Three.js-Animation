@@ -9,7 +9,9 @@
     "build:godview": "node tools/build-godview.cjs",
     "test:godview": "node tools/gvtest.cjs .validation/godview",
     "apply:edits": "node tools/apply-overrides.cjs",
-    "test:projects": "node tools/projtest.cjs .validation/projects"
+    "test:projects": "node tools/projtest.cjs .validation/projects",
+    "test:perf": "node tools/perfidle.cjs .validation/idle",
+    "hunt:shaders": "PLAY=1 node tools/proghunt.cjs Clockwork_Firefly_fullfilm.html 0 0 299"
   },
   "devDependencies": {
     "playwright": "1.63.0",

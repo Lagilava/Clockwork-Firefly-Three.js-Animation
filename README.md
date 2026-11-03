@@ -119,3 +119,10 @@ The rooftop town now has a plan instead of a uniform grid of houses:
 - Tree trunks were 30 units tall and ended in flat black caps that poked through the canopy, which showed in the top-down descent (about 258 to 261 s). Trunks now taper to a thin tip, are shorter, and every trunk wears a crown. The crowns use their own random stream, so the authored forest layout is unchanged.
 - The distant home town was a pink box and spire hanging in the fog. It now has a belfry, a dial ring, lit windows, gable-roofed houses and its own ground plain, and its windows and roofs warm with the dawn.
 - `tools/directorframes.cjs` renders the director's-cut frame at any film times (`TIMES=244,257 node tools/directorframes.cjs <outDir>`).
+
+## Smoothness checks
+
+- **Shader pre-compilation.** The film used to compile a few dozen shader programs while playing (15 at the hard cut near 1:54, others near 0:20, 0:44 and 1:16), and every compile is a visible hitch on a real GPU. The loader now renders extra warm-up frames at those moments and rolls through the 0:44 dissolve, so nothing compiles during playback. `PLAY=1 node tools/proghunt.cjs Clockwork_Firefly_fullfilm.html 0 0 299` plays the whole film and lists any program that still appears (the target is zero).
+- **Paused frames.** When the film is paused and nothing has changed, the frame is not re-rendered (it refreshes about four times a second). Seeking, dragging, grading and playing redraw at once. `node tools/perfidle.cjs` checks this.
+- **Sculptor.** It also skips redundant redraws while you are not touching anything, and the preview monitor is on `Auto`: full rate, dropping to every 2nd or 4th frame only when the editor falls below about 50 fps and recovering when it is fast again. Pick a fixed rate in the monitor menu to override.
+- `node tools/perfprobe.cjs` prints per-stage CPU time, draw calls and program counts at sample moments. The headless browser uses software GL, so only those counts, not frame rates, are comparable.

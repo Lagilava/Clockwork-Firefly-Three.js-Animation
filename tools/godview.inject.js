@@ -414,7 +414,22 @@ function godViewInstall(film) {
     camera.position.copy(gp); camera.quaternion.copy(gq); camera.fov = gfov; camera.aspect = GV_VIEW.w / Math.max(1, GV_VIEW.h); camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
     world.sky.follow(camera);
   }
+  // Idle saver: when nothing is playing and nothing has changed (time, camera, canvas size, input), the viewport is
+  // not redrawn every frame. Any input, or a 250 ms heartbeat for changes made from code, brings full rate straight back.
+  film.idle.heartbeat = -1; // the desk has its own idle saver below; the film's must never skip its calls (monitor, grade preview)
+  const idle = gv.idle = { heartbeat: 250, lastInput: performance.now(), lastDraw: 0, sig: new Float64Array(12), skipped: 0, drawn: 0 };
+  for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'wheel', 'keydown', 'keyup', 'input', 'change', 'touchstart']) addEventListener(ev, () => { idle.lastInput = performance.now(); }, { capture: true, passive: true });
+  const idleSig = (T) => {
+    const c = renderer.domElement, p = camera.position, q = camera.quaternion, sg = idle.sig; let same = true;
+    const v = [T, p.x, p.y, p.z, q.x, q.y, q.z, q.w, camera.fov, c.width, c.height, post.gtao.blendIntensity]; // the AO fade eases per drawn frame, so wait for it to settle
+    for (let n = 0; n < v.length; n++) { if (Math.abs(sg[n] - v[n]) > (n === 11 ? 1e-4 : 0)) same = false; }
+    if (!same) for (let n = 0; n < v.length; n++) sg[n] = v[n];
+    return same;
+  };
   post.render = (t, time, o) => {
+    const now = performance.now(), same = idleSig(st.T);
+    if (same && !pv.need && !st.playing && !dragging && !cap.active && now - idle.lastInput > 1200 && now - idle.lastDraw < idle.heartbeat) { idle.skipped++; return; }
+    idle.lastDraw = now; idle.drawn++;
     if (pv.need) { pv.need = false; renderMonitor(t, time, o); }
     lookGod();
     render0(t, time, { ...o, cinematic: false, letter: 0 });
@@ -439,6 +454,20 @@ function godViewInstall(film) {
   /* ---------- 6. the per-frame update ---------- */
   const _o = { pos: V(), target: V(), fov: 40, shake: 0, roll: 0 }, _root = V(), _last = V(), _fwd = V(), _tmp = V();
   let lastRootSet = false, lastSelTick = -1;
+  // Monitor rate. "Auto" keeps the monitor at full rate while the machine keeps up and halves it (then quarters it) only
+  // while playback is struggling, which frees the second full render per frame. It recovers on its own.
+  const mon = { auto: true, level: 1, lastFpsT: 0, good: 0 };
+  function monRate() {
+    if (!mon.auto) return pv.rate;
+    const fps = st.fps; if (fps && fps !== mon.lastFpsT) {
+      mon.lastFpsT = fps;
+      if (fps < 50 && mon.level < 4) { mon.level *= 2; mon.good = 0; }
+      else if (fps > 58 && mon.level > 1) { if (++mon.good >= 4) { mon.level /= 2; mon.good = 0; } }
+      else mon.good = 0;
+    }
+    return mon.level;
+  }
+  gv.mon = mon;
   director.update = function godUpdate(T, dt) {
     const set = world.cur;
     if (state.auto && !cap.active && set !== state.set) { state.set = set; setView(curView); document.querySelectorAll('[data-set]').forEach((b) => b.classList.toggle('on', b.dataset.set === set)); buildSelPath(); rebuildEdit(); pv.dirty = true; }
@@ -466,7 +495,7 @@ function godViewInstall(film) {
     // the director's camera, as the film's own director computes it
     gv.frameNo++;
     const playing = st.playing, moved = T !== pv.lastT;
-    if (pv.on && (cap.active || pv.dirty || (moved && (!playing || gv.frameNo % pv.rate === 0)))) { computePreviewPose(T, dt || 1 / 60); pv.need = true; pv.dirty = false; }
+    if (pv.on && (cap.active || pv.dirty || (moved && (!playing || gv.frameNo % monRate() === 0)))) { computePreviewPose(T, dt || 1 / 60); pv.need = true; pv.dirty = false; }
     liveCam.position.copy(pv.pos); liveCam.scale.setScalar(g * 1.4); _fwd.set(0, 0, -1).applyQuaternion(pv.quat); liveCam.lookAt(_tmp.copy(pv.pos).add(_fwd));
     liveRay.position.copy(pv.pos); const L = 25 * g; liveRay.scale.set(1, 1, L); liveRay.quaternion.setFromUnitVectors(V(0, 0, 1), _fwd.normalize());
     world.sky.follow(camera);
@@ -687,7 +716,7 @@ function godViewInstall(film) {
   $g('gvClipY').oninput = (e) => { state.clipY = +e.target.value; $g('gvClipV').textContent = state.clipY + ' m'; };
   $g('gvExp').oninput = (e) => { state.exposure = +e.target.value; $g('gvExpV').textContent = state.exposure.toFixed(1) + '×'; };
   $g('gvMonOn').onchange = (e) => { pv.on = e.target.checked; pv.dirty = true; $g('gvMonOff').style.display = pv.on ? 'none' : 'grid'; };
-  $g('gvMonRate').onchange = (e) => { pv.rate = +e.target.value; };
+  $g('gvMonRate').onchange = (e) => { mon.auto = e.target.value === 'auto'; if (!mon.auto) pv.rate = +e.target.value; else mon.level = 1; };
   $g('gvGuidesOn').onchange = (e) => $g('gvGuides').classList.toggle('on', e.target.checked);
   $g('gvCapture').onclick = startCapture;
   document.querySelectorAll('[data-layer]').forEach((c) => { c.checked = layers[c.dataset.layer]; c.onchange = () => { layers[c.dataset.layer] = c.checked; }; });

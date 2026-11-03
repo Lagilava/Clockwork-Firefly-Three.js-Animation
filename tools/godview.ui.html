@@ -51,7 +51,7 @@
       <div class="rg"><label for="gvExp">Exposure</label><input type="range" id="gvExp" min="0.6" max="4" step="0.1" value="1.6"><output id="gvExpV">1.6×</output></div>
       <div class="sect">Director's cut monitor</div>
       <label class="chk"><input type="checkbox" id="gvMonOn" checked> Render the monitor</label>
-      <div class="rg"><label for="gvMonRate">Rate</label><select id="gvMonRate" class="sel" style="grid-column:2/4"><option value="1">Every frame</option><option value="2">Every 2nd frame</option><option value="4">Every 4th frame</option></select></div>
+      <div class="rg"><label for="gvMonRate">Rate</label><select id="gvMonRate" class="sel" style="grid-column:2/4"><option value="auto" selected>Auto (full rate unless slow)</option><option value="1">Every frame</option><option value="2">Every 2nd frame</option><option value="4">Every 4th frame</option></select></div>
       <div class="sect">Shot thumbnails</div>
       <div class="btns"><button class="btn" id="gvCapture">Capture all shots</button><span id="gvCapStat" class="lens"></span></div>
     </div>

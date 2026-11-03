@@ -4,6 +4,22 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Clockwork Firefly</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js" />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/postprocessing/EffectComposer.js" />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/postprocessing/UnrealBloomPass.js" />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/postprocessing/GTAOPass.js" />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/postprocessing/SMAAPass.js" />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js" />
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/environments/RoomEnvironment.js" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Jost:wght@400;500&display=swap" rel="stylesheet" />
@@ -181,15 +197,6 @@
   </div>
 </footer>
 <div id="toast"></div>
-
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-  }
-}
-</script>
 
 <script type="module">
 import * as THREE from 'three';
@@ -6600,6 +6607,7 @@ async function boot() {
     st.fpsAcc += dt; st.fpsN++;
     if (st.fpsAcc < 1.0) return;
     st.fps = st.fpsN / st.fpsAcc; st.fpsAcc = 0; st.fpsN = 0;
+    if (st.lockScale) return; // test hook: hold the render scale steady
     // Keep the saved outgoing frame valid throughout a dissolve. Reallocating
     // the composer here would erase that image and interrupt the transition.
     if (post.dissolve.activeCut !== null || (st.playing && DISSOLVE_CUTS.some(c => Math.abs(st.T - c) < 0.4))) return;
@@ -6627,6 +6635,20 @@ async function boot() {
     $('chapterCard').classList.toggle('on', ci >= 0);
   }
 
+  // A frame is a pure function of film time except for one thing that eases per rendered frame: the ambient-occlusion fade
+  // (gtao.blendIntensity). It is part of the signature, so a paused frame is only skipped once that fade has settled.
+  const IDLE_TOL = [0, 0, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-4, 0, 0, 1e-4];
+  const filmIdle = { heartbeat: 250, last: 0, key: '', nums: new Float64Array(IDLE_TOL.length), drawn: 0, skipped: 0, why: [] };
+  function canSkipRender(T) {
+    const c = renderer.domElement, p = camera.position, q = camera.quaternion, n = filmIdle.nums;
+    const key = post.preset + '|' + director.mode + '|' + st.ended + '|' + st.started;
+    const v = [T, st.elapsed, p.x, p.y, p.z, q.x, q.y, q.z, q.w, camera.fov, c.width, c.height, post.gtao.blendIntensity];
+    let same = key === filmIdle.key, diff = same ? -1 : 99;
+    for (let i = 0; same && i < v.length; i++) if (Math.abs(n[i] - v[i]) > IDLE_TOL[i]) { same = false; diff = i; }
+    const now = performance.now();
+    if (same && !st.playing && !dragging && post.dissolve.activeCut === null && now - filmIdle.last < filmIdle.heartbeat) { filmIdle.skipped++; return true; }
+    if (filmIdle.why.length < 64) filmIdle.why.push(diff); filmIdle.key = key; for (let i = 0; i < v.length; i++) n[i] = v[i]; filmIdle.last = now; filmIdle.drawn++; return false;
+  }
   function frame(now) {
     requestAnimationFrame(frame);
     const wallDt = Math.max(0, (now - lastNow) / 1000); lastNow = now;
@@ -6656,7 +6678,10 @@ async function boot() {
     env.dustMat.uniforms.uScale.value = frameScale;
     fx.update(dt, T, camera, renderer, anim);
     const asp = innerWidth / innerHeight, letter = asp > 1.25 ? clamp((1 - asp / 2.2) / 2, 0, 0.12) : 0;
-    post.render(T, st.elapsed, { letter, dt: rawDt, cut: director.cut, cinematic: director.mode === 'director', threshold: S.set === 'roof' ? 0.95 : S.set === 'forest' ? 0.78 : 0.72 });
+    // Paused and settled (start card, pause, end card): the frame is a pure function of film time, so an identical
+    // picture is not re-rendered 60 times a second. Anything that changes it draws again at once; a 250 ms
+    // heartbeat catches the rest. Playing, scrubbing and dissolves are never skipped.
+    if (!canSkipRender(T)) post.render(T, st.elapsed, { letter, dt: rawDt, cut: director.cut, cinematic: director.mode === 'director', threshold: S.set === 'roof' ? 0.95 : S.set === 'forest' ? 0.78 : 0.72 });
     st.renderMs = damp(st.renderMs, performance.now() - renderStart, 3, rawDt);
 
     cards(T);
@@ -6674,7 +6699,9 @@ async function boot() {
 
   // Real warm-up renders allocate shadows, upload textures, compile post passes and
   // prepare visible/hidden actor variants. compile(scene) alone misses these paths.
-  const warmFrames = [0, 12, 25, 44, 80, 100, 114, 136.1, 150, 190, 214, 235, 261, 280, 299];
+  // The extra frames just after a cut (20.3, 44.2, 76.3, 114.1 to 116.3) cover shader programs that were otherwise
+  // compiled mid-playback, which showed up as a hitch at 0:44, 1:16 and the crash cut at 1:54.
+  const warmFrames = [0, 12, 20.3, 25, 44, 44.05, 44.2, 76.05, 76.3, 80, 100, 114, 114.1, 114.3, 115.7, 116.3, 136.1, 150, 190, 214, 235, 261, 280, 299];
   for (let i = 0; i < warmFrames.length; i++) {
     $('loaderMsg').textContent = `Preparing chapter lighting and shaders (${i + 1}/${warmFrames.length}).`;
     await new Promise(requestAnimationFrame);
@@ -6686,6 +6713,18 @@ async function boot() {
     post.render(t, 0, { letter: 0, threshold: S.set === 'roof' ? 0.95 : S.set === 'forest' ? 0.78 : 0.72 });
     motion.sample();
   }
+  // Roll through the chapter-two dissolve the way playback does (stepping time, real frames): seeking alone leaves a few
+  // shadow-depth shader variants uncompiled, and they would otherwise compile on the first frames after 0:44.
+  { const dt = 0.05; warm(43.5); post.dissolve.reset();
+    await renderer.compileAsync(scene, camera);
+    for (let t = 43.5, elapsed = 0; t < 44.6; t += dt, elapsed += dt) {
+      anim.step(dt); const T = anim.T; S.syncFlash = syncFlashAt(T);
+      ember.update(T, dt, anim); const L = world.update(T, camera, scaleNow(), anim, dt);
+      if (S.set === 'atrium') lightAtrium(env, T, L, anim);
+      director.update(T, dt); updateKicker(T, dt); world.sky.follow(camera); fx.update(dt, T, camera, renderer, anim);
+      post.render(T, elapsed, { letter: 0, dt, cut: director.cut, cinematic: director.mode === 'director', threshold: S.set === 'roof' ? 0.95 : S.set === 'forest' ? 0.78 : 0.72 });
+      await new Promise(requestAnimationFrame);
+    } }
   for (let t = 1.3; t < FILM; t += 3.7) { anim.seek(t); ember.update(t, 1 / 60, anim); motion.sample(); }
   batching.rigid = mergeRigidParts(bot.root, motion.moved) + mergeRigidParts(ember.group, motion.moved);
   pmrem.dispose();
@@ -6697,7 +6736,7 @@ async function boot() {
     lastNow = n; frame(n);
     $('loader').classList.add('done'); $('start').classList.remove('hidden');
   });
-  window.__film = { st, anim, seekTo, setPlaying, S, camera, renderer, post, scene, world, director, warm, ember, fx };
+  window.__film = { idle: filmIdle, st, anim, seekTo, setPlaying, S, camera, renderer, post, scene, world, director, warm, ember, fx };
 }
 
 setTimeout(() => {
