@@ -1,53 +1,136 @@
 <div id="gvBoot" class="gvCard hidden">Sampling the whole film (robot, Ember, authored cameras)…</div>
 
-<aside id="gvPanel">
-  <h1>God's-eye view</h1>
-  <section>
-    <h2>Set</h2>
-    <div class="seg">
+<div id="gv">
+  <header id="gvTop">
+    <div class="brand">Clockwork Firefly<i>Director's desk</i></div>
+    <button class="tbtn narrow" id="gvLeftBtn">Shots</button>
+    <div class="grp" id="gvSets">
       <button data-set="atrium">Atrium</button><button data-set="roof">Rooftops</button><button data-set="forest">Glade</button>
     </div>
-    <label class="chk"><input type="checkbox" id="gvAuto" checked> Follow the film's set</label>
-  </section>
-  <section>
-    <h2>Camera <span class="hint">1 to 4</span></h2>
-    <div class="seg four">
-      <button data-view="top">Top</button><button data-view="aerial">Aerial</button><button data-view="side">Side</button><button data-view="south">South</button>
+    <div class="grp transport">
+      <button class="iconbtn" id="gvPrevShot" title="Previous shot (↑)"><svg class="ic" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+      <button class="iconbtn" id="gvPlay" title="Play / pause (Space)"><svg class="ic" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg></button>
+      <button class="iconbtn" id="gvNextShot" title="Next shot (↓)"><svg class="ic" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5l11 7L4 19z"/></svg></button>
+      <span id="gvClock">0:00.0</span>
+      <select id="gvSpeed" title="Playback speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
     </div>
-    <label class="chk"><input type="checkbox" id="gvFollow"> Track the robot</label>
-    <label class="chk"><input type="checkbox" id="gvClipOn"> Cut away above <b id="gvClipV">30 m</b></label>
-    <input type="range" id="gvClipY" min="1" max="80" step="1" value="30">
-  </section>
-  <section>
-    <h2>Layers</h2>
-    <label class="chk"><input type="checkbox" data-layer="paths"> Robot path <i class="sw" style="background:linear-gradient(90deg,#5cf,#fc5,#f55)"></i></label>
-    <label class="chk"><input type="checkbox" data-layer="ember"> Ember path <i class="sw" style="background:#c8ff5a"></i></label>
-    <label class="chk"><input type="checkbox" data-layer="ticks"> Time ticks (5 s)</label>
-    <label class="chk"><input type="checkbox" data-layer="beats"> Beat labels</label>
-    <label class="chk"><input type="checkbox" data-layer="cams"> Authored cameras</label>
-    <label class="chk"><input type="checkbox" data-layer="shots"> Shot labels</label>
-    <label class="chk"><input type="checkbox" data-layer="live"> Live markers</label>
-    <label class="chk"><input type="checkbox" data-layer="grid"> Grid <span class="hint">G</span></label>
-  </section>
-  <section>
-    <h2>Image</h2>
-    <label class="chk"><input type="checkbox" id="gvFog" checked> Remove fog</label>
-    <label class="rng">Exposure <b id="gvExpV">1.6×</b><input type="range" id="gvExp" min="0.6" max="4" step="0.1" value="1.6"></label>
-  </section>
-  <button id="gvMapBtn" class="big">Whole-film map <span class="hint">M</span></button>
-  <p class="foot">Drag to orbit, right-drag to pan, wheel to zoom. Hover a path for the time, click it to jump there. The bar below plays and scrubs the film.</p>
-</aside>
+    <div class="gsp"></div>
+    <button class="tbtn" id="gvMapBtn">Map</button>
+    <button class="tbtn" id="gvHelpBtn" title="Shortcuts">?</button>
+    <button class="tbtn narrow" id="gvRightBtn">Monitor</button>
+  </header>
 
-<aside id="gvSide">
-  <div class="tabs"><button class="gvTab on" data-tab="beats">Beats</button><button class="gvTab" data-tab="shots">Shots</button></div>
-  <ul id="gvBeats"></ul>
-  <ul id="gvShots" class="hidden"></ul>
-</aside>
+  <aside id="gvLeft">
+    <div class="tabs" id="gvLTabs"><button data-ltab="shots" class="on">Shots</button><button data-ltab="beats">Beats</button><button data-ltab="view">View</button></div>
+    <div class="lbody" id="gvLShots"></div>
+    <div class="lbody hidden" id="gvLBeats"></div>
+    <div id="gvBeatNote" class="hidden"></div>
+    <div class="lbody hidden" id="gvLView">
+      <div class="sect">Camera</div>
+      <label class="chk"><input type="checkbox" id="gvAuto" checked> Follow the film's set</label>
+      <label class="chk"><input type="checkbox" id="gvFollow"> Track the robot</label>
+      <label class="chk"><input type="checkbox" id="gvClipOn"> Cut away above <b id="gvClipV">30 m</b></label>
+      <input type="range" id="gvClipY" min="1" max="80" step="1" value="30">
+      <div class="sect">Layers</div>
+      <label class="chk"><input type="checkbox" data-layer="paths"> Robot path <span class="sw" style="background:linear-gradient(90deg,#4fa0ff,#4fe08a,#ffd34f,#ff5a4f)"></span></label>
+      <label class="chk"><input type="checkbox" data-layer="ember"> Ember path <span class="sw" style="background:#c8f060"></span></label>
+      <label class="chk"><input type="checkbox" data-layer="ticks"> Time ticks (5 s)</label>
+      <label class="chk"><input type="checkbox" data-layer="beats"> Beat labels</label>
+      <label class="chk"><input type="checkbox" data-layer="cams"> Authored cameras</label>
+      <label class="chk"><input type="checkbox" data-layer="shots"> Shot labels</label>
+      <label class="chk"><input type="checkbox" data-layer="live"> Live markers</label>
+      <label class="chk"><input type="checkbox" data-layer="grid"> Grid <span style="color:var(--gv-faint)">G</span></label>
+      <div class="sect">God view image</div>
+      <label class="chk"><input type="checkbox" id="gvFog" checked> Remove fog</label>
+      <div class="rg"><label for="gvExp">Exposure</label><input type="range" id="gvExp" min="0.6" max="4" step="0.1" value="1.6"><output id="gvExpV">1.6×</output></div>
+      <div class="sect">Director's cut monitor</div>
+      <label class="chk"><input type="checkbox" id="gvMonOn" checked> Render the monitor</label>
+      <div class="rg"><label for="gvMonRate">Rate</label><select id="gvMonRate" class="sel" style="grid-column:2/4"><option value="1">Every frame</option><option value="2">Every 2nd frame</option><option value="4">Every 4th frame</option></select></div>
+      <div class="sect">Shot thumbnails</div>
+      <div class="btns"><button class="btn" id="gvCapture">Capture all shots</button><span id="gvCapStat" class="lens"></span></div>
+    </div>
+  </aside>
 
-<div id="gvReadout"></div>
+  <main id="gvStage">
+    <div class="hud tl">
+      <div class="grp" id="gvViews">
+        <button data-view="top">Top</button><button data-view="aerial">Aerial</button><button data-view="side">Side</button><button data-view="south">South</button>
+      </div>
+      <button class="tbtn" id="gvFrame" title="Frame the set (F)">Frame set</button>
+      <button class="tbtn" id="gvFocus" title="Frame the selected shot (S)">Frame shot</button>
+    </div>
+    <div class="hud tr">
+      <button class="tbtn" id="gvTrackBtn" title="Camera follows the robot (T)">Track robot</button>
+      <button class="tbtn" id="gvClipBtn" title="Cut away the upper part of the set (C)">Cut-away</button>
+    </div>
+    <div id="gvEditBadge" class="hidden">Editing camera</div>
+    <div class="hud bl"><div id="gvReadout"></div></div>
+  </main>
+
+  <aside id="gvRight">
+    <section class="gcard" id="gvMonCard">
+      <div class="gcardhead"><b>Director's cut</b><span class="sub" id="gvMonShot"></span><span class="gsp"></span><label class="chk" style="padding:0"><input type="checkbox" id="gvGuidesOn"> Guides</label></div>
+      <div class="monwrap">
+        <canvas id="gvMon" width="800" height="450"></canvas>
+        <div id="gvGuides"><i style="left:33.33%;top:0;bottom:0;width:1px"></i><i style="left:66.66%;top:0;bottom:0;width:1px"></i><i style="top:33.33%;left:0;right:0;height:1px"></i><i style="top:66.66%;left:0;right:0;height:1px"></i><div class="box" style="inset:5%"></div><div class="box" style="inset:10%"></div></div>
+        <div id="gvMonOff">Monitor is off</div>
+        <div id="gvMonHud"><span id="gvMonTc"></span><span id="gvMonLens"></span></div>
+      </div>
+      <div class="monbar">
+        <button class="tbtn iconbtn" id="gvMonPrev" title="Previous shot"><svg class="ic" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+        <button class="tbtn iconbtn" id="gvMonPlay" title="Play / pause"><svg class="ic" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg></button>
+        <button class="tbtn iconbtn" id="gvMonNext" title="Next shot"><svg class="ic" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5l11 7L4 19z"/></svg></button>
+        <span class="sp"></span><span class="lens" id="gvMonPose"></span>
+      </div>
+    </section>
+    <section class="gcard gsp">
+      <div class="itabs" id="gvITabs"><button data-itab="shot" class="on">Shot</button><button data-itab="grade">Grade</button><button data-itab="export">Export</button></div>
+      <div class="ibody" id="gvIShot"></div>
+      <div class="ibody hidden" id="gvIGrade"></div>
+      <div class="ibody hidden" id="gvIExport"></div>
+    </section>
+  </aside>
+
+  <section id="gvTL">
+    <div id="gvTLGrip" title="Drag to resize"></div>
+    <div class="tlbar">
+      <span class="lbl">Timeline</span>
+      <button class="tbtn iconbtn" id="gvZoomOut" title="Zoom out (-)"><svg class="ic ln" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      <button class="tbtn iconbtn" id="gvZoomIn" title="Zoom in (+)"><svg class="ic ln" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+      <button class="tbtn" id="gvZoomFit">Fit film</button>
+      <button class="tbtn" id="gvZoomShot">Zoom to shot</button>
+      <label class="chk" style="padding:0"><input type="checkbox" id="gvTLFollow" checked> Follow playhead</label>
+      <span class="sp"></span>
+      <select id="gvTrackAdd" title="Add a curve track"><option value="">+ Add curve track…</option></select>
+    </div>
+    <div id="gvTLWrap"><canvas id="gvTLCanvas"></canvas></div>
+  </section>
+</div>
+
 <div id="gvTip" class="hidden"></div>
 
 <div id="gvMap" class="hidden">
-  <div class="mapHead"><b>Whole film, every set at once</b><span>Robot path coloured by time (blue early, red late), Ember dashed, blue squares are authored camera positions. Click a point to jump there.</span><button id="gvMapClose">Close (Esc)</button></div>
+  <div class="mapHead"><b>Whole film, every set at once</b><span>Robot path coloured by time (blue early, red late), Ember dashed, blue squares are authored camera positions. Click a point to jump there.</span><button class="tbtn" id="gvMapClose">Close (Esc)</button></div>
   <canvas id="gvMapCanvas"></canvas>
 </div>
+
+<div id="gvHelp" class="hidden"><div class="sheet">
+  <h2>Director's desk</h2>
+  <p>The film is a pure function of time, so everything here is live: scrub the timeline and the viewport, the director's-cut monitor and the curves all follow.</p>
+  <table>
+    <tr><td>Space</td><td>Play or pause</td></tr>
+    <tr><td>← →</td><td>Step one frame (hold Shift for one second)</td></tr>
+    <tr><td>↑ ↓</td><td>Previous or next shot</td></tr>
+    <tr><td>1 2 3 4</td><td>Top, Aerial, Side, South view</td></tr>
+    <tr><td>F / S</td><td>Frame the set / frame the selected shot</td></tr>
+    <tr><td>T / C / G</td><td>Track robot / cut-away / grid</td></tr>
+    <tr><td>E</td><td>Edit the selected shot's camera</td></tr>
+    <tr><td>K</td><td>Add a camera keyframe at the playhead (while editing)</td></tr>
+    <tr><td>Delete</td><td>Delete the selected keyframe</td></tr>
+    <tr><td>M</td><td>Whole-film map</td></tr>
+    <tr><td>Timeline wheel</td><td>Zoom (Shift + wheel scrolls the tracks)</td></tr>
+    <tr><td>Esc</td><td>Close map or this sheet</td></tr>
+  </table>
+  <p>Edited cameras are saved in this browser. Use Export to download them, then <code>node tools/apply-overrides.cjs edits.json</code> to bake them into the film.</p>
+  <div class="btns"><button class="btn pri" id="gvHelpClose">Close</button></div>
+</div></div>

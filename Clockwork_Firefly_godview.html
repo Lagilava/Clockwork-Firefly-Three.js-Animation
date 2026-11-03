@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Clockwork Firefly: God's-eye view</title>
+<title>Clockwork Firefly: Director's desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Jost:wght@400;500&display=swap" rel="stylesheet" />
@@ -108,42 +108,187 @@
   @media (prefers-reduced-motion:reduce){ #loader .gear{animation:none} .card,#start,#end,#chrome{transition:none} }
 </style>
 <style>
+/* Director's desk: the god's-eye editor. Dark, neutral chrome so the picture carries the colour. */
+:root{
+  --gv-bg:#0b0d12;--gv-panel:#11141b;--gv-panel2:#171b24;--gv-raise:#1e2330;--gv-line:#242a38;--gv-line2:#323a4d;
+  --gv-text:#dde2ee;--gv-dim:#8b94a9;--gv-faint:#5d667b;
+  --gv-gold:#f1d9a6;--gv-cyan:#6cc4ff;--gv-hero:#ff7a5c;--gv-ember:#c8f060;--gv-edit:#ffb347;
+  --gv-c1:#e0b75a;--gv-c2:#e8785e;--gv-c3:#4fc3a1;--gv-c4:#9b86e8;
+  --gv-font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--gv-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
 .hidden{display:none!important}
-body.godview #titleCard,body.godview #chapterCard,body.godview #end,body.godview #start,body.godview #loader,body.godview #selCam,body.godview #selGrade,body.godview #btnNotes,body.godview #notes{display:none!important}
-#gvPanel,#gvSide,#gvReadout,#gvTip,#gvBoot,#gvMap{font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#dfe3ee}
-#gvPanel{position:fixed;left:12px;top:12px;bottom:92px;width:236px;overflow:auto;z-index:20;background:rgba(10,12,18,.84);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px}
-#gvPanel h1{font-size:15px;margin:0 0 8px;color:#f1d9a6;letter-spacing:.02em}
-#gvPanel h2{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#8c97ad;margin:12px 0 6px;font-weight:600}
-#gvPanel .hint{float:right;color:#667088;text-transform:none;letter-spacing:0;font-weight:400}
-.seg{display:flex;gap:4px}.seg button{flex:1;padding:6px 4px;background:#171c28;color:#c9d0e0;border:1px solid #2a3244;border-radius:7px;cursor:pointer;font:inherit;font-size:12px}
-.seg button.on{background:#f1d9a6;color:#1a1408;border-color:#f1d9a6;font-weight:600}
-.seg.four button{font-size:11.5px}
-.chk{display:flex;align-items:center;gap:7px;margin:5px 0;cursor:pointer}.chk input{accent-color:#f1d9a6}
-.sw{display:inline-block;width:28px;height:6px;border-radius:3px;margin-left:auto}
-.rng{display:block;margin-top:6px}.rng b{float:right;font-weight:600}
-#gvPanel input[type=range]{width:100%;accent-color:#f1d9a6}
-#gvPanel .big{width:100%;margin-top:14px;padding:9px;background:#2a3a5a;color:#fff;border:1px solid #3d5380;border-radius:9px;cursor:pointer;font:inherit;font-weight:600}
-#gvPanel .big:hover{background:#344872}
-#gvPanel .foot{font-size:11.5px;color:#7f8aa0;margin:12px 0 0}
-#gvSide{position:fixed;right:12px;top:12px;bottom:92px;width:244px;z-index:20;display:flex;flex-direction:column;background:rgba(10,12,18,.84);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px}
-#gvSide .tabs{display:flex;gap:4px;margin-bottom:6px}
-#gvSide .tabs button{flex:1;padding:6px;background:#171c28;color:#c9d0e0;border:1px solid #2a3244;border-radius:7px;cursor:pointer;font:inherit}
-#gvSide .tabs button.on{background:#f1d9a6;color:#1a1408;font-weight:600;border-color:#f1d9a6}
-#gvSide ul{list-style:none;margin:0;padding:0;overflow:auto;flex:1}
-#gvSide li{display:flex;gap:9px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12.5px}
-#gvSide li:hover{background:#1c2332}#gvSide li.on{background:#2d3a22;color:#e8ffc0}
-#gvSide li .t{color:#8c97ad;font-variant-numeric:tabular-nums;min-width:34px}
-#gvReadout{position:fixed;left:50%;transform:translateX(-50%);top:12px;z-index:20;background:rgba(10,12,18,.84);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:7px 14px;text-align:center;max-width:calc(100vw - 540px);font-size:12.5px;font-variant-numeric:tabular-nums}
-#gvReadout .k{color:#8c97ad;margin-left:8px}#gvReadout b{color:#f1d9a6}
-#gvTip{position:fixed;z-index:30;pointer-events:none;background:rgba(10,12,18,.94);border:1px solid #3a4560;border-radius:8px;padding:6px 10px;font-size:12px;font-variant-numeric:tabular-nums}
-.gvCard{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(6,8,12,.9);color:#f1d9a6;font-size:18px}
-#gvMap{position:fixed;inset:0;z-index:50;background:#06080c}
-#gvMap .mapHead{position:absolute;left:0;right:0;top:0;height:58px;box-sizing:border-box;background:#06080c;display:flex;gap:16px;align-items:center;padding:12px 18px;border-bottom:1px solid #1d2433}
-#gvMap .mapHead span{color:#8c97ad;font-size:12px;flex:1}
-#gvMap .mapHead button{padding:6px 12px;background:#171c28;color:#dfe3ee;border:1px solid #2a3244;border-radius:7px;cursor:pointer}
+body.godview{background:var(--gv-bg)}
+body.godview #titleCard,body.godview #chapterCard,body.godview #end,body.godview #start,body.godview #loader,body.godview #chrome,body.godview #notes,body.godview #toast{display:none!important}
+#gv,#gvBoot,#gvMap,#gvHelp,#gvTip{font:13px/1.4 var(--gv-font);color:var(--gv-text)}
+#gv *{box-sizing:border-box}
+#gv{position:fixed;inset:0;z-index:20;display:grid;grid-template-columns:268px minmax(0,1fr) 360px;grid-template-rows:46px minmax(0,1fr) var(--gv-tlh,284px);grid-template-areas:"top top top" "left stage right" "tl tl tl";background:var(--gv-bg)}
+#gv button,#gv select,#gv input,#gv textarea{font:inherit}
+:where(#gv) button,:where(#gv) select,:where(#gv) input,:where(#gv) textarea{color:var(--gv-text)}
+#gv button{cursor:pointer}
+#gv svg.ic{width:16px;height:16px;fill:currentColor;stroke:none;vertical-align:-3px}
+#gv svg.ic.ln{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* top bar */
+#gvTop{grid-area:top;display:flex;align-items:center;gap:14px;padding:0 12px;background:var(--gv-panel);border-bottom:1px solid var(--gv-line);min-width:0;overflow-x:auto;scrollbar-width:none}
+#gvTop::-webkit-scrollbar{display:none}
+#gvTop .brand{font-weight:650;letter-spacing:.01em;white-space:nowrap;color:var(--gv-gold)}
+#gvTop .brand i{font-weight:400;color:var(--gv-dim);margin-left:8px;font-style:normal}
+#gvTop .gsp{flex:1}
+.grp{display:flex;gap:2px;padding:2px;background:var(--gv-bg);border:1px solid var(--gv-line);border-radius:9px;flex:none}
+.grp button,.tbtn{padding:5px 11px;border:0;background:transparent;border-radius:7px;color:var(--gv-dim);white-space:nowrap}
+.grp button:hover,.tbtn:hover{color:var(--gv-text);background:var(--gv-raise)}
+.grp button.on{background:var(--gv-gold);color:#1a1408;font-weight:600}
+.tbtn{border:1px solid var(--gv-line);background:var(--gv-panel2);color:var(--gv-text)}
+.tbtn.on{border-color:var(--gv-gold);color:var(--gv-gold)}
+.iconbtn{width:32px;height:30px;display:grid;place-items:center;padding:0!important}
+#gvClock{font:12.5px var(--gv-mono);color:var(--gv-text);padding:0 8px;min-width:112px;text-align:center}
+#gvClock b{color:var(--gv-gold);font-weight:600}
+.transport{align-items:center;gap:0}
+.transport select{background:transparent;border:0;color:var(--gv-dim);padding:4px 2px}
+.narrow{display:none}
+
+/* side panels */
+#gvLeft,#gvRight{background:var(--gv-panel);min-height:0;display:flex;flex-direction:column;overflow:hidden}
+#gvLeft{grid-area:left;border-right:1px solid var(--gv-line)}
+#gvRight{grid-area:right;border-left:1px solid var(--gv-line);overflow:hidden}
+.tabs{display:flex;gap:2px;padding:8px 8px 0;border-bottom:1px solid var(--gv-line)}
+.tabs button{padding:7px 12px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--gv-dim);margin-bottom:-1px}
+.tabs button:hover{color:var(--gv-text)}
+.tabs button.on{color:var(--gv-gold);border-bottom-color:var(--gv-gold);font-weight:600}
+.lbody{flex:1;min-height:0;overflow:auto;padding:6px 8px 12px}
+.lbody::-webkit-scrollbar,#gvRight::-webkit-scrollbar,.ibody::-webkit-scrollbar{width:8px}
+.lbody::-webkit-scrollbar-thumb,#gvRight::-webkit-scrollbar-thumb,.ibody::-webkit-scrollbar-thumb{background:var(--gv-line2);border-radius:4px}
+.chead{position:sticky;top:-6px;z-index:2;margin:8px -8px 4px;padding:5px 12px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:650;background:var(--gv-panel);display:flex;align-items:center;gap:8px}
+.chead:before{content:"";width:8px;height:8px;border-radius:2px;background:var(--cc)}
+.srow{display:flex;gap:9px;align-items:center;padding:4px 6px;border-radius:7px;cursor:pointer;border:1px solid transparent}
+.srow:hover{background:var(--gv-panel2)}
+.srow.on{background:var(--gv-raise);border-color:var(--gv-line2)}
+.srow.sel{border-color:var(--gv-cyan)}
+.srow .th{width:64px;height:36px;border-radius:4px;background:var(--gv-bg) center/cover;flex:none;border:1px solid var(--gv-line);display:grid;place-items:center;color:var(--gv-faint);font:10px var(--gv-mono)}
+.srow .tx{min-width:0;flex:1}
+.srow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
+.srow .sb{color:var(--gv-dim);font:11px var(--gv-mono)}
+.srow .ed{color:var(--gv-edit);font-size:11px;flex:none}
+.brow{display:flex;gap:9px;padding:5px 8px;border-radius:7px;cursor:pointer;font-size:12.5px}
+.brow:hover{background:var(--gv-panel2)}.brow.on{background:var(--gv-raise)}
+.brow .t{color:var(--gv-dim);font:11.5px var(--gv-mono);min-width:38px;padding-top:1px}
+#gvBeatNote{border-top:1px solid var(--gv-line);padding:10px 12px;font-size:12px;color:var(--gv-dim);max-height:34%;overflow:auto;background:var(--gv-panel2)}
+#gvBeatNote b{display:block;color:var(--gv-gold);margin-bottom:3px;font-size:13px}
+#gvBeatNote .pr{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+#gvBeatNote .pr span{font-size:10.5px;padding:2px 7px;border:1px solid var(--gv-line2);border-radius:99px}
+
+/* form controls */
+.sect{margin:10px 2px 4px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--gv-faint);font-weight:650;display:flex;align-items:center;gap:6px}
+.sect .hint{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400;color:var(--gv-faint)}
+.chk{display:flex;align-items:center;gap:8px;padding:3px 2px;cursor:pointer}
+.chk input{accent-color:var(--gv-gold)}
+.chk .sw{margin-left:auto;width:26px;height:5px;border-radius:3px}
+.rg{display:grid;grid-template-columns:78px 1fr 44px;gap:8px;align-items:center;padding:3px 2px}
+.rg label{color:var(--gv-dim);font-size:12px}
+.rg output{font:11.5px var(--gv-mono);text-align:right;color:var(--gv-text)}
+input[type=range]{width:100%;accent-color:var(--gv-gold);height:18px;background:transparent}
+.sel,#gv select.sel{width:100%;padding:6px 8px;background:var(--gv-bg);border:1px solid var(--gv-line2);border-radius:7px;color:var(--gv-text)}
+.btn{padding:6px 11px;border:1px solid var(--gv-line2);border-radius:7px;background:var(--gv-panel2);color:var(--gv-text)}
+.btn:hover{background:var(--gv-raise)}
+.btn.pri{background:var(--gv-gold);border-color:var(--gv-gold);color:#1a1408;font-weight:600}
+.btn.pri:hover{background:#f6e4bd}
+.btn.warn{border-color:#7a3b32;color:#ffab9c}
+.btn.sm{padding:3px 8px;font-size:12px}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.num{width:100%;padding:4px 6px;background:var(--gv-bg);border:1px solid var(--gv-line2);border-radius:6px;color:var(--gv-text);font:12px var(--gv-mono);min-width:0}
+.num:focus,.sel:focus,.btn:focus-visible,#gv button:focus-visible{outline:2px solid var(--gv-cyan);outline-offset:1px}
+.xyz{display:grid;grid-template-columns:40px repeat(3,1fr);gap:5px;align-items:center;margin:4px 0}
+.xyz label{color:var(--gv-dim);font-size:11.5px}
+.tint{display:grid;grid-template-columns:78px 1fr;gap:8px;align-items:center;padding:3px 2px}
+.tint label{color:var(--gv-dim);font-size:12px}
+.tint .cols{display:flex;gap:6px}
+.tint input[type=color]{width:100%;height:26px;border:1px solid var(--gv-line2);border-radius:6px;background:var(--gv-bg);padding:0}
+
+/* viewport */
+#gvStage{grid-area:stage;position:relative;min-width:0;min-height:0;overflow:hidden;background:#05070a}
+#gvStage>canvas{position:absolute!important;inset:0;width:100%;height:100%;touch-action:none}
+.hud{position:absolute;z-index:3;display:flex;gap:6px;align-items:center;pointer-events:none}
+.hud>*{pointer-events:auto}
+.hud.tl{left:10px;top:10px;flex-wrap:wrap}
+.hud.tr{right:10px;top:10px}
+.hud.bl{left:10px;bottom:10px;max-width:calc(100% - 20px)}
+.hud .grp,.hud .tbtn{background:rgba(11,13,18,.82);backdrop-filter:blur(6px)}
+#gvReadout{font:11.5px var(--gv-mono);padding:6px 10px;background:rgba(11,13,18,.82);border:1px solid var(--gv-line);border-radius:8px;color:var(--gv-dim);pointer-events:none;line-height:1.55}
+#gvReadout b{color:var(--gv-gold);font-weight:600}
+#gvReadout .r{color:var(--gv-hero)}#gvReadout .e{color:var(--gv-ember)}
+#gvEditBadge{position:absolute;z-index:3;left:50%;top:10px;transform:translateX(-50%);padding:5px 12px;background:rgba(40,28,10,.9);border:1px solid var(--gv-edit);color:var(--gv-edit);border-radius:99px;font-weight:600;pointer-events:none}
+#gvTip{position:fixed;z-index:70;pointer-events:none;background:rgba(10,12,18,.96);border:1px solid var(--gv-line2);border-radius:8px;padding:6px 10px;font:12px var(--gv-mono)}
+
+/* monitor */
+.gcard{margin:10px;border:1px solid var(--gv-line);border-radius:10px;background:var(--gv-panel2);overflow:hidden;flex:none}
+.gcard.gsp{flex:1 1 0;display:flex;flex-direction:column;min-height:120px}
+.gcardhead{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--gv-line);font-size:12px}
+.gcardhead b{color:var(--gv-gold);white-space:nowrap}.gcardhead .sub{color:var(--gv-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.gcardhead .gsp{flex:1}
+.monwrap{position:relative;background:#000;aspect-ratio:16/9;width:100%}
+#gvMon{position:absolute;inset:0;width:100%;height:100%;display:block}
+#gvGuides{position:absolute;inset:0;pointer-events:none;display:none}
+#gvGuides.on{display:block}
+#gvGuides i{position:absolute;background:rgba(255,255,255,.28)}
+#gvGuides .box{position:absolute;border:1px dashed rgba(255,255,255,.4)}
+#gvMonHud{position:absolute;left:8px;right:8px;bottom:6px;display:flex;justify-content:space-between;font:11px var(--gv-mono);color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}
+#gvMonOff{position:absolute;inset:0;display:none;place-items:center;color:var(--gv-dim);font-size:12px;background:#000}
+.monbar{display:flex;align-items:center;gap:4px;padding:6px 8px;border-top:1px solid var(--gv-line)}
+.monbar .sp{flex:1}
+.monbar .tbtn{padding:4px 8px;font-size:12px}
+.lens{font:11px var(--gv-mono);color:var(--gv-dim);padding:0 6px}
+
+/* inspector */
+.itabs{display:flex;gap:2px;padding:6px 8px 0;border-bottom:1px solid var(--gv-line);flex:none}
+.itabs button{padding:6px 10px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--gv-dim);margin-bottom:-1px}
+.itabs button.on{color:var(--gv-gold);border-bottom-color:var(--gv-gold);font-weight:600}
+.ibody{padding:8px 10px 14px;overflow:auto;flex:1;min-height:0}
+.shead{display:flex;align-items:baseline;gap:8px;margin-bottom:2px}
+.shead h3{margin:0;font-size:15px;font-weight:650}
+.shead .m{color:var(--gv-dim);font:11.5px var(--gv-mono)}
+.snote{color:var(--gv-dim);font-size:12px;margin:2px 0 8px}
+.keys{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.keys button{padding:3px 9px;border:1px solid var(--gv-line2);background:var(--gv-bg);border-radius:6px;font:11.5px var(--gv-mono);color:var(--gv-dim)}
+.keys button.on{border-color:var(--gv-edit);color:var(--gv-edit);background:#241a0a}
+.note{font-size:12px;color:var(--gv-dim);background:var(--gv-bg);border:1px solid var(--gv-line);border-radius:8px;padding:8px 10px;margin:8px 0}
+.note.edit{border-color:#5a4018;color:#e7c88c}
+textarea.num{height:120px;resize:vertical}
+
+/* timeline */
+#gvTL{grid-area:tl;position:relative;background:var(--gv-panel);border-top:1px solid var(--gv-line);display:flex;flex-direction:column;min-height:0}
+#gvTLGrip{position:absolute;left:0;right:0;top:-4px;height:8px;cursor:ns-resize;z-index:5}
+.tlbar{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--gv-line);flex:none;overflow-x:auto;scrollbar-width:none}
+.tlbar::-webkit-scrollbar{display:none}
+.tlbar .sp{flex:1}.tlbar .lbl{color:var(--gv-dim);font-size:12px;white-space:nowrap}
+.tlbar select{max-width:150px;padding:4px 6px;background:var(--gv-bg);border:1px solid var(--gv-line2);border-radius:6px;color:var(--gv-text)}
+#gvTLWrap{position:relative;flex:1;min-height:0}
+#gvTLCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:default}
+
+/* overlays */
+.gvCard{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:rgba(6,8,12,.92);color:var(--gv-gold);font-size:18px}
+#gvMap,#gvHelp{position:fixed;inset:0;z-index:80;background:#06080c}
+#gvMap .mapHead{position:absolute;left:0;right:0;top:0;height:58px;background:#06080c;display:flex;gap:16px;align-items:center;padding:12px 18px;border-bottom:1px solid #1d2433}
+#gvMap .mapHead span{color:var(--gv-dim);font-size:12px;flex:1}
 #gvMapCanvas{position:absolute;left:0;right:0;top:58px;bottom:0;width:100%;height:calc(100% - 58px);cursor:crosshair}
-body.godview #chrome{z-index:25}
-@media (max-width:900px){#gvSide{display:none}#gvReadout{max-width:calc(100vw - 280px)}}
+#gvHelp{display:grid;place-items:center;background:rgba(6,8,12,.86)}
+#gvHelp .sheet{width:min(640px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto;background:var(--gv-panel);border:1px solid var(--gv-line2);border-radius:14px;padding:18px 22px}
+#gvHelp h2{margin:0 0 10px;color:var(--gv-gold);font-size:17px}
+#gvHelp table{width:100%;border-collapse:collapse}
+#gvHelp td{padding:4px 0;border-bottom:1px solid var(--gv-line);font-size:12.5px;vertical-align:top}
+#gvHelp td:first-child{font:12px var(--gv-mono);color:var(--gv-gold);white-space:nowrap;padding-right:18px}
+#gvHelp p{color:var(--gv-dim);font-size:12.5px}
+
+/* narrow screens: panels become drawers, the viewport and timeline keep the room */
+@media (max-width:1100px){#gv{grid-template-columns:230px minmax(0,1fr) 300px}}
+@media (max-width:900px){
+  #gv{grid-template-columns:minmax(0,1fr);grid-template-rows:46px minmax(0,1fr) var(--gv-tlh,210px);grid-template-areas:"top" "stage" "tl"}
+  #gvLeft,#gvRight{position:fixed;top:46px;bottom:0;z-index:40;width:min(340px,92vw);transition:transform .2s;box-shadow:0 0 40px #000a}
+  #gvLeft{left:0;transform:translateX(-102%)}#gvRight{right:0;transform:translateX(102%)}
+  #gv.openL #gvLeft,#gv.openR #gvRight{transform:none}
+  .narrow{display:inline-block}
+  #gvTop .brand i{display:none}
+}
+@media (prefers-reduced-motion:reduce){#gvLeft,#gvRight{transition:none}}
 
 </style>
 </head>
@@ -236,6 +381,7 @@ import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
@@ -5688,24 +5834,38 @@ const at = (o, p, tgt, fov, shake = 0.25, roll = 0) => { o.pos.copy(p); o.target
 
 const SHOTS = [
   /* ---- I. The Atrium ---- */
+  // ESTABLISHING PUSH-IN — a slow push on the sleeping robot
   { t0: 0, blend: 0, fn: (t, u, o) => { lerpV(o.pos, [9.5, 3.3, 12.5], [5.0, 2.4, 7.2], eo(u)); o.target.set(0, 1.0 + u * 0.3, 0); o.fov = lerp(38, 33, eo(u)); o.shake = 0.3; } },
+  // KEY INSERT — over the shoulder as the winding key turns
   { t0: 6.0, blend: 0, fn: (t, u, o, d) => { d.anim.bot.keySpin.getWorldPosition(_c1); at(o, _c2.copy(_c1).addScaledVector(HF, -1.9).addScaledVector(HR, 1.1).add(_v1.set(0, 0.55, 0)), _c1, 30, 0.15); } },
+  // EYES IGNITE — close on the face as the lantern wakes
   { t0: 8.6, blend: 0, fn: (t, u, o) => at(o, _c1.copy(S.head).add(_v1.set(lerp(2.2, 1.7, u), 0.45, lerp(3.0, 2.5, u))), _c2.copy(S.head).add(_v1.set(0, -0.04, 0)), 30, 0.14) },
+  // LOOK UP — floor-level tilt up the oculus shaft
   { t0: 10.2, blend: 0, fn: (t, u, o) => { o.pos.set(4.8, 0.55, 6.0); lerpV(o.target, [0.6, 7.5, 0.4], [2.4, 3.0, 0.6], smooth(range(t, 10.2, 11.7))); o.fov = 46; o.shake = 0.22; } },
+  // NOTICE — medium shot as it spots her
   { t0: 11.9, blend: 0.6, fn: (t, u, o) => { mid(0.35); o.pos.set(MID.x + 3.4 - u * 0.4, 1.6 + u * 0.15, MID.z + 4.9 - u * 0.6); o.target.set(MID.x, 1.35 + MID.y * 0.1, MID.z); o.fov = 40; o.shake = 0.3; } },
+  // APPROACH — medium shot, it walks toward her
   { t0: 14.6, blend: 0.8, fn: (t, u, o) => { mid(0.3); o.pos.set(MID.x + 3.0 - u * 0.4, 1.8, MID.z + 5.2 - u * 0.3); o.target.set(MID.x, 1.9, MID.z); o.fov = 38; o.shake = 0.3; } },
+  // HEAD-HEIGHT HOLD — tight on the face for the tease
   { t0: 17.2, blend: 0, fn: (t, u, o) => { lerpV(o.pos, [3.0, 3.25, 4.6], [2.8, 3.2, 4.2], u); o.target.set(1.0, 3.0, 1.2); o.fov = 31; o.shake = 0.12; } },
+  // BONK — a fast shaking close-up on the nose
   { t0: 20.0, blend: 0, fn: (t, u, o) => { o.pos.set(3.8, 2.5, 5.2); o.target.set(0.95, 2.6, 1.0); o.fov = 34; o.shake = 2.0 * Math.pow(1 - u, 2) + 0.2; } },
+  // FIRST-FLIGHT CROUCH — floor level, coil then leap
   { t0: 21.6, blend: 0.5, fn: (t, u, o) => {
     o.pos.set(4.7, 0.38 + u * 0.52, 3.5 - u * 0.25);
     const k = smooth(range(t, 22.8, 24.4)); o.target.set(lerp(0.8, S.root.x, k), lerp(1.0, S.root.y, k), lerp(0.85, S.root.z, k));
     o.fov = lerp(34, 42, smooth(range(t, 22.7, 23.4))); o.shake = 0.42 + smooth(range(t, 23, 23.5)) * 0.58; } },
+  // CHASE ORBIT — the camera circles the pair as it learns to fly
   { t0: 24.6, blend: 0.9, fn: (t, u, o) => {
     const th = 0.72 + EASE.inOutQuad(u) * 2.6, R = lerp(7.0, 6.3, u), h = lerp(2.2, 5.5, EASE.inOutSine(u));
     o.pos.set(Math.sin(th) * R, h, -0.7 + Math.cos(th) * R); mid(0.5); o.target.set(MID.x * 0.9, MID.y, MID.z * 0.9); o.fov = lerp(36, 40, Math.sin(u * Math.PI)); o.shake = 0.4; } },
+  // MEET — a slow push to two hands that almost touch
   { t0: 32.6, blend: 0.7, fn: (t, u, o) => { mid(0.5); o.pos.set(MID.x + lerp(1.15, -0.35, eo(u)), MID.y + lerp(0.15, -0.05, u), MID.z + lerp(5.2, 3.65, eo(u))); o.target.copy(MID); o.fov = lerp(31, 26, eo(u)); o.shake = 0.1; } },
+  // LOW HESITATION — looking up while she waits at the oculus
   { t0: 35.2, blend: 0.8, fn: (t, u, o) => { o.pos.copy(S.root).add(_v1.set(1.4, -1.7, 3.2)); o.pos.y = Math.max(0.6, o.pos.y); o.target.copy(S.root).lerp(S.lure, 0.6); o.fov = 44; o.shake = 0.25; } },
+  // HOME OR HER — close on the head as it looks down, then up
   { t0: 38.0, blend: 0.6, fn: (t, u, o) => at(o, _c1.copy(S.head).add(_v1.set(1.5, 0.15, 2.3)), S.head, 31, 0.12) },
+  // ASCENT — a rising wide as the spiral begins
   { t0: 39.9, blend: 0.8, fn: (t, u, o) => { lerpV(o.pos, [3.0, 0.7, 6.4], [1.8, 1.6, 4.6], eo(u)); o.target.copy(S.root).lerp(_v1.set(0, 10, 0), 0.35); o.fov = lerp(48, 58, u); o.shake = 0.3; } },
 
   /* ---- II. Rooftops -------------------------------------------------------
@@ -5921,6 +6081,42 @@ SHOTS.forEach((s, i) => { s.t1 = i < SHOTS.length - 1 ? SHOTS[i + 1].t0 : FILM; 
 // the scene (and through the actors). Every shot change is a clean cut to a new set-up, and the springs reset on
 // the cut so each shot starts at rest and then moves on its own authored path.
 SHOTS.forEach((s) => { s.blend = 0; });
+
+/* ---- Shot overrides: hand-placed camera keyframes -------------------------------------------------
+   Written by the god's-eye editor (Clockwork_Firefly_godview.html, "Export") and applied by tools/apply-overrides.cjs.
+   Keyed by the shot's start time. Each key is { u: 0..1 through the shot, pos, target, fov, roll, shake }.
+   With rel set, pos and target are offsets from the robot, so the camera follows it. An overridden shot
+   drops its DRIFT move; handheld still applies.                                                          */
+const SHOT_OVERRIDES = /*OVERRIDES-BEGIN*/{}/*OVERRIDES-END*/;
+const _ovP = V(), _ovT = V();
+function overrideShotFn(ov) {
+  const ks = ov.keys.slice().sort((a, b) => a.u - b.u), n = ks.length;
+  const cr = (p0, p1, p2, p3, t) => { const t2 = t * t, t3 = t2 * t; return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3); };
+  const vec = (key, i) => (i === 0 ? key.pos[0] : i === 1 ? key.pos[1] : i === 2 ? key.pos[2] : i === 3 ? key.target[0] : i === 4 ? key.target[1] : i === 5 ? key.target[2] : i === 6 ? key.fov : i === 7 ? (key.roll || 0) : (key.shake ?? 0.15));
+  const out = new Array(9);
+  return (t, u, o) => {
+    let i = 0; while (i < n - 2 && u > ks[i + 1].u) i++;
+    if (n === 1) for (let c = 0; c < 9; c++) out[c] = vec(ks[0], c);
+    else {
+      const a = ks[i], b = ks[i + 1], span = b.u - a.u, k = span > 1e-6 ? clamp((u - a.u) / span) : 1;
+      for (let c = 0; c < 9; c++) {
+        if (n === 2) out[c] = lerp(vec(a, c), vec(b, c), smooth(k));
+        else out[c] = cr(vec(ks[Math.max(0, i - 1)], c), vec(a, c), vec(b, c), vec(ks[Math.min(n - 1, i + 2)], c), k);
+      }
+    }
+    _ovP.set(out[0], out[1], out[2]); _ovT.set(out[3], out[4], out[5]);
+    if (ov.rel) { _ovP.add(S.root); _ovT.add(S.root); }
+    o.pos.copy(_ovP); o.target.copy(_ovT); o.fov = out[6]; o.roll = out[7]; o.shake = out[8];
+  };
+}
+function applyShotOverride(t0, ov) {
+  const s = SHOTS.find((x) => x.t0 === t0); if (!s) return false;
+  if (!s.base) s.base = { fn: s.fn, drift: DRIFT.get(t0) };
+  if (ov && ov.keys && ov.keys.length) { s.fn = overrideShotFn(ov); DRIFT.delete(t0); }
+  else { s.fn = s.base.fn; if (s.base.drift) DRIFT.set(t0, s.base.drift); }
+  return true;
+}
+for (const k in SHOT_OVERRIDES) applyShotOverride(+k, SHOT_OVERRIDES[k]);
 
 // A few subjective/action setups carry the camera operator's breathing and reactions.
 // Keep the wides and quiet emotional holds on a stable support.
@@ -6254,6 +6450,9 @@ const GRADE_PRESETS = {
   villeneuve: { sh: [0.75, 0.85, 1.08], hi: [1.38, 1.08, 0.62], mid: [1.21, 1.07, 0.77], sat: 0.70, contrast: 1.10, warm: 1.38, grain: 1.18, lift: 0.012, vig: 0.91 },
   coppola:    { sh: [1.14, 1.02, 1.25], hi: [1.20, 1.06, 1.11], mid: [1.11, 0.99, 1.12], sat: 0.89, contrast: 0.82, warm: 1.12, grain: 0.72, lift: 0.018, vig: 0.72 },
 };
+/* Director's grade: written by the god's-eye editor through tools/apply-overrides.cjs (null until baked). */
+const DIRECTOR_GRADE = /*GRADE-BEGIN*/null/*GRADE-END*/;
+if (DIRECTOR_GRADE) GRADE_PRESETS.directorgrade = DIRECTOR_GRADE;
 class Post {
   constructor(renderer, scene, camera, skyScene) {
     this.renderer = renderer;
@@ -6308,7 +6507,7 @@ class Post {
     this.bloomOn = true;
     this.bloomAllowed = true;
     this.aaOn = false; // SMAA produced square artifacts on bright/clipped areas
-    this.preset = 'default';
+    this.preset = DIRECTOR_GRADE ? 'directorgrade' : 'default';
   }
   setPreset(name) { this.preset = GRADE_PRESETS[name] ? name : 'default'; }
   setSize(w, h, pr) {
@@ -6544,11 +6743,11 @@ async function boot() {
   });
 
   const resize = () => {
-    maxPixelRatio = Math.min(nativePixelRatio, 1.5, Math.sqrt(2560 * 1440 / (innerWidth * innerHeight)));
+    maxPixelRatio = Math.min(nativePixelRatio, 1.5, Math.sqrt(2560 * 1440 / ((GV_VIEW.w || innerWidth) * (GV_VIEW.h || innerHeight))));
     pixelRatio = Math.min(pixelRatio, maxPixelRatio);
-    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-    renderer.setPixelRatio(pixelRatio); renderer.setSize(innerWidth, innerHeight);
-    post.setSize(innerWidth, innerHeight, pixelRatio);
+    camera.aspect = (GV_VIEW.w || innerWidth) / (GV_VIEW.h || innerHeight); camera.updateProjectionMatrix();
+    renderer.setPixelRatio(pixelRatio); renderer.setSize((GV_VIEW.w || innerWidth), (GV_VIEW.h || innerHeight));
+    post.setSize((GV_VIEW.w || innerWidth), (GV_VIEW.h || innerHeight), pixelRatio);
   };
   addEventListener('resize', resize);
 
@@ -6658,67 +6857,94 @@ async function boot() {
 }
 
 /* ==========================================================================
-   GOD'S-EYE VIEW  (injected by tools/build-godview.cjs; lives inside the film's module)
-   Samples the whole film once (robot, Ember, authored camera), then draws it all
-   over the live scene: paths coloured by time, time ticks, beat and shot labels,
-   camera glyphs, a whole-film map, and free overhead cameras with clipping.
+   DIRECTOR'S DESK  (injected by tools/build-godview.cjs; lives inside the film's module)
+   A god's-eye editor for the film. It samples the whole film once (robot, Ember, authored
+   cameras), draws all of it over the live scene, mirrors the director's cut in a monitor with
+   the film's real grade, lets you place camera keyframes for any shot, and runs a timeline.
    ========================================================================== */
 const GV_RANGES = { atrium: [[0, 44], [261, FILM]], roof: [[44, 114]], forest: [[114, 261]] };
 const GV_SET_NAMES = { atrium: 'The Atrium', roof: 'Rooftops', forest: 'The Glade' };
 const GV_SET_TIME = { atrium: 12, roof: 60, forest: 140 };
 const GV_GLYPH = { atrium: 0.5, roof: 2.2, forest: 1.3 };
+const GV_CHAP_COL = ['#e0b75a', '#e8785e', '#4fc3a1', '#9b86e8'];
+const GV_SET_COL = { atrium: '#7f93c9', roof: '#d98a5f', forest: '#5aa889' };
+const GV_VIEW = { w: 0, h: 0 };
+const GV_SHOT_NOTES = {"0":"ESTABLISHING PUSH-IN — a slow push on the sleeping robot","6":"KEY INSERT — over the shoulder as the winding key turns","20":"BONK — a fast shaking close-up on the nose","38":"HOME OR HER — close on the head as it looks down, then up","44":"WORLD REVEAL — low, wide and architectural.","53":"BIRD'S-EYE — breaks the horizon and shows the route through the roofs.","58":"TOWN SCALE — distant master shot.","84":"SUNSET SILHOUETTE — broad static composition and visual breathing room.","92":"LANTERN DETAIL — fizzle reads as a genuine insert shot. Placed behind and beside the cage so the wing covers never mask it.","101":"FAST FOLLOW.","104":"FIRST STUTTER — frontal medium shot so loss of lift reads on the body.","114":"CRASH REVEAL — wide and low, then settles on the body.","120":"EMBER-SIDE OVER-SHOULDER — her concern frames the dormant robot.","128":"LONELINESS — overhead master makes the robot small in the clearing.","136":"FIRST LIGHT — grass-height foreground perspective.","140":"SWARM ARRIVAL — reverse wide from behind the robot.","143":"ARC AROUND THE CLEARING.","147":"TOP-DOWN LIGHT PATTERN — lets synchronized flashes become choreography.","150":"BORROWED LIGHT — side medium on key/body.","173":"DELIGHT REACTION.","176":"LEARNING THE BEAT — balanced two-shot.","196":"VORTEX TOP — graphic overhead spiral.","205":"CANOPY BREAK — near-vertical wide that sells height.","222":"DAWN DESCENT MASTER.","228":"CLIFF CRANE REVEAL — Cameron scale: the camera rises over the cliff lip on a long boom, the whole valley and sunrise unfolding behind the pair.","231":"DESCENT THREE-QUARTER.","235":"RECOVERY LOW MEDIUM.","238":"BACKLIT ORBIT — a slow sweeping arc around the pair with the rising sun behind them, long glowing rim-light silhouettes.","261":"SHAFT ENTRY — top-down geometry shot.","266":"ATRIUM RE-ESTABLISHER — diagonal long move across the cage.","278":"MECHANICAL DETAIL — the key and gears coast down.","289":"OCULUS POV — the answering light is discovered from the robot's world.","8.6":"EYES IGNITE — close on the face as the lantern wakes","10.2":"LOOK UP — floor-level tilt up the oculus shaft","11.9":"NOTICE — medium shot as it spots her","14.6":"APPROACH — medium shot, it walks toward her","17.2":"HEAD-HEIGHT HOLD — tight on the face for the tease","21.6":"FIRST-FLIGHT CROUCH — floor level, coil then leap","24.6":"CHASE ORBIT — the camera circles the pair as it learns to fly","32.6":"MEET — a slow push to two hands that almost touch","35.2":"LOW HESITATION — looking up while she waits at the oculus","39.9":"ASCENT — a rising wide as the spiral begins","47.4":"REAR PURSUIT — establishes forward momentum.","50.2":"ROOF-SKIM PROFILE — low side-on speed read.","55.4":"WIDE LANDSCAPE — pulls far out so the hero is a small bright spark crossing the whole rooftop skyline.","61.4":"CLOCK-TOWER THREE-QUARTER.","64.2":"BANKING ORBIT — curved camera motion mirrors the flight arc.","68.6":"EXTREME LOW PASS — the robot crosses above the lens.","72.4":"LANDING MASTER — re-establish the destination.","74.55":"LANDING INSERT — floor-height side profile for leg extension and contact.","76.25":"IMPACT RECOVERY — low medium angle.","78.8":"PASSENGER CLOSE-UP.","81.25":"REACTION REVERSE — opposite side for the wink/giggle beat.","88.6":"QUIET PROFILE TWO-SHOT.","95.2":"LOW HERO ANGLE — Snyder-style: camera on the floor beside the robot, looking up at a canted, monumental silhouette; never in its path.","98.55":"TAKEOFF — very low rear angle, opposite of the first-flight coverage.","106.55":"SECOND STUTTER — high side angle, deliberately different axis.","109.4":"FALL — distant three-quarter that lets the whole ballistic arc play.","111.55":"FALL INSERT — look almost straight down as the trees rush up.","116.7":"GROUND-LEVEL AFTERMATH.","122.5":"ROBOT CLOSE-UP — waiting for a response.","125.7":"EXTREME DETAIL — the weak flicker.","132.5":"EMPTY SIDE PROFILE — hold the absence after Ember leaves.","154.4":"KEY INSERT — each pulse has a mechanical consequence.","158.4":"PULSE MASTER — the whole clearing answers together.","164.4":"WAKE — intimate face close-up.","166.35":"RISE — heroic low angle replaces another eye-level orbit.","169.2":"HERO POV OF THE SWARM — over the shoulder.","179.2":"OFF-BEAT INSERT — isolate embarrassment on the face.","181.7":"SWARM REACTION — reverse angle, hero now seen from within the lights.","184.75":"ON-BEAT — wide symmetrical payoff.","188.4":"DANCE TAKEOFF — low and close.","191.6":"VORTEX ORBIT.","200.2":"FROM BELOW — fireflies and robot climb away from lens.","209.2":"LIGHTS CLOSE PASS — lateral tracking among the swarm.","213.4":"CONSTELLATION CLIMAX — monumental distant frame.","216.6":"AFTERGLOW — intimate three-quarter.","219.5":"GALAXY DRIFT — high reverse angle as the swarm opens out.","225.3":"DESCENT PROFILE — introduces the cliff plane before the chapter transition.","233.45":"LANDING LOW-ANGLE — ground-hugging wide lens looking up at the touchdown against the sun-lit sky.","240.8":"OVER-THE-SHOULDER TO THE HORIZON.","243.4":"GOODBYE PUSH-IN — wide lens on a steady dolly-in, slightly low, so the pair grows in frame as the farewell lands.","246.1":"EMBER REVERSE — her side of the farewell.","248.7":"SEPARATION CRANE — the boom lifts and swings out as the distance between them opens, valley spreading beneath.","252.3":"HOMEWARD LOW TRACK — wide-lens low tracking move that sweeps alongside and past the takeoff, ground rushing underneath.","255.2":"DEPARTURE SIDE TRACK.","258.2":"FINAL GLANCE BOOM-UP — the camera climbs and pulls away on a huge crane so the glade and sunrise valley shrink below.","263.5":"DESCENT FOLLOW — camera drops alongside rather than staying outside cage.","268.4":"FLOOR-LEVEL ARRIVAL.","270.2":"LANDING SIDE MEDIUM.","272.6":"GLANCE TO US — intimate face framing.","275.4":"PULL-BACK — returns the robot to its place in the atrium.","280.2":"EYES DIM — final character close-up before stillness.","282.2":"TIME PASSAGE — wide locked tableau, preserving the contemplative ending.","292.2":"ANSWER INSERT — sleeping lantern replies.","295.3":"FINAL MASTER — end where the film began, but wider and warmer."};
+const GV_LS = { edits: 'clockwork.godview.edits.v1', grade: 'clockwork.godview.grade.v1' };
 const gvInRange = (set, t) => GV_RANGES[set].some(([a, b]) => t >= a && t < b);
 const gvFmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const gvFmtF = (s) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, '0')}`;
 const gvHue = (t) => { const c = new THREE.Color(); c.setHSL((0.62 - (t / FILM) * 0.62 + 1) % 1, 0.85, 0.58); return c; };
+const gvIcon = { play: '<svg class="ic" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg>', pause: '<svg class="ic" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>' };
+const gvShotTitle = (t0, i) => { const n = GV_SHOT_NOTES[t0]; if (!n) return `Shot ${i + 1}`; const h = n.split(/\s+[—-]\s+/)[0].trim().replace(/[.]$/, ''); return h.toLowerCase().replace(/(^|[\s'-])([a-z])/g, (m, a, b) => a + b.toUpperCase()); };
+const gvEsc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function godViewInstall(film) {
-  const { st, anim, seekTo, setPlaying, S, camera, renderer, scene, world, director } = film;
+  const { st, anim, seekTo, setPlaying, S, camera, renderer, scene, world, director, post } = film;
   const $g = (id) => document.getElementById(id);
   document.body.classList.add('godview');
   $g('gvBoot').classList.remove('hidden');
+  const MON_ASPECT = 16 / 9;
+  const gv = { sel: 0, selKey: 0, pinned: false, editOn: false, ov: {}, thumbs: [], grade: null, tl: null, dirty: true, frameNo: 0 };
+  gv.film = film;
+
+  /* ---------- 0. stage: the film's canvas lives in the viewport cell ---------- */
+  const stage = $g('gvStage'); stage.prepend(renderer.domElement);
+  const fitStage = () => { const r = stage.getBoundingClientRect(); GV_VIEW.w = Math.max(64, Math.round(r.width)); GV_VIEW.h = Math.max(64, Math.round(r.height)); window.dispatchEvent(new Event('resize')); lineMats.forEach((m) => m.resolution.set(GV_VIEW.w, GV_VIEW.h)); };
+  const lineMats = [];
+  new ResizeObserver(() => { clearTimeout(fitStage.h); fitStage.h = setTimeout(fitStage, 30); }).observe(stage);
 
   /* ---------- 1. sample the whole film once ---------- */
   const DT = 1 / 20, N = Math.floor(FILM / DT);
-  const sm = { t: new Float32Array(N), root: new Float32Array(N * 3), lure: new Float32Array(N * 3), cam: new Float32Array(N * 3), tgt: new Float32Array(N * 3), shot: new Int16Array(N), n: 0 };
-  function sampleFilm() {
-    seekTo(0); setPlaying(false);
-    const o = { pos: V(), target: V(), fov: 40, shake: 0, roll: 0 };
-    for (let i = 0; i < N; i++) {
-      anim.step(DT);
-      const t = anim.T; sm.t[i] = t;
-      sm.root.set([S.root.x, S.root.y, S.root.z], i * 3);
-      sm.lure.set([S.lure.x, S.lure.y, S.lure.z], i * 3);
-      const si = director.shotAt(t); director.evalShot(si, t, o);
-      sm.cam.set([o.pos.x, o.pos.y, o.pos.z], i * 3); sm.tgt.set([o.target.x, o.target.y, o.target.z], i * 3); sm.shot[i] = si;
-      sm.n = i + 1;
-    }
-    seekTo(0);
+  const sm = { t: new Float32Array(N), root: new Float32Array(N * 3), lure: new Float32Array(N * 3), cam: new Float32Array(N * 3), tgt: new Float32Array(N * 3), fov: new Float32Array(N), roll: new Float32Array(N), shake: new Float32Array(N), shot: new Int16Array(N), n: 0 };
+  gv.sm = sm;
+  const _so = { pos: V(), target: V(), fov: 40, shake: 0, roll: 0 };
+  function record(i) {
+    const t = i * DT; sm.t[i] = t;
+    sm.root[i * 3] = S.root.x; sm.root[i * 3 + 1] = S.root.y; sm.root[i * 3 + 2] = S.root.z;
+    sm.lure[i * 3] = S.lure.x; sm.lure[i * 3 + 1] = S.lure.y; sm.lure[i * 3 + 2] = S.lure.z;
+    const si = director.shotAt(t); director.evalShot(si, t, _so);
+    sm.cam[i * 3] = _so.pos.x; sm.cam[i * 3 + 1] = _so.pos.y; sm.cam[i * 3 + 2] = _so.pos.z;
+    sm.tgt[i * 3] = _so.target.x; sm.tgt[i * 3 + 1] = _so.target.y; sm.tgt[i * 3 + 2] = _so.target.z;
+    sm.fov[i] = _so.fov; sm.roll[i] = _so.roll || 0; sm.shake[i] = _so.shake; sm.shot[i] = si;
   }
-  sampleFilm();
-  const sampleAt = (t) => Math.max(0, Math.min(sm.n - 1, Math.round(t / DT)));
+  function sampleRange(a, b) {
+    const i0 = clamp(Math.round(a / DT), 0, N - 1), i1 = clamp(Math.round(b / DT), 0, N - 1);
+    seekTo(i0 * DT); setPlaying(false);
+    for (let i = i0; i <= i1; i++) { if (i > i0) anim.step(DT); record(i); sm.n = Math.max(sm.n, i + 1); }
+  }
+  sampleRange(0, FILM);
+  const sampleAt = (t) => clamp(Math.round(t / DT), 0, sm.n - 1);
   const rootAt = (i, out = V()) => out.set(sm.root[i * 3], sm.root[i * 3 + 1], sm.root[i * 3 + 2]);
   const lureAt = (i, out = V()) => out.set(sm.lure[i * 3], sm.lure[i * 3 + 1], sm.lure[i * 3 + 2]);
   const camAt = (i, out = V()) => out.set(sm.cam[i * 3], sm.cam[i * 3 + 1], sm.cam[i * 3 + 2]);
   const tgtAt = (i, out = V()) => out.set(sm.tgt[i * 3], sm.tgt[i * 3 + 1], sm.tgt[i * 3 + 2]);
+  gv.sampleAt = sampleAt; gv.rootAt = rootAt;
+  const shotOfSet = (i) => setAt(SHOTS[i].t0);
+  const shotDur = (i) => SHOTS[i].t1 - SHOTS[i].t0;
+  const shotT = (i, u) => SHOTS[i].t0 + u * shotDur(i);
+  gv.shotT = shotT; gv.shotDur = shotDur;
 
-  // per-set bounds from where the actors and the authored cameras actually go
   const bounds = {};
-  for (const set of Object.keys(GV_RANGES)) {
-    const b = new THREE.Box3().makeEmpty();
-    for (let i = 0; i < sm.n; i++) if (gvInRange(set, sm.t[i])) { b.expandByPoint(rootAt(i)); if (sm.lure[i * 3 + 1] < 40) b.expandByPoint(lureAt(i)); b.expandByPoint(camAt(i)); }
-    bounds[set] = b;
-  }
+  const computeBounds = () => {
+    for (const set of Object.keys(GV_RANGES)) {
+      const b = new THREE.Box3().makeEmpty();
+      for (let i = 0; i < sm.n; i++) if (gvInRange(set, sm.t[i])) { b.expandByPoint(rootAt(i)); if (sm.lure[i * 3 + 1] < 40) b.expandByPoint(lureAt(i)); b.expandByPoint(camAt(i)); }
+      bounds[set] = b;
+    }
+  };
+  computeBounds();
 
   /* ---------- 2. overlay objects ---------- */
   const god = new THREE.Group(); god.name = 'godview'; scene.add(god);
   const layers = { paths: true, ember: true, ticks: true, beats: false, cams: true, shots: false, grid: true, live: true };
   const byLayer = {}; for (const k in layers) byLayer[k] = [];
   const add = (layer, obj, set) => { obj.userData.layer = layer; obj.userData.set = set; obj.renderOrder = 10; god.add(obj); byLayer[layer].push(obj); return obj; };
-  const lineMats = [];
+  const remove = (obj) => { god.remove(obj); for (const k in byLayer) { const a = byLayer[k], i = a.indexOf(obj); if (i >= 0) a.splice(i, 1); } obj.traverse((o) => { o.geometry?.dispose(); if (o.material && !o.material.map) o.material.dispose?.(); }); };
   const mkLine = (pts, cols, width, dashed = false) => {
     const g = new LineGeometry(); g.setPositions(pts); g.setColors(cols);
     const m = new LineMaterial({ color: 0xffffff, linewidth: width, vertexColors: true, dashed, dashSize: 0.8, gapSize: 0.5, transparent: true, depthTest: false, depthWrite: false, worldUnits: false });
-    m.resolution.set(innerWidth, innerHeight); lineMats.push(m);
+    m.resolution.set(GV_VIEW.w || innerWidth, GV_VIEW.h || innerHeight); lineMats.push(m);
     const l = new Line2(g, m); l.computeLineDistances(); l.frustumCulled = false; return l;
   };
   const labelCache = new Map();
@@ -6742,40 +6968,65 @@ function godViewInstall(film) {
     for (const [a, b] of GV_RANGES[set]) {
       const rp = [], rc = [], ep = [], ec = [];
       for (let i = sampleAt(a); i < sampleAt(b); i++) {
-        const t = sm.t[i], c = gvHue(t); rootAt(i); rp.push(sm.root[i * 3], sm.root[i * 3 + 1], sm.root[i * 3 + 2]); rc.push(c.r, c.g, c.b);
+        const t = sm.t[i], c = gvHue(t); rp.push(sm.root[i * 3], sm.root[i * 3 + 1], sm.root[i * 3 + 2]); rc.push(c.r, c.g, c.b);
         if (sm.lure[i * 3 + 1] < 40 && t > 8.9) { ep.push(sm.lure[i * 3], sm.lure[i * 3 + 1], sm.lure[i * 3 + 2]); ec.push(0.78, 1, 0.35); }
       }
       add('paths', mkLine(rp, rc, 3.5), set);
       if (ep.length > 6) add('ember', mkLine(ep, ec, 2, true), set);
     }
-    // ticks every 5 s on the hero path
     for (let t = 0; t < FILM; t += 5) {
       if (!gvInRange(set, t)) continue; const i = sampleAt(t), p = rootAt(i);
       const d = add('ticks', mkDot(gvHue(t).getHex(), 0.07 * scale * 1.6), set); d.position.copy(p);
       const l = add('ticks', mkLabel(gvFmt(t), '#e8e8f0', 0.026), set); l.position.copy(p);
     }
-    // beat labels where each beat starts
     for (const b of BEATS) {
       if (!gvInRange(set, b.t0)) continue; const i = sampleAt(b.t0);
       const l = add('beats', mkLabel(`${gvFmt(b.t0)} ${b.name}`, '#ffd28a', 0.03), set); l.position.copy(rootAt(i)); l.position.y += 0.4 * scale; l.center.set(0, -0.6);
     }
-    // authored cameras: a glyph at each shot start, looking toward its target
-    SHOTS.forEach((sh, idx) => {
-      if (!gvInRange(set, sh.t0)) return; const i = sampleAt(sh.t0 + 0.2);
-      const p = camAt(i), tg = tgtAt(i), dir = tg.clone().sub(p), len = Math.min(dir.length(), 40 * scale), g = new THREE.Group();
-      dir.normalize();
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.22 * scale, 0.7 * scale, 4), new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, depthTest: false, toneMapped: false }));
-      cone.geometry.rotateX(Math.PI / 2); cone.lookAt(dir); g.add(cone);
-      const ray = mkLine([0, 0, 0, dir.x * len * 0.35, dir.y * len * 0.35, dir.z * len * 0.35], [1, 1, 1, 1, 1, 1], 1.2, true); g.add(ray);
-      g.position.copy(p); add('cams', g, set);
-      const l = add('shots', mkLabel(`S${idx + 1}  ${gvFmt(sh.t0)}`, '#bfe3ff', 0.024), set); l.position.copy(p);
-    });
-    // a faint camera path
+  }
+  /* authored camera glyphs, one per shot; rebuilt for a shot after it is edited */
+  const shotObjs = [], camPathObjs = {};
+  function buildShotGlyph(idx) {
+    const old = shotObjs[idx]; if (old) { remove(old.g); remove(old.l); }
+    const sh = SHOTS[idx], set = shotOfSet(idx), scale = GV_GLYPH[set], i = sampleAt(sh.t0 + 0.2);
+    const p = camAt(i), tg = tgtAt(i), dir = tg.clone().sub(p), len = Math.min(dir.length(), 40 * scale), g = new THREE.Group();
+    dir.normalize();
+    const edited = !!gv.ov[sh.t0];
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.22 * scale, 0.7 * scale, 4), new THREE.MeshBasicMaterial({ color: edited ? 0xffb347 : 0xffffff, wireframe: true, depthTest: false, toneMapped: false }));
+    cone.geometry.rotateX(Math.PI / 2); cone.lookAt(dir); g.add(cone);
+    g.add(mkLine([0, 0, 0, dir.x * len * 0.35, dir.y * len * 0.35, dir.z * len * 0.35], edited ? [1, 0.7, 0.28, 1, 0.7, 0.28] : [1, 1, 1, 1, 1, 1], 1.2, true));
+    g.position.copy(p); add('cams', g, set);
+    const l = add('shots', mkLabel(`S${idx + 1}  ${gvFmt(sh.t0)}`, edited ? '#ffb347' : '#bfe3ff', 0.024), set); l.position.copy(p);
+    shotObjs[idx] = { g, l };
+  }
+  function buildCamPath(set) {
+    if (camPathObjs[set]) remove(camPathObjs[set]);
     const cp = [], cc = [];
     for (const [a, b] of GV_RANGES[set]) for (let i = sampleAt(a); i < sampleAt(b); i += 2) { cp.push(sm.cam[i * 3], sm.cam[i * 3 + 1], sm.cam[i * 3 + 2]); cc.push(0.55, 0.75, 1); }
-    add('cams', mkLine(cp, cc, 1, true), set).material.opacity = 0.35;
+    camPathObjs[set] = add('cams', mkLine(cp, cc, 1, true), set); camPathObjs[set].material.opacity = 0.35;
   }
-  // live markers: hero and Ember beacons plus the camera currently in use
+  SHOTS.forEach((_, i) => buildShotGlyph(i));
+  for (const set of Object.keys(GV_RANGES)) buildCamPath(set);
+
+  /* the selected shot: camera path, target path, and view rays through the shot */
+  const selG = new THREE.Group(); god.add(selG); selG.userData.setOf = 'atrium';
+  function buildSelPath() {
+    while (selG.children.length) { const c = selG.children[0]; selG.remove(c); c.traverse((o) => { o.geometry?.dispose(); o.material?.dispose?.(); }); }
+    const i = gv.sel, sh = SHOTS[i], i0 = sampleAt(sh.t0), i1 = sampleAt(sh.t1 - DT), set = shotOfSet(i), g = GV_GLYPH[set];
+    selG.userData.setOf = set;
+    const cp = [], cc = [], tp = [], tc = [];
+    for (let k = i0; k <= i1; k++) { cp.push(sm.cam[k * 3], sm.cam[k * 3 + 1], sm.cam[k * 3 + 2]); cc.push(0.42, 0.77, 1); tp.push(sm.tgt[k * 3], sm.tgt[k * 3 + 1], sm.tgt[k * 3 + 2]); tc.push(1, 0.45, 0.85); }
+    if (cp.length >= 6) { selG.add(mkLine(cp, cc, 3)); selG.add(mkLine(tp, tc, 2, true)); }
+    const rays = [], rc = [];
+    const nR = Math.max(2, Math.min(7, Math.round(shotDur(i) / 0.6)));
+    for (let r = 0; r < nR; r++) { const k = Math.round(i0 + (i1 - i0) * (r / (nR - 1))); rays.push(sm.cam[k * 3], sm.cam[k * 3 + 1], sm.cam[k * 3 + 2], sm.tgt[k * 3], sm.tgt[k * 3 + 1], sm.tgt[k * 3 + 2]); const f = 0.35 + 0.65 * (r / (nR - 1)); rc.push(0.42 * f, 0.77 * f, f, 1 * f, 0.45 * f, 0.85 * f); }
+    for (let r = 0; r < nR; r++) selG.add(mkLine(rays.slice(r * 6, r * 6 + 6), rc.slice(r * 6, r * 6 + 6), 1.2));
+    const s0 = mkDot(0x6cc4ff, 0.12 * g * 1.6); s0.position.set(sm.cam[i0 * 3], sm.cam[i0 * 3 + 1], sm.cam[i0 * 3 + 2]); selG.add(s0);
+    const s1 = mkDot(0xff73d9, 0.1 * g * 1.6); s1.position.set(sm.tgt[i0 * 3], sm.tgt[i0 * 3 + 1], sm.tgt[i0 * 3 + 2]); selG.add(s1);
+    selG.traverse((o) => { o.renderOrder = 11; });
+  }
+
+  /* live markers: hero and Ember beacons plus the camera currently in use */
   const live = new THREE.Group(); god.add(live); byLayer.live.push(live);
   const heroBeacon = mkDot(0xff6a50, 0.35), emberBeacon = mkDot(0xd8ff5a, 0.25), heroLabel = mkLabel('ROBOT', '#ff9a80', 0.03), emberLabel = mkLabel('EMBER', '#d8ff5a', 0.03);
   const heroDrop = mkLine([0, 0, 0, 0, -1, 0], [1, 0.5, 0.4, 1, 0.5, 0.4], 1.5, true), emberDrop = mkLine([0, 0, 0, 0, -1, 0], [0.85, 1, 0.4, 0.85, 1, 0.4], 1.5, true);
@@ -6789,20 +7040,42 @@ function godViewInstall(film) {
   /* ---------- 3. cameras, controls, environment ---------- */
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.08; controls.screenSpacePanning = true; controls.minDistance = 0.6; controls.maxDistance = 1500; controls.maxPolarAngle = Math.PI;
-  const state = { set: 'atrium', auto: true, follow: false, clipOn: false, clipY: 30, fogOff: true, exposure: 1.6, brightFloor: true };
+  const state = { set: 'atrium', auto: true, follow: false, clipOn: false, clipY: 30, fogOff: true, exposure: 1.6 };
+  gv.state = state; gv.layers = layers; gv.bounds = bounds;
   const clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), 30);
   director.setMode('follow'); director.controls.enabled = false;
   camera.far = 4000; camera.near = 0.1; camera.fov = 50; camera.updateProjectionMatrix();
-  // neutralise the cinematic image: no fades, light vignette; overall exposure is adjustable
-  const sample0 = { exposure: CH.exposure.sample.bind(CH.exposure), fade: CH.fade.sample.bind(CH.fade), vig: CH.vig.sample.bind(CH.vig) };
-  CH.fade.sample = () => 0; CH.vig.sample = () => 0.25; CH.exposure.sample = (t) => Math.max(0.85, sample0.exposure(t)) * state.exposure;
-  const fogDensity = { v: 0 };
+  post.dissolve.enabled = false;
+  const real = { exposure: CH.exposure.sample.bind(CH.exposure), fade: CH.fade.sample.bind(CH.fade), vig: CH.vig.sample.bind(CH.vig), bloom: CH.bloom.sample.bind(CH.bloom) };
+
+  /* colour grade: presets from the film plus free sliders, applied to the monitor (and optionally the god view) */
+  const gradeNames = {}; document.querySelectorAll('#selGrade option').forEach((o) => { gradeNames[o.value] = o.textContent; });
+  if (!gradeNames.default) gradeNames.default = 'Original color grade';
+  const cloneGrade = (p) => ({ sh: [...p.sh], hi: [...p.hi], mid: [...p.mid], sat: p.sat, contrast: p.contrast, warm: p.warm, grain: p.grain, lift: p.lift, vig: p.vig });
+  const G = gv.grade = { base: GRADE_PRESETS.directorgrade ? 'directorgrade' : 'default', vals: null, exposure: 1, bloom: 1, applyGod: false, bypass: false, touched: false };
+  G.vals = cloneGrade(GRADE_PRESETS[G.base]);
+  GRADE_PRESETS.gvcustom = G.vals;
+  const gradeDefaults = () => ({ ...cloneGrade(GRADE_PRESETS[G.base]) });
+  const lookGod = () => {
+    const ap = G.applyGod && !G.bypass;
+    CH.fade.sample = () => 0; CH.vig.sample = () => 0.25;
+    CH.exposure.sample = (t) => Math.max(0.85, real.exposure(t)) * state.exposure * (ap ? G.exposure : 1);
+    CH.bloom.sample = (t) => real.bloom(t) * (ap ? G.bloom : 1);
+    post.setPreset(ap ? 'gvcustom' : 'default');
+  };
+  const lookMon = () => {
+    CH.fade.sample = real.fade; CH.vig.sample = real.vig;
+    CH.exposure.sample = (t) => real.exposure(t) * (G.bypass ? 1 : G.exposure);
+    CH.bloom.sample = (t) => real.bloom(t) * (G.bypass ? 1 : G.bloom);
+    post.setPreset(G.bypass ? 'default' : 'gvcustom');
+  };
+  lookGod();
 
   function frameSet(set, mode) {
     const b = bounds[set], c = b.getCenter(V()), size = b.getSize(V()), span = Math.max(size.x, size.z, size.y * 0.8, 6);
     const fit = (span * 0.62) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     controls.target.copy(c); controls.target.y = Math.max(b.min.y, c.y - size.y * 0.25);
-    const dirs = { top: V(0, 1, 0.0001), aerial: V(0.55, 0.62, 0.78), side: V(0, 0.18, 1), south: V(0, 0.5, 1), east: V(1, 0.4, 0.2) };
+    const dirs = { top: V(0, 1, 0.0001), aerial: V(0.55, 0.62, 0.78), side: V(0, 0.18, 1), south: V(0, 0.5, 1) };
     camera.position.copy(controls.target).addScaledVector((dirs[mode] || dirs.aerial).normalize(), fit);
     controls.update();
     grid.position.set(c.x, b.min.y - 0.02, c.z); const gsz = Math.max(20, Math.ceil(span * 1.8 / 10) * 10); grid.scale.setScalar(gsz / 200);
@@ -6812,176 +7085,786 @@ function godViewInstall(film) {
   function setSet(set, jump = true) {
     state.set = set; document.querySelectorAll('[data-set]').forEach((b) => b.classList.toggle('on', b.dataset.set === set));
     if (jump && !gvInRange(set, st.T)) seekTo(GV_SET_TIME[set]);
-    setView(curView); renderLists();
+    setView(curView); gv.dirty = true; buildSelPath();
+  }
+  function frameShot(i) {
+    const set = shotOfSet(i); if (state.set !== set) { state.set = set; document.querySelectorAll('[data-set]').forEach((b) => b.classList.toggle('on', b.dataset.set === set)); }
+    const i0 = sampleAt(SHOTS[i].t0), i1 = sampleAt(SHOTS[i].t1 - DT), b = new THREE.Box3().makeEmpty();
+    for (let k = i0; k <= i1; k += 2) { b.expandByPoint(camAt(k)); b.expandByPoint(tgtAt(k)); b.expandByPoint(rootAt(k)); }
+    const key = gv.ov[SHOTS[i].t0]; if (key) for (const k of key.keys) { const w = keyWorld(i, k); b.expandByPoint(w.pos); b.expandByPoint(w.tgt); }
+    const c = b.getCenter(V()), size = b.getSize(V()), span = Math.max(size.x, size.y, size.z, 3);
+    controls.target.copy(c); const d = (span * 0.9) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const dir = _fwd.copy(camera.position).sub(controls.target).normalize(); if (dir.lengthSq() < 0.5) dir.set(0.55, 0.62, 0.78).normalize();
+    camera.position.copy(controls.target).addScaledVector(dir, d); controls.update();
   }
 
-  const _o = { pos: V(), target: V(), fov: 40, shake: 0, roll: 0 }, _root = V(), _lure = V(), _last = V(), _fwd = V();
-  let lastRootSet = false;
-  director.update = function godUpdate() {
-    const T = st.T, set = world.cur;
-    if (state.auto && set !== state.set) { state.set = set; setView(curView); document.querySelectorAll('[data-set]').forEach((b) => b.classList.toggle('on', b.dataset.set === set)); renderLists(); }
+  /* ---------- 4. shot overrides: the camera editor's model ---------- */
+  const _r1 = V(), _kw = { pos: V(), tgt: V() };
+  const keyRoot = (i, k, out) => rootAt(sampleAt(shotT(i, k.u)), out);
+  function keyWorld(i, k, out = { pos: V(), tgt: V() }) {
+    out.pos.set(k.pos[0], k.pos[1], k.pos[2]); out.tgt.set(k.target[0], k.target[1], k.target[2]);
+    if (gv.ov[SHOTS[i].t0]?.rel) { keyRoot(i, k, _r1); out.pos.add(_r1); out.tgt.add(_r1); }
+    return out;
+  }
+  function setKeyWorld(i, k, pos, tgt) {
+    const rel = gv.ov[SHOTS[i].t0]?.rel; if (rel) keyRoot(i, k, _r1);
+    if (pos) { k.pos = [pos.x - (rel ? _r1.x : 0), pos.y - (rel ? _r1.y : 0), pos.z - (rel ? _r1.z : 0)]; }
+    if (tgt) { k.target = [tgt.x - (rel ? _r1.x : 0), tgt.y - (rel ? _r1.y : 0), tgt.z - (rel ? _r1.z : 0)]; }
+  }
+  function keyFromSample(i, u) {
+    const k = sampleAt(clamp(shotT(i, u), SHOTS[i].t0, SHOTS[i].t1 - DT));
+    const p = camAt(k), tg = tgtAt(k);
+    return { u, pos: [p.x, p.y, p.z], target: [tg.x, tg.y, tg.z], fov: +sm.fov[k].toFixed(2), roll: +sm.roll[k].toFixed(4), shake: +sm.shake[k].toFixed(3) };
+  }
+  const round3 = (v) => Math.round(v * 1000) / 1000;
+  function applyOv(i) { const t0 = SHOTS[i].t0, ov = gv.ov[t0]; applyShotOverride(t0, ov && ov.keys.length ? ov : null); gv.dirty = true; gv.pv.dirty = true; }
+  function saveEdits() { try { localStorage.setItem(GV_LS.edits, JSON.stringify(gv.ov)); } catch (e) { /* storage may be blocked */ } }
+  function saveGrade() { try { localStorage.setItem(GV_LS.grade, JSON.stringify({ base: G.base, vals: G.vals, exposure: G.exposure, bloom: G.bloom, applyGod: G.applyGod, touched: G.touched })); } catch (e) { /* storage may be blocked */ } }
+  function resampleShot(i) {
+    const T0 = st.T, was = st.playing; sampleRange(SHOTS[i].t0, SHOTS[i].t1 - DT);
+    seekTo(T0); setPlaying(was);
+    computeBounds(); buildShotGlyph(i); buildCamPath(shotOfSet(i)); buildSelPath();
+  }
+  function enterEdit(i) {
+    const t0 = SHOTS[i].t0;
+    if (!gv.ov[t0]) {
+      const us = shotDur(i) > 2.5 ? [0, 0.5, 1] : [0, 1];
+      gv.ov[t0] = { rel: false, keys: us.map((u) => keyFromSample(i, u)) };
+      applyOv(i); saveEdits(); resampleShot(i); renderShotRows(); renderExport();
+    }
+    gv.editOn = true; gv.pinned = true; gv.selKey = Math.min(gv.selKey, gv.ov[t0].keys.length - 1); gv.dirty = true; renderInspector();
+  }
+  function exitEdit() { gv.editOn = false; gv.pinned = false; renderInspector(); }
+  function resetShot(i) { delete gv.ov[SHOTS[i].t0]; applyOv(i); saveEdits(); gv.editOn = false; gv.pinned = false; resampleShot(i); renderShotRows(); renderInspector(); renderExport(); }
+  function addKeyHere() {
+    const i = gv.sel, ov = gv.ov[SHOTS[i].t0]; if (!ov) return;
+    const T = clamp(st.T, SHOTS[i].t0, SHOTS[i].t1), u = (T - SHOTS[i].t0) / shotDur(i);
+    if (ov.keys.some((k) => Math.abs(k.u - u) < 0.015)) return;
+    const o = { pos: V(), target: V(), fov: 40, shake: 0.15, roll: 0 }; director.evalShot(i, T, o);
+    const k = { u: round3(u), pos: [0, 0, 0], target: [0, 0, 0], fov: +o.fov.toFixed(2), roll: +(o.roll || 0).toFixed(4), shake: +o.shake.toFixed(3) };
+    setKeyWorld(i, k, o.pos, o.target);
+    k.pos = k.pos.map(round3); k.target = k.target.map(round3);
+    ov.keys.push(k); ov.keys.sort((a, b) => a.u - b.u); gv.selKey = ov.keys.indexOf(k);
+    applyOv(i); saveEdits(); resampleShot(i); renderInspector(); renderExport();
+  }
+  function deleteKey() {
+    const i = gv.sel, ov = gv.ov[SHOTS[i].t0]; if (!ov || ov.keys.length <= 1) return;
+    ov.keys.splice(gv.selKey, 1); ov.keys[0].u = 0; ov.keys[ov.keys.length - 1].u = ov.keys.length > 1 ? 1 : ov.keys[0].u;
+    gv.selKey = clamp(gv.selKey, 0, ov.keys.length - 1); applyOv(i); saveEdits(); resampleShot(i); renderInspector(); renderExport();
+  }
+  function toggleRel(rel) {
+    const i = gv.sel, ov = gv.ov[SHOTS[i].t0]; if (!ov || ov.rel === rel) return;
+    const worlds = ov.keys.map((k) => { const w = keyWorld(i, k); return { pos: w.pos.clone(), tgt: w.tgt.clone() }; });
+    ov.rel = rel; ov.keys.forEach((k, n) => setKeyWorld(i, k, worlds[n].pos, worlds[n].tgt));
+    ov.keys.forEach((k) => { k.pos = k.pos.map(round3); k.target = k.target.map(round3); });
+    applyOv(i); saveEdits(); resampleShot(i); renderInspector();
+  }
+  function selectKey(n, seek = true) { gv.selKey = n; const ov = gv.ov[SHOTS[gv.sel].t0]; if (seek && ov) { seekTo(shotT(gv.sel, ov.keys[n].u)); setPlaying(false); } renderInspector(); gv.dirty = true; }
+  function moveKeyU(n, u) {
+    const i = gv.sel, ov = gv.ov[SHOTS[i].t0]; if (!ov || n === 0 || n === ov.keys.length - 1) return;
+    ov.keys[n].u = round3(clamp(u, ov.keys[n - 1].u + 0.02, ov.keys[n + 1].u - 0.02)); applyOv(i); saveEdits(); gv.dirty = true;
+  }
+  gv.moveKeyU = moveKeyU; gv.commitKeys = () => { resampleShot(gv.sel); renderInspector(); };
+
+  /* 3D gizmos and key visuals for the shot being edited */
+  const editG = new THREE.Group(); scene.add(editG);
+  const proxyPos = new THREE.Object3D(), proxyTgt = new THREE.Object3D(); scene.add(proxyPos, proxyTgt);
+  const tcPos = new TransformControls(camera, renderer.domElement), tcTgt = new TransformControls(camera, renderer.domElement);
+  tcPos.setSize(0.75); tcTgt.setSize(0.6); tcPos.setSpace('world'); tcTgt.setSpace('world');
+  const helperPos = tcPos.getHelper(), helperTgt = tcTgt.getHelper(); scene.add(helperPos, helperTgt);
+  helperPos.visible = helperTgt.visible = false;
+  let dragging = false;
+  for (const tc of [tcPos, tcTgt]) tc.addEventListener('dragging-changed', (e) => { controls.enabled = !e.value; dragging = e.value; if (!e.value) gv.commitKeys(); });
+  const onGizmo = () => {
+    const i = gv.sel, ov = gv.ov[SHOTS[i].t0]; if (!ov) return; const k = ov.keys[gv.selKey]; if (!k) return;
+    setKeyWorld(i, k, proxyPos.position, proxyTgt.position);
+    k.pos = k.pos.map(round3); k.target = k.target.map(round3); applyOv(i); saveEdits(); syncKeyFields();
+  };
+  tcPos.addEventListener('objectChange', onGizmo); tcTgt.addEventListener('objectChange', onGizmo);
+  const editMat = (c, o = 1) => new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: o, depthTest: false, toneMapped: false });
+  function frustumGeom(fov, len) {
+    const h = Math.tan(THREE.MathUtils.degToRad(fov / 2)) * len, w = h * MON_ASPECT, v = [[0, 0, 0], [-w, -h, len], [w, -h, len], [w, h, len], [-w, h, len]], idx = [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [2, 3], [3, 4], [4, 1]], pts = [];
+    for (const [a, b] of idx) pts.push(...v[a], ...v[b]);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); return g;
+  }
+  function rebuildEdit() {
+    while (editG.children.length) { const c = editG.children[0]; editG.remove(c); c.traverse((o) => { o.geometry?.dispose(); o.material?.dispose?.(); }); }
+    const i = gv.sel, ov = gv.ov[SHOTS[i].t0], on = gv.editOn && ov && shotOfSet(i) === state.set;
+    helperPos.visible = helperTgt.visible = !!on; tcPos.enabled = tcTgt.enabled = !!on;
+    if (!on) { tcPos.detach(); tcTgt.detach(); return; }
+    const g = GV_GLYPH[state.set], pathPts = [];
+    ov.keys.forEach((k, n) => {
+      const w = keyWorld(i, k), sel = n === gv.selKey, col = sel ? 0xffb347 : 0x9a7433;
+      const fr = new THREE.LineSegments(frustumGeom(k.fov, 1.8 * g), editMat(col, sel ? 1 : 0.7)); fr.position.copy(w.pos); fr.lookAt(w.tgt); fr.renderOrder = 20; editG.add(fr);
+      const tp = mkDot(sel ? 0xff73d9 : 0x8a4a7a, (sel ? 0.16 : 0.1) * g); tp.position.copy(w.tgt); tp.renderOrder = 20; editG.add(tp);
+      const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints([w.pos, w.tgt]), editMat(sel ? 0xffd9a0 : 0x6a5a3a, sel ? 0.9 : 0.5)); ln.renderOrder = 20; editG.add(ln);
+      pathPts.push(w.pos.clone());
+    });
+    if (pathPts.length > 1) { const cv = new THREE.CatmullRomCurve3(pathPts); const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(cv.getPoints(pathPts.length * 24)), editMat(0xffd27a, 0.95)); l.renderOrder = 20; editG.add(l); }
+    const sk = ov.keys[gv.selKey], w = keyWorld(i, sk);
+    proxyPos.position.copy(w.pos); proxyTgt.position.copy(w.tgt);
+    tcPos.attach(proxyPos); tcTgt.attach(proxyTgt);
+  }
+  gv.rebuildEdit = rebuildEdit;
+
+  /* ---------- 5. the director's-cut monitor, grade and thumbnails ---------- */
+  const monitor = $g('gvMon'), mctx = monitor.getContext('2d');
+  const pv = gv.pv = { on: true, rate: 1, pos: V(), quat: new THREE.Quaternion(), fov: 40, lastT: -1, dirty: true, need: false, fog: 0 };
+  const cap = { active: false, i: 0, restoreT: 0, restoreSet: 'atrium' };
+  const thumbCv = document.createElement('canvas'); thumbCv.width = 192; thumbCv.height = 108; const thumbCtx = thumbCv.getContext('2d');
+  const origUpdate = director.update;
+  const _gp = V(), _gq = new THREE.Quaternion();
+  function computePreviewPose(T, dt) {
+    _gp.copy(camera.position); _gq.copy(camera.quaternion); const gfov = camera.fov, mode = director.mode;
+    camera.aspect = MON_ASPECT;
+    if (T < pv.lastT - 0.001 || T - pv.lastT > 0.25) director.prevCineShot = -1;
+    director.mode = 'director';
+    origUpdate.call(director, T, Math.min(Math.max(dt, 1 / 120), 1 / 30));
+    pv.pos.copy(camera.position); pv.quat.copy(camera.quaternion); pv.fov = camera.fov; pv.lastT = T;
+    director.mode = mode; camera.position.copy(_gp); camera.quaternion.copy(_gq); camera.fov = gfov;
+    camera.aspect = GV_VIEW.w / Math.max(1, GV_VIEW.h); camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
+    S.cam.copy(camera.position);
+  }
+  const render0 = post.render.bind(post);
+  const hideDuring = [god, helperPos, helperTgt, editG];
+  function renderMonitor(t, time, o) {
+    const gp = _gp.copy(camera.position), gq = _gq.copy(camera.quaternion), gfov = camera.fov, vis = hideDuring.map((h) => h.visible), clips = renderer.clippingPlanes, fog = scene.fog.density;
+    camera.position.copy(pv.pos); camera.quaternion.copy(pv.quat); camera.fov = pv.fov; camera.aspect = MON_ASPECT; camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
+    hideDuring.forEach((h) => { h.visible = false; }); renderer.clippingPlanes = []; scene.fog.density = pv.fog;
+    world.sky.follow(camera); lookMon();
+    render0(t, time, { ...o, letter: clamp((1 - MON_ASPECT / 2.2) / 2, 0, 0.12), cinematic: true });
+    const src = renderer.domElement;
+    mctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, monitor.width, monitor.height);
+    if (cap.active) captureThumb();
+    hideDuring.forEach((h, n) => { h.visible = vis[n]; }); renderer.clippingPlanes = clips; scene.fog.density = fog;
+    camera.position.copy(gp); camera.quaternion.copy(gq); camera.fov = gfov; camera.aspect = GV_VIEW.w / Math.max(1, GV_VIEW.h); camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
+    world.sky.follow(camera);
+  }
+  post.render = (t, time, o) => {
+    if (pv.need) { pv.need = false; renderMonitor(t, time, o); }
+    lookGod();
+    render0(t, time, { ...o, cinematic: false, letter: 0 });
+  };
+  function captureThumb() {
+    thumbCtx.drawImage(monitor, 0, 0, monitor.width, monitor.height, 0, 0, 192, 108);
+    const c = document.createElement('canvas'); c.width = 192; c.height = 108; c.getContext('2d').drawImage(thumbCv, 0, 0);
+    gv.thumbs[cap.i] = c; cap.i++; gv.dirty = true;
+    $g('gvCapStat').textContent = `${cap.i} / ${SHOTS.length}`;
+    if (cap.i % 6 === 0 || cap.i >= SHOTS.length) renderShotRows();
+    nextCapture();
+  }
+  function nextCapture() {
+    if (cap.i >= SHOTS.length) { cap.active = false; state.auto = $g('gvAuto').checked; seekTo(cap.restoreT); setSet(cap.restoreSet, false); $g('gvCapture').textContent = 'Capture all shots'; renderShotRows(); return; }
+    const s = SHOTS[cap.i]; seekTo(s.t0 + Math.min(1.2, (s.t1 - s.t0) * 0.45)); pv.dirty = true;
+  }
+  function startCapture() {
+    if (cap.active) { cap.active = false; $g('gvCapture').textContent = 'Capture all shots'; seekTo(cap.restoreT); return; }
+    cap.active = true; cap.i = 0; cap.restoreT = st.T; cap.restoreSet = state.set; setPlaying(false); pv.on = true; $g('gvMonOn').checked = true; $g('gvCapture').textContent = 'Stop capturing'; nextCapture();
+  }
+
+  /* ---------- 6. the per-frame update ---------- */
+  const _o = { pos: V(), target: V(), fov: 40, shake: 0, roll: 0 }, _root = V(), _last = V(), _fwd = V(), _tmp = V();
+  let lastRootSet = false, lastSelTick = -1;
+  director.update = function godUpdate(T, dt) {
+    const set = world.cur;
+    if (state.auto && !cap.active && set !== state.set) { state.set = set; setView(curView); document.querySelectorAll('[data-set]').forEach((b) => b.classList.toggle('on', b.dataset.set === set)); buildSelPath(); rebuildEdit(); pv.dirty = true; }
+    pv.fog = scene.fog.density;
     if (state.fogOff) scene.fog.density = 0;
-    renderer.clippingPlanes = state.clipOn ? [clip] : [];
-    clip.constant = state.clipY;
+    renderer.clippingPlanes = state.clipOn ? [clip] : []; clip.constant = state.clipY;
     if (state.follow) { _root.copy(S.root); if (lastRootSet) { _fwd.copy(_root).sub(_last); controls.target.add(_fwd); camera.position.add(_fwd); } _last.copy(_root); lastRootSet = true; } else lastRootSet = false;
     controls.update();
+    // the selection follows the playhead unless a shot is pinned (or being edited)
+    const si = director.shotAt(T);
+    if (!gv.pinned && !cap.active && si !== gv.sel) selectShot(si, false);
     // overlays
     const cur = state.set, i = sampleAt(T);
     for (const k in byLayer) for (const o of byLayer[k]) o.visible = layers[k] && (o.userData.set === undefined || o.userData.set === cur);
-    live.visible = layers.live;
+    selG.visible = shotOfSet(gv.sel) === cur; live.visible = layers.live;
     const g = GV_GLYPH[cur];
-    rootAt(i, _root); heroBeacon.position.copy(S.root); heroBeacon.scale.setScalar(g); heroLabel.position.copy(S.root).add(_fwd.set(0, 0.8 * g, 0));
+    heroBeacon.position.copy(S.root); heroBeacon.scale.setScalar(g); heroLabel.position.copy(S.root).add(_fwd.set(0, 0.8 * g, 0));
     emberBeacon.visible = emberLabel.visible = S.lure.y < 40 && T > 8.9;
     emberBeacon.position.copy(S.lure); emberBeacon.scale.setScalar(g); emberLabel.position.copy(S.lure).add(_fwd.set(0, 0.7 * g, 0));
     const floorY = bounds[cur].min.y - 0.02;
     heroDrop.position.set(S.root.x, floorY, S.root.z); heroDrop.scale.set(1, S.root.y - floorY, 1);
     emberDrop.position.set(S.lure.x, floorY, S.lure.z); emberDrop.scale.set(1, Math.max(0.01, S.lure.y - floorY), 1); emberDrop.visible = emberBeacon.visible;
-    director.evalShot(director.shotAt(T), T, _o);
-    liveCam.position.copy(_o.pos); liveCam.scale.setScalar(g * 1.4); liveCam.lookAt(_o.target);
-    liveRay.position.copy(_o.pos); _fwd.copy(_o.target).sub(_o.pos); const L = Math.min(_fwd.length(), 60 * g);
-    liveRay.scale.set(1, 1, L); liveRay.quaternion.setFromUnitVectors(V(0, 0, 1), _fwd.normalize());
+    // gizmos follow their key unless being dragged
+    if (gv.editOn && tcPos.enabled && !dragging) { const ov = gv.ov[SHOTS[gv.sel].t0], k = ov?.keys[gv.selKey]; if (k) { const w = keyWorld(gv.sel, k); proxyPos.position.copy(w.pos); proxyTgt.position.copy(w.tgt); } }
+    // the director's camera, as the film's own director computes it
+    gv.frameNo++;
+    const playing = st.playing, moved = T !== pv.lastT;
+    if (pv.on && (cap.active || pv.dirty || (moved && (!playing || gv.frameNo % pv.rate === 0)))) { computePreviewPose(T, dt || 1 / 60); pv.need = true; pv.dirty = false; }
+    liveCam.position.copy(pv.pos); liveCam.scale.setScalar(g * 1.4); _fwd.set(0, 0, -1).applyQuaternion(pv.quat); liveCam.lookAt(_tmp.copy(pv.pos).add(_fwd));
+    liveRay.position.copy(pv.pos); const L = 25 * g; liveRay.scale.set(1, 1, L); liveRay.quaternion.setFromUnitVectors(V(0, 0, 1), _fwd.normalize());
     world.sky.follow(camera);
-    updateReadout(T, i);
+    updateLive(T, i);
   };
 
-  /* ---------- 4. panels ---------- */
+  /* ---------- 7. panels ---------- */
   const readout = $g('gvReadout');
-  function updateReadout(T, i) {
-    const bi = beatAt(T), b = BEATS[bi], si = director.shotAt(T), ci = chapterAt(T);
-    const f = (v) => v.toFixed(1);
-    readout.innerHTML = `<b>${gvFmt(T)}</b> · ${GV_SET_NAMES[world.cur]} · Chapter ${CHAPTERS[ci].num} ${CHAPTERS[ci].name}<br>
-      <span class="k">Beat</span> ${b.name} <span class="k">Shot</span> S${si + 1} (${gvFmt(SHOTS[si].t0)}–${gvFmt(SHOTS[si].t1)})<br>
-      <span class="k">Robot</span> ${f(S.root.x)}, ${f(S.root.y)}, ${f(S.root.z)} <span class="k">Ember</span> ${S.lure.y < 40 ? `${f(S.lure.x)}, ${f(S.lure.y)}, ${f(S.lure.z)}` : 'off stage'}`;
-    if (i !== lastListI) { lastListI = i; markActive(T); }
+  function selectShot(i, seek = true) {
+    gv.sel = clamp(i, 0, SHOTS.length - 1);
+    const ov = gv.ov[SHOTS[gv.sel].t0]; gv.selKey = clamp(gv.selKey, 0, ov ? ov.keys.length - 1 : 0);
+    if (!ov && gv.editOn) { gv.editOn = false; gv.pinned = false; }
+    if (seek) { seekTo(SHOTS[gv.sel].t0 + 0.05); setPlaying(false); }
+    buildSelPath(); renderInspector(); markShotRows(); rebuildEdit(); gv.dirty = true; pv.dirty = true;
   }
-  let lastListI = -1;
-  function renderLists() {
-    const cur = state.set, bl = $g('gvBeats'), sl = $g('gvShots');
-    bl.innerHTML = BEATS.filter((b) => gvInRange(cur, b.t0)).map((b) => `<li data-t="${b.t0}"><span class="t">${gvFmt(b.t0)}</span><span>${b.name}</span></li>`).join('');
-    sl.innerHTML = SHOTS.map((s, i) => [s, i]).filter(([s]) => gvInRange(cur, s.t0)).map(([s, i]) => `<li data-t="${s.t0}" data-shot="${i}"><span class="t">${gvFmt(s.t0)}</span><span>S${i + 1} · ${(s.t1 - s.t0).toFixed(1)}s</span></li>`).join('');
-    lastListI = -1;
-  }
-  function markActive(T) {
-    for (const ul of [$g('gvBeats'), $g('gvShots')]) {
-      let act = null; for (const li of ul.children) { const t = +li.dataset.t; if (t <= T) act = li; li.classList.remove('on'); }
-      if (act) { act.classList.add('on'); if (!ul.matches(':hover')) { const r = act.offsetTop - ul.clientHeight / 2; ul.scrollTop += (r - ul.scrollTop) * 0.2; } }
-    }
-  }
-  for (const id of ['gvBeats', 'gvShots']) $g(id).addEventListener('click', (e) => { const li = e.target.closest('li'); if (li) { seekTo(+li.dataset.t); setPlaying(false); } });
+  gv.selectShot = selectShot; gv.shotOfSet = shotOfSet;
+  const stepShot = (d) => { const i = clamp(director.shotAt(st.T) + d, 0, SHOTS.length - 1); gv.pinned = false; gv.editOn = false; selectShot(i, true); };
 
-  document.querySelectorAll('[data-set]').forEach((b) => b.onclick = () => { state.auto = false; $g('gvAuto').checked = false; setSet(b.dataset.set); });
+  let lastBeat = -1, lastShotRow = -1, lastClock = '';
+  function updateLive(T, i) {
+    const clock = `<b>${gvFmtF(T)}</b> / ${gvFmt(FILM)}`; if (clock !== lastClock) { $g('gvClock').innerHTML = clock; lastClock = clock; }
+    const f = (v) => v.toFixed(1), bi = beatAt(T), ci = chapterAt(T);
+    readout.innerHTML = `<b>${GV_SET_NAMES[world.cur]}</b> · Ch ${CHAPTERS[ci].num} ${CHAPTERS[ci].name} · ${BEATS[bi].name}<br><span class="r">Robot</span> ${f(S.root.x)}, ${f(S.root.y)}, ${f(S.root.z)} &nbsp; <span class="e">Ember</span> ${S.lure.y < 40 ? `${f(S.lure.x)}, ${f(S.lure.y)}, ${f(S.lure.z)}` : 'off stage'}`;
+    if (bi !== lastBeat) { lastBeat = bi; markBeatRows(bi); }
+    if (gv.sel !== lastShotRow) { lastShotRow = gv.sel; markShotRows(); }
+    // monitor text
+    const sh = SHOTS[gv.sel], focal = 12 / Math.tan(THREE.MathUtils.degToRad(pv.fov / 2));
+    $g('gvMonTc').textContent = `S${gv.sel + 1}  ${gvFmtF(T)}`; $g('gvMonLens').textContent = `${focal.toFixed(0)} mm · ${pv.fov.toFixed(0)}°`;
+    $g('gvMonShot').textContent = `S${gv.sel + 1} · ${gvShotTitle(sh.t0, gv.sel)}`;
+    $g('gvMonPose').textContent = `${pv.pos.x.toFixed(1)}, ${pv.pos.y.toFixed(1)}, ${pv.pos.z.toFixed(1)}`;
+    const playSvg = st.playing ? gvIcon.pause : gvIcon.play;
+    for (const id of ['gvPlay', 'gvMonPlay']) { const b = $g(id); if (b.dataset.st !== String(st.playing)) { b.innerHTML = playSvg; b.dataset.st = String(st.playing); } }
+    $g('gvEditBadge').classList.toggle('hidden', !gv.editOn);
+    if (gv.tl && (gv.dirty || T !== gv.tl.lastT || st.playing)) { gv.tl.draw(T); gv.dirty = false; }
+  }
+
+  /* shots and beats lists */
+  const thumbURL = [];
+  function renderShotRows() {
+    const box = $g('gvLShots'); let html = '', lastChap = -1;
+    SHOTS.forEach((s, i) => {
+      const ci = chapterAt(s.t0 + 0.01); if (ci !== lastChap) { lastChap = ci; html += `<div class="chead" style="--cc:${GV_CHAP_COL[ci]}">Chapter ${CHAPTERS[ci].num} · ${CHAPTERS[ci].name}</div>`; }
+      const th = gv.thumbs[i]; if (th && !thumbURL[i]) thumbURL[i] = th.toDataURL('image/jpeg', 0.72);
+      html += `<div class="srow" data-shot="${i}"><div class="th" ${thumbURL[i] ? `style="background-image:url(${thumbURL[i]})"` : ''}>${thumbURL[i] ? '' : 'S' + (i + 1)}</div><div class="tx"><div class="nm">S${i + 1} · ${gvEsc(gvShotTitle(s.t0, i))}</div><div class="sb">${gvFmt(s.t0)} · ${(s.t1 - s.t0).toFixed(1)} s · ${GV_SET_NAMES[setAt(s.t0)]}</div></div>${gv.ov[s.t0] ? '<span class="ed" title="Camera edited">✎</span>' : ''}</div>`;
+    });
+    const top = box.scrollTop; box.innerHTML = html; box.scrollTop = top; lastShotRow = -1;
+  }
+  function markShotRows() {
+    const rows = $g('gvLShots').querySelectorAll('.srow'); let act = null;
+    rows.forEach((r) => { const on = +r.dataset.shot === gv.sel; r.classList.toggle('on', on); if (on) act = r; });
+    if (act) { const box = $g('gvLShots'); if (!box.matches(':hover')) { const y = act.offsetTop - box.clientHeight / 2 + act.offsetHeight / 2; box.scrollTop += (y - box.scrollTop) * 0.35; } }
+  }
+  function renderBeatRows() {
+    let html = '', lastChap = -1;
+    BEATS.forEach((b, i) => { const ci = chapterAt(b.t0 + 0.01); if (ci !== lastChap) { lastChap = ci; html += `<div class="chead" style="--cc:${GV_CHAP_COL[ci]}">Chapter ${CHAPTERS[ci].num} · ${CHAPTERS[ci].name}</div>`; } html += `<div class="brow" data-beat="${i}"><span class="t">${gvFmt(b.t0)}</span><span>${gvEsc(b.name)}</span></div>`; });
+    $g('gvLBeats').innerHTML = html;
+  }
+  function markBeatRows(bi) {
+    let act = null; $g('gvLBeats').querySelectorAll('.brow').forEach((r) => { const on = +r.dataset.beat === bi; r.classList.toggle('on', on); if (on) act = r; });
+    const b = BEATS[bi], note = $g('gvBeatNote');
+    note.innerHTML = `<b>${gvEsc(b.name)} · ${gvFmt(b.t0)}–${gvFmt(b.t1)}</b>${gvEsc(b.text)}<div class="pr">${b.p.map((p) => `<span>${gvEsc((PRINCIPLES.find((x) => x[0] === p) || [0, p])[1])}</span>`).join('')}</div>`;
+    if (act) { const box = $g('gvLBeats'); if (!box.matches(':hover')) { const y = act.offsetTop - box.clientHeight / 2; box.scrollTop += (y - box.scrollTop) * 0.35; } }
+  }
+  $g('gvLShots').addEventListener('click', (e) => { const r = e.target.closest('.srow'); if (!r) return; gv.pinned = false; gv.editOn = false; selectShot(+r.dataset.shot, true); if (innerWidth <= 900) $g('gv').classList.remove('openL'); });
+  $g('gvLBeats').addEventListener('click', (e) => { const r = e.target.closest('.brow'); if (r) { seekTo(BEATS[+r.dataset.beat].t0); setPlaying(false); } });
+  document.querySelectorAll('#gvLTabs button').forEach((b) => b.onclick = () => {
+    document.querySelectorAll('#gvLTabs button').forEach((x) => x.classList.toggle('on', x === b));
+    $g('gvLShots').classList.toggle('hidden', b.dataset.ltab !== 'shots'); $g('gvLBeats').classList.toggle('hidden', b.dataset.ltab !== 'beats'); $g('gvLView').classList.toggle('hidden', b.dataset.ltab !== 'view'); $g('gvBeatNote').classList.toggle('hidden', b.dataset.ltab !== 'beats');
+  });
+
+  /* inspector: shot tab */
+  const num = (v, d = 2) => (typeof v === 'number' ? +v.toFixed(d) : 0);
+  function renderInspector() {
+    const i = gv.sel, s = SHOTS[i], ov = gv.ov[s.t0], box = $g('gvIShot'), note = GV_SHOT_NOTES[s.t0];
+    const drift = s.base?.drift || DRIFT.get(s.t0), hand = HANDHELD.get(s.t0);
+    let h = `<div class="shead"><h3>S${i + 1} · ${gvEsc(gvShotTitle(s.t0, i))}</h3><span class="m">${gvFmtF(s.t0)}–${gvFmtF(s.t1)} · ${shotDur(i).toFixed(1)} s</span></div>`;
+    const desc = note && note.split(/\s+[—-]\s+/).length > 1 ? note.split(/\s+[—-]\s+/).slice(1).join(' — ') : '';
+    h += `<div class="snote">${gvEsc(desc || 'Authored in code. Its camera follows the action with springs and a slow move.')}</div>`;
+    h += `<div class="btns"><button class="btn pri" id="iEdit">${ov ? (gv.editOn ? 'Editing…' : 'Edit camera') : 'Edit camera'}</button><button class="btn" id="iFrame">Frame shot</button><button class="btn" id="iStart">Go to start</button>${ov ? '<button class="btn warn" id="iReset">Reset to authored</button>' : ''}</div>`;
+    if (!ov) {
+      h += `<div class="note">This shot is driven by code: it reads the robot's position, adds spring smoothing and a slow move${drift ? ` (drift ${gvEsc(Object.entries(drift).map(([k, v]) => k + ' ' + JSON.stringify(v)).join(', '))})` : ''}${hand ? `, plus handheld sway (${hand[0]})` : ''}. <b>Edit camera</b> bakes it into ${shotDur(i) > 2.5 ? '3' : '2'} keyframes you can move with the gizmos or the numbers below.</div>`;
+    } else {
+      const k = ov.keys[gv.selKey] || ov.keys[0], pf = ov.rel ? 'Offset from robot' : 'World position';
+      h += `<label class="chk"><input type="checkbox" id="iRel" ${ov.rel ? 'checked' : ''}> Follow the robot (keys are offsets from it)</label>`;
+      h += `<div class="sect">Keyframes <span class="hint">${ov.keys.length} · K adds one at the playhead</span></div><div class="keys">${ov.keys.map((kk, n) => `<button data-key="${n}" class="${n === gv.selKey ? 'on' : ''}">${n + 1} · ${Math.round(kk.u * 100)}%</button>`).join('')}</div>`;
+      h += `<div class="btns"><button class="btn sm" id="iAddKey">+ Key at playhead</button><button class="btn sm warn" id="iDelKey" ${ov.keys.length <= 1 ? 'disabled' : ''}>Delete key</button><button class="btn sm" id="iGoKey">Go to key</button></div>`;
+      h += `<div class="sect">${pf}</div><div class="xyz"><label>Camera</label>${['px', 'py', 'pz'].map((f, n) => `<input class="num" data-f="${f}" type="number" step="0.05" value="${num(k.pos[n])}">`).join('')}</div>`;
+      h += `<div class="xyz"><label>Look at</label>${['tx', 'ty', 'tz'].map((f, n) => `<input class="num" data-f="${f}" type="number" step="0.05" value="${num(k.target[n])}">`).join('')}</div>`;
+      h += `<div class="rg"><label for="kFov">Lens</label><input type="range" id="kFov" data-f="fov" min="12" max="90" step="0.5" value="${num(k.fov, 1)}"><output id="kFovV">${num(k.fov, 0)}° · ${(12 / Math.tan(THREE.MathUtils.degToRad(k.fov / 2))).toFixed(0)} mm</output></div>`;
+      h += `<div class="rg"><label for="kRoll">Dutch</label><input type="range" id="kRoll" data-f="roll" min="-15" max="15" step="0.25" value="${num((k.roll || 0) * 57.2958, 2)}"><output id="kRollV">${num((k.roll || 0) * 57.2958, 1)}°</output></div>`;
+      h += `<div class="rg"><label for="kShake">Shake</label><input type="range" id="kShake" data-f="shake" min="0" max="1" step="0.01" value="${num(k.shake ?? 0.15)}"><output id="kShakeV">${num(k.shake ?? 0.15)}</output></div>`;
+      if (gv.selKey > 0 && gv.selKey < ov.keys.length - 1) h += `<div class="rg"><label for="kU">Time</label><input type="range" id="kU" data-f="u" min="0" max="100" step="1" value="${Math.round(k.u * 100)}"><output id="kUV">${Math.round(k.u * 100)}%</output></div>`;
+      h += `<div class="sect">Aim helpers</div><div class="btns"><button class="btn sm" id="iFromGod">Camera = god view</button><button class="btn sm" id="iFocusGod">Look at = god focus</button><button class="btn sm" id="iLookRobot">Look at robot</button><button class="btn sm" id="iLookEmber">Look at Ember</button></div>`;
+      h += `<div class="note edit">${ov.rel ? 'This shot follows the robot.' : 'Fixed world positions: the camera will not follow the robot unless you tick Follow.'} ${gv.editOn ? 'Drag the amber gizmo for the camera and the pink one for what it looks at.' : 'Press Edit camera to show the gizmos.'}</div>`;
+      h += `<div class="btns"><button class="btn" id="iDone">${gv.editOn ? 'Done editing' : 'Show gizmos'}</button></div>`;
+    }
+    const top = box.scrollTop; box.innerHTML = h; box.scrollTop = top;
+  }
+  function syncKeyFields() {
+    const ov = gv.ov[SHOTS[gv.sel].t0], k = ov?.keys[gv.selKey]; if (!k) return; const box = $g('gvIShot');
+    ['px', 'py', 'pz'].forEach((f, n) => { const el = box.querySelector(`[data-f=${f}]`); if (el && document.activeElement !== el) el.value = num(k.pos[n]); });
+    ['tx', 'ty', 'tz'].forEach((f, n) => { const el = box.querySelector(`[data-f=${f}]`); if (el && document.activeElement !== el) el.value = num(k.target[n]); });
+  }
+  const insp = $g('gvIShot');
+  insp.addEventListener('click', (e) => {
+    const t = e.target.closest('button'); if (!t) return; const i = gv.sel;
+    if (t.dataset.key !== undefined) return selectKey(+t.dataset.key, true);
+    const ov = gv.ov[SHOTS[i].t0], k = ov?.keys[gv.selKey];
+    switch (t.id) {
+      case 'iEdit': enterEdit(i); rebuildEdit(); frameShot(i); break;
+      case 'iFrame': frameShot(i); break;
+      case 'iStart': seekTo(SHOTS[i].t0 + 0.05); setPlaying(false); break;
+      case 'iReset': resetShot(i); break;
+      case 'iDone': if (gv.editOn) exitEdit(); else { gv.editOn = true; gv.pinned = true; renderInspector(); } rebuildEdit(); break;
+      case 'iAddKey': addKeyHere(); rebuildEdit(); break;
+      case 'iDelKey': deleteKey(); rebuildEdit(); break;
+      case 'iGoKey': if (k) { seekTo(shotT(i, k.u)); setPlaying(false); } break;
+      case 'iFromGod': if (k) { setKeyWorld(i, k, camera.position, null); k.pos = k.pos.map(round3); applyOv(i); saveEdits(); resampleShot(i); renderInspector(); rebuildEdit(); } break;
+      case 'iFocusGod': if (k) { setKeyWorld(i, k, null, controls.target); k.target = k.target.map(round3); applyOv(i); saveEdits(); resampleShot(i); renderInspector(); rebuildEdit(); } break;
+      case 'iLookRobot': if (k) { keyRoot(i, k, _tmp); _tmp.y += 0.4; setKeyWorld(i, k, null, _tmp); k.target = k.target.map(round3); applyOv(i); saveEdits(); resampleShot(i); renderInspector(); rebuildEdit(); } break;
+      case 'iLookEmber': if (k) { lureAt(sampleAt(shotT(i, k.u)), _tmp); setKeyWorld(i, k, null, _tmp); k.target = k.target.map(round3); applyOv(i); saveEdits(); resampleShot(i); renderInspector(); rebuildEdit(); } break;
+      default:
+    }
+  });
+  insp.addEventListener('input', (e) => {
+    const el = e.target, f = el.dataset.f, i = gv.sel, ov = gv.ov[SHOTS[i].t0], k = ov?.keys[gv.selKey];
+    if (el.id === 'iRel') return toggleRel(el.checked), rebuildEdit();
+    if (!f || !k) return;
+    const v = parseFloat(el.value); if (Number.isNaN(v)) return;
+    if (f === 'px') k.pos[0] = v; else if (f === 'py') k.pos[1] = v; else if (f === 'pz') k.pos[2] = v;
+    else if (f === 'tx') k.target[0] = v; else if (f === 'ty') k.target[1] = v; else if (f === 'tz') k.target[2] = v;
+    else if (f === 'fov') { k.fov = v; $g('kFovV').textContent = `${v.toFixed(0)}° · ${(12 / Math.tan(THREE.MathUtils.degToRad(v / 2))).toFixed(0)} mm`; }
+    else if (f === 'roll') { k.roll = v / 57.2958; $g('kRollV').textContent = `${v.toFixed(1)}°`; }
+    else if (f === 'shake') { k.shake = v; $g('kShakeV').textContent = v.toFixed(2); }
+    else if (f === 'u') { moveKeyU(gv.selKey, v / 100); $g('kUV').textContent = `${v}%`; }
+    applyOv(i); saveEdits(); rebuildEdit();
+  });
+  insp.addEventListener('change', (e) => { if (e.target.dataset.f) { resampleShot(gv.sel); renderInspector(); } });
+
+  /* inspector: colour grade tab */
+  const GRADE_SLIDERS = [['contrast', 'Contrast', 0.5, 1.8, 0.01], ['sat', 'Saturation', 0, 2, 0.01], ['warm', 'Warmth', 0, 2, 0.01], ['grain', 'Grain', 0, 2.5, 0.01], ['vig', 'Vignette', 0, 2, 0.01], ['lift', 'Black lift', 0, 0.05, 0.001]];
+  const tintHex = (v) => '#' + v.map((c) => Math.round(clamp(c - 0.5, 0, 1) * 255).toString(16).padStart(2, '0')).join('');
+  const hexTint = (h) => [1, 3, 5].map((n) => 0.5 + parseInt(h.slice(n, n + 2), 16) / 255);
+  function renderGrade() {
+    const names = Object.entries(gradeNames).filter(([k]) => k !== 'gvcustom');
+    let h = `<div class="note">Applies to the director's-cut monitor and the thumbnails, on top of the film's own chapter colour script. ${G.touched ? '<b>Edited.</b>' : ''}</div>`;
+    h += `<div class="sect">Look</div><select class="sel" id="gBase">${names.map(([k, v]) => `<option value="${k}" ${k === G.base ? 'selected' : ''}>${gvEsc(v)}</option>`).join('')}</select>`;
+    h += `<label class="chk"><input type="checkbox" id="gBypass" ${G.bypass ? 'checked' : ''}> Bypass grade (compare with the original)</label><label class="chk"><input type="checkbox" id="gGod" ${G.applyGod ? 'checked' : ''}> Also apply to the god view</label>`;
+    h += `<div class="sect">Exposure and light</div><div class="rg"><label>Exposure</label><input type="range" data-g="exposure" min="0.4" max="2.5" step="0.01" value="${G.exposure}"><output>${G.exposure.toFixed(2)}</output></div><div class="rg"><label>Bloom</label><input type="range" data-g="bloom" min="0" max="3" step="0.01" value="${G.bloom}"><output>${G.bloom.toFixed(2)}</output></div>`;
+    h += `<div class="sect">Tone</div>` + GRADE_SLIDERS.map(([k, l, a, b, s]) => `<div class="rg"><label>${l}</label><input type="range" data-gv="${k}" min="${a}" max="${b}" step="${s}" value="${G.vals[k]}"><output>${G.vals[k].toFixed(k === 'lift' ? 3 : 2)}</output></div>`).join('');
+    h += `<div class="sect">Colour</div>` + [['sh', 'Shadows'], ['mid', 'Midtones'], ['hi', 'Highlights']].map(([k, l]) => `<div class="tint"><label>${l}</label><input type="color" data-gt="${k}" value="${tintHex(G.vals[k])}"></div>`).join('');
+    h += `<div class="btns"><button class="btn" id="gReset">Reset to ${gvEsc(gradeNames[G.base] || G.base)}</button></div>`;
+    $g('gvIGrade').innerHTML = h;
+  }
+  const gradeBox = $g('gvIGrade');
+  gradeBox.addEventListener('input', (e) => {
+    const el = e.target; let done = true;
+    if (el.dataset.g) { G[el.dataset.g] = parseFloat(el.value); el.nextElementSibling.textContent = G[el.dataset.g].toFixed(2); }
+    else if (el.dataset.gv) { G.vals[el.dataset.gv] = parseFloat(el.value); el.nextElementSibling.textContent = G.vals[el.dataset.gv].toFixed(el.dataset.gv === 'lift' ? 3 : 2); }
+    else if (el.dataset.gt) G.vals[el.dataset.gt] = hexTint(el.value);
+    else if (el.id === 'gBypass') G.bypass = el.checked; else if (el.id === 'gGod') G.applyGod = el.checked; else done = false;
+    if (done) { if (el.id !== 'gBypass' && el.id !== 'gGod') G.touched = true; pv.dirty = true; saveGrade(); renderExport(); }
+  });
+  gradeBox.addEventListener('change', (e) => {
+    if (e.target.id === 'gBase') { G.base = e.target.value; G.vals = gradeDefaults(); GRADE_PRESETS.gvcustom = G.vals; G.exposure = 1; G.bloom = 1; G.touched = G.base !== 'default'; pv.dirty = true; saveGrade(); renderGrade(); renderExport(); }
+  });
+  gradeBox.addEventListener('click', (e) => { if (e.target.id === 'gReset') { G.vals = gradeDefaults(); GRADE_PRESETS.gvcustom = G.vals; G.exposure = 1; G.bloom = 1; G.touched = false; pv.dirty = true; saveGrade(); renderGrade(); renderExport(); } });
+
+  /* inspector: export tab */
+  const editsJSON = () => JSON.stringify({ version: 1, overrides: gv.ov, ...(G.touched ? { grade: G.vals } : {}) }, null, 1);
+  function renderExport() {
+    const keys = Object.keys(gv.ov);
+    let h = `<div class="note">Edits are saved in this browser automatically. Export them to put them in the film itself.</div><div class="sect">Edited shots <span class="hint">${keys.length}</span></div>`;
+    h += keys.length ? keys.map((t0) => { const idx = SHOTS.findIndex((s) => s.t0 === +t0); return `<div class="srow" data-goshot="${idx}"><div class="tx"><div class="nm">S${idx + 1} · ${gvEsc(gvShotTitle(+t0, idx))}</div><div class="sb">${gv.ov[t0].keys.length} keys${gv.ov[t0].rel ? ' · follows robot' : ''}</div></div><button class="btn sm warn" data-rm="${idx}">Reset</button></div>`; }).join('') : '<div class="note">No camera edits yet. Pick a shot and press Edit camera.</div>';
+    h += `<div class="sect">Colour grade</div><div class="note">${G.touched ? `Custom grade based on ${gvEsc(gradeNames[G.base] || G.base)} will be exported.` : 'Unchanged, nothing to export.'}</div>`;
+    h += `<div class="btns"><button class="btn pri" id="xDown">Download edits.json</button><button class="btn" id="xCopy">Copy JSON</button></div><div class="sect">Import</div><textarea class="num" id="xText" placeholder="Paste exported JSON here"></textarea><div class="btns"><button class="btn" id="xImport">Import pasted JSON</button><button class="btn warn" id="xClear">Clear all edits</button></div><div class="note">To bake into the film: <code>node tools/apply-overrides.cjs edits.json</code> then <code>npm run build:godview</code>.</div><div id="xMsg" class="lens"></div>`;
+    $g('gvIExport').innerHTML = h;
+  }
+  const xbox = $g('gvIExport');
+  xbox.addEventListener('click', async (e) => {
+    const t = e.target.closest('button'); const row = e.target.closest('[data-goshot]'); const msg = (m) => { const x = $g('xMsg'); if (x) x.textContent = m; };
+    if (t?.dataset.rm !== undefined) { selectShot(+t.dataset.rm, false); resetShot(+t.dataset.rm); return; }
+    if (row && !t) { gv.pinned = false; selectShot(+row.dataset.goshot, true); return; }
+    if (!t) return;
+    if (t.id === 'xDown') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([editsJSON()], { type: 'application/json' })); a.download = 'clockwork-edits.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); msg('Downloaded.'); }
+    else if (t.id === 'xCopy') { try { await navigator.clipboard.writeText(editsJSON()); msg('Copied to the clipboard.'); } catch (err) { $g('xText').value = editsJSON(); $g('xText').select(); msg('Clipboard blocked: the JSON is in the box, copy it from there.'); } }
+    else if (t.id === 'xImport') {
+      try {
+        const d = JSON.parse($g('xText').value); if (!d.overrides) throw new Error('no overrides in this JSON');
+        for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); }
+        for (const [t0, ov] of Object.entries(d.overrides)) { gv.ov[t0] = ov; applyShotOverride(+t0, ov); }
+        if (d.grade) { G.vals = d.grade; GRADE_PRESETS.gvcustom = G.vals; G.touched = true; renderGrade(); }
+        saveEdits(); saveGrade(); await resampleAll(); msg(`Imported ${Object.keys(gv.ov).length} shot edit(s).`);
+      } catch (err) { msg('Could not import: ' + err.message); }
+    } else if (t.id === 'xClear') { for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); } saveEdits(); gv.editOn = false; gv.pinned = false; await resampleAll(); msg('Cleared.'); }
+  });
+  async function resampleAll() {
+    const T0 = st.T, was = st.playing; sampleRange(0, FILM); seekTo(T0); setPlaying(was); computeBounds();
+    SHOTS.forEach((_, i) => buildShotGlyph(i)); for (const set of Object.keys(GV_RANGES)) buildCamPath(set);
+    buildSelPath(); rebuildEdit(); renderShotRows(); renderInspector(); renderExport(); pv.dirty = true; gv.dirty = true;
+  }
+  document.querySelectorAll('#gvITabs button').forEach((b) => b.onclick = () => {
+    document.querySelectorAll('#gvITabs button').forEach((x) => x.classList.toggle('on', x === b));
+    $g('gvIShot').classList.toggle('hidden', b.dataset.itab !== 'shot'); $g('gvIGrade').classList.toggle('hidden', b.dataset.itab !== 'grade'); $g('gvIExport').classList.toggle('hidden', b.dataset.itab !== 'export');
+  });
+
+  /* ---------- 8. controls: toolbar, view options, pointer, keyboard, map ---------- */
+  const syncChecks = () => { $g('gvTrackBtn').classList.toggle('on', state.follow); $g('gvFollow').checked = state.follow; $g('gvClipBtn').classList.toggle('on', state.clipOn); $g('gvClipOn').checked = state.clipOn; };
+  document.querySelectorAll('[data-set]').forEach((b) => b.onclick = () => { state.auto = false; $g('gvAuto').checked = false; setSet(b.dataset.set); rebuildEdit(); });
   document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => setView(b.dataset.view));
+  $g('gvFrame').onclick = () => setView(curView); $g('gvFocus').onclick = () => frameShot(gv.sel);
   $g('gvAuto').onchange = (e) => { state.auto = e.target.checked; };
-  $g('gvFollow').onchange = (e) => { state.follow = e.target.checked; };
+  $g('gvFollow').onchange = (e) => { state.follow = e.target.checked; syncChecks(); };
+  $g('gvTrackBtn').onclick = () => { state.follow = !state.follow; syncChecks(); };
+  $g('gvClipBtn').onclick = () => { state.clipOn = !state.clipOn; syncChecks(); };
   $g('gvFog').onchange = (e) => { state.fogOff = e.target.checked; };
-  $g('gvClipOn').onchange = (e) => { state.clipOn = e.target.checked; };
+  $g('gvClipOn').onchange = (e) => { state.clipOn = e.target.checked; syncChecks(); };
   $g('gvClipY').oninput = (e) => { state.clipY = +e.target.value; $g('gvClipV').textContent = state.clipY + ' m'; };
   $g('gvExp').oninput = (e) => { state.exposure = +e.target.value; $g('gvExpV').textContent = state.exposure.toFixed(1) + '×'; };
+  $g('gvMonOn').onchange = (e) => { pv.on = e.target.checked; pv.dirty = true; $g('gvMonOff').style.display = pv.on ? 'none' : 'grid'; };
+  $g('gvMonRate').onchange = (e) => { pv.rate = +e.target.value; };
+  $g('gvGuidesOn').onchange = (e) => $g('gvGuides').classList.toggle('on', e.target.checked);
+  $g('gvCapture').onclick = startCapture;
   document.querySelectorAll('[data-layer]').forEach((c) => { c.checked = layers[c.dataset.layer]; c.onchange = () => { layers[c.dataset.layer] = c.checked; }; });
-  document.querySelectorAll('.gvTab').forEach((b) => b.onclick = () => { document.querySelectorAll('.gvTab').forEach((x) => x.classList.toggle('on', x === b)); $g('gvBeats').classList.toggle('hidden', b.dataset.tab !== 'beats'); $g('gvShots').classList.toggle('hidden', b.dataset.tab !== 'shots'); });
-  addEventListener('resize', () => lineMats.forEach((m) => m.resolution.set(innerWidth, innerHeight)));
+  const togglePlay = () => setPlaying(!st.playing);
+  for (const id of ['gvPlay', 'gvMonPlay']) $g(id).onclick = togglePlay;
+  for (const id of ['gvPrevShot', 'gvMonPrev']) $g(id).onclick = () => stepShot(-1);
+  for (const id of ['gvNextShot', 'gvMonNext']) $g(id).onclick = () => stepShot(1);
+  $g('gvSpeed').onchange = (e) => { st.speed = +e.target.value; };
+  $g('gvLeftBtn').onclick = () => { $g('gv').classList.toggle('openL'); $g('gv').classList.remove('openR'); };
+  $g('gvRightBtn').onclick = () => { $g('gv').classList.toggle('openR'); $g('gv').classList.remove('openL'); };
+  $g('gvHelpBtn').onclick = () => $g('gvHelp').classList.toggle('hidden'); $g('gvHelpClose').onclick = () => $g('gvHelp').classList.add('hidden');
+  // timeline height grip
+  { const grip = $g('gvTLGrip'); let y0 = 0, h0 = 0, on = false; grip.addEventListener('pointerdown', (e) => { on = true; y0 = e.clientY; h0 = $g('gvTL').getBoundingClientRect().height; grip.setPointerCapture(e.pointerId); });
+    grip.addEventListener('pointermove', (e) => { if (!on) return; const h = clamp(h0 + (y0 - e.clientY), 150, innerHeight * 0.65); $g('gv').style.setProperty('--gv-tlh', h + 'px'); gv.dirty = true; });
+    grip.addEventListener('pointerup', () => { on = false; }); }
 
   /* hover on the paths: nearest hero or Ember sample in screen space */
   const tip = $g('gvTip'), _p = V();
   function nearestSample(px, py) {
-    const set = state.set; let best = null, bd = 22 * 22;
+    const rect = renderer.domElement.getBoundingClientRect(), set = state.set; let best = null, bd = 22 * 22;
     for (let i = 0; i < sm.n; i += 2) {
       if (!gvInRange(set, sm.t[i])) continue;
       for (const kind of (layers.ember ? ['root', 'lure'] : ['root'])) {
         if (kind === 'lure' && (sm.lure[i * 3 + 1] > 40 || sm.t[i] < 8.9)) continue;
         const a = sm[kind]; _p.set(a[i * 3], a[i * 3 + 1], a[i * 3 + 2]).project(camera);
         if (_p.z > 1) continue;
-        const sx = (_p.x * 0.5 + 0.5) * innerWidth, sy = (-_p.y * 0.5 + 0.5) * innerHeight, d = (sx - px) ** 2 + (sy - py) ** 2;
+        const sx = rect.left + (_p.x * 0.5 + 0.5) * rect.width, sy = rect.top + (-_p.y * 0.5 + 0.5) * rect.height, d = (sx - px) ** 2 + (sy - py) ** 2;
         if (d < bd) { bd = d; best = { i, kind, sx, sy }; }
       }
     }
     return best;
   }
   renderer.domElement.addEventListener('pointermove', (e) => {
-    if (e.buttons) { tip.classList.add('hidden'); return; }
+    if (e.buttons || dragging) { tip.classList.add('hidden'); return; }
     const n = nearestSample(e.clientX, e.clientY);
-    if (!n) { tip.classList.add('hidden'); return; }
+    if (!n) { tip.classList.add('hidden'); renderer.domElement.style.cursor = ''; return; }
     const t = sm.t[n.i], b = BEATS[beatAt(t)], a = sm[n.kind];
-    tip.innerHTML = `<b>${n.kind === 'root' ? 'Robot' : 'Ember'}</b> ${gvFmt(t)}<br>${b.name} · S${sm.shot[n.i] + 1}<br>${a[n.i * 3].toFixed(1)}, ${a[n.i * 3 + 1].toFixed(1)}, ${a[n.i * 3 + 2].toFixed(1)}`;
+    tip.innerHTML = `<b>${n.kind === 'root' ? 'Robot' : 'Ember'}</b> ${gvFmtF(t)}<br>${gvEsc(b.name)} · S${sm.shot[n.i] + 1}<br>${a[n.i * 3].toFixed(1)}, ${a[n.i * 3 + 1].toFixed(1)}, ${a[n.i * 3 + 2].toFixed(1)}`;
     tip.style.left = Math.min(innerWidth - 190, e.clientX + 14) + 'px'; tip.style.top = Math.min(innerHeight - 90, e.clientY + 14) + 'px'; tip.classList.remove('hidden');
     renderer.domElement.style.cursor = 'pointer';
   });
+  renderer.domElement.addEventListener('pointerleave', () => tip.classList.add('hidden'));
   let downAt = null;
   renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
   renderer.domElement.addEventListener('pointerup', (e) => {
-    if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
-    const n = nearestSample(e.clientX, e.clientY); if (n) { seekTo(sm.t[n.i]); setPlaying(false); }
+    if (!downAt || dragging || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
+    const n = nearestSample(e.clientX, e.clientY); if (n) { gv.pinned = false; seekTo(sm.t[n.i]); setPlaying(false); }
   });
 
-  /* ---------- 5. whole-film map (every set at once, top-down and side) ---------- */
-  const mapEl = $g('gvMap'), cv = $g('gvMapCanvas'), mctx = cv.getContext('2d');
+  /* whole-film map (every set at once, top-down and side) */
+  const mapEl = $g('gvMap'), cv = $g('gvMapCanvas'), mapCtx = cv.getContext('2d');
   let mapHit = [];
   function drawMap() {
-    const dpr = Math.min(devicePixelRatio || 1, 2), W = cv.clientWidth, H = cv.clientHeight;
-    cv.width = W * dpr; cv.height = H * dpr; mctx.setTransform(dpr, 0, 0, dpr, 0, 0); mctx.clearRect(0, 0, W, H);
-    mapHit = []; const sets = ['atrium', 'roof', 'forest'], padX = 24, colW = (W - padX * 4) / 3, rowH = (H - 90) / 2;
+    const mctx2 = mapCtx, dpr = Math.min(devicePixelRatio || 1, 2), W = cv.clientWidth, H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr; mctx2.setTransform(dpr, 0, 0, dpr, 0, 0); mctx2.clearRect(0, 0, W, H);
+    mapHit = []; const sets = ['atrium', 'roof', 'forest'], wide = W > 760, padX = 24, colW = wide ? (W - padX * 4) / 3 : W - padX * 2, rowH = wide ? (H - 90) / 2 : (H - 60) / 6 - 14;
     sets.forEach((set, ci) => {
-      const b = bounds[set], x0 = padX + ci * (colW + padX);
+      const b = bounds[set], x0 = padX + (wide ? ci * (colW + padX) : 0);
       [['top', 'x', 'z'], ['side', 'x', 'y']].forEach(([view, ax, ay], ri) => {
-        const y0 = 48 + ri * (rowH + 14), bx0 = b.min[ax], bx1 = b.max[ax], by0 = b.min[ay], by1 = b.max[ay];
+        const y0 = wide ? 48 + ri * (rowH + 14) : 40 + (ci * 2 + ri) * (rowH + 22), bx0 = b.min[ax], bx1 = b.max[ax], by0 = b.min[ay], by1 = b.max[ay];
         const spanX = Math.max(bx1 - bx0, 4), spanY = Math.max(by1 - by0, 4), s = Math.min((colW - 16) / spanX, (rowH - 16) / spanY);
         const ox = x0 + (colW - spanX * s) / 2, oy = y0 + (rowH - spanY * s) / 2;
-        const px = (v) => ox + (v - bx0) * s, py = (v) => (view === 'top' ? oy + (v - by0) * s : oy + (by1 - v) * s);
-        mctx.fillStyle = '#0d1018'; mctx.strokeStyle = '#242c3d'; mctx.lineWidth = 1; mctx.beginPath(); mctx.roundRect(x0, y0, colW, rowH, 8); mctx.fill(); mctx.stroke();
-        if (ri === 0) { mctx.fillStyle = '#d8d0c0'; mctx.font = '600 15px system-ui'; mctx.fillText(GV_SET_NAMES[set], x0 + 4, y0 - 20); mctx.fillStyle = '#7f8aa0'; mctx.font = '12px system-ui'; mctx.fillText(`${gvFmt(GV_RANGES[set][0][0])}–${gvFmt(GV_RANGES[set].at(-1)[1])} · top view (x→, z↓)`, x0 + 4, y0 - 5); }
-        else { mctx.fillStyle = '#7f8aa0'; mctx.font = '12px system-ui'; mctx.fillText('side view (x→, height↑)', x0 + 8, y0 + 16); }
-        mctx.save(); mctx.beginPath(); mctx.rect(x0, y0, colW, rowH); mctx.clip();
-        // authored cameras
-        mctx.fillStyle = 'rgba(160,200,255,.7)';
-        for (let i = 0; i < sm.n; i += 20) if (gvInRange(set, sm.t[i])) { mctx.fillRect(px(sm.cam[i * 3 + (ax === 'x' ? 0 : 0)]) - 1.5, py(sm.cam[i * 3 + (ay === 'z' ? 2 : 1)]) - 1.5, 3, 3); }
-        // Ember
-        mctx.strokeStyle = 'rgba(200,255,90,.8)'; mctx.setLineDash([4, 3]); mctx.lineWidth = 1.2; mctx.beginPath(); let pen = false;
-        for (let i = 0; i < sm.n; i++) { if (!gvInRange(set, sm.t[i]) || sm.lure[i * 3 + 1] > 40 || sm.t[i] < 8.9) { pen = false; continue; } const X = px(sm.lure[i * 3]), Y = py(sm.lure[i * 3 + (ay === 'z' ? 2 : 1)]); if (!pen) { mctx.moveTo(X, Y); pen = true; } else mctx.lineTo(X, Y); }
-        mctx.stroke(); mctx.setLineDash([]);
-        // robot, coloured by time
-        mctx.lineWidth = 2.4; mctx.lineCap = 'round';
+        const px = (v) => ox + (v - bx0) * s, py = (v) => (view === 'top' ? oy + (v - by0) * s : oy + (by1 - v) * s), yi = ay === 'z' ? 2 : 1;
+        mctx2.fillStyle = '#0d1018'; mctx2.strokeStyle = '#242c3d'; mctx2.lineWidth = 1; mctx2.beginPath(); mctx2.roundRect(x0, y0, colW, rowH, 8); mctx2.fill(); mctx2.stroke();
+        if (ri === 0) { mctx2.fillStyle = '#d8d0c0'; mctx2.font = '600 15px system-ui'; mctx2.fillText(GV_SET_NAMES[set], x0 + 4, y0 - 20); mctx2.fillStyle = '#7f8aa0'; mctx2.font = '12px system-ui'; mctx2.fillText(`${gvFmt(GV_RANGES[set][0][0])}–${gvFmt(GV_RANGES[set].at(-1)[1])} · top view (x→, z↓)`, x0 + 4, y0 - 5); }
+        else { mctx2.fillStyle = '#7f8aa0'; mctx2.font = '12px system-ui'; mctx2.fillText('side view (x→, height↑)', x0 + 8, y0 + 16); }
+        mctx2.save(); mctx2.beginPath(); mctx2.rect(x0, y0, colW, rowH); mctx2.clip();
+        mctx2.fillStyle = 'rgba(160,200,255,.7)';
+        for (let i = 0; i < sm.n; i += 20) if (gvInRange(set, sm.t[i])) mctx2.fillRect(px(sm.cam[i * 3]) - 1.5, py(sm.cam[i * 3 + yi]) - 1.5, 3, 3);
+        mctx2.strokeStyle = 'rgba(200,255,90,.8)'; mctx2.setLineDash([4, 3]); mctx2.lineWidth = 1.2; mctx2.beginPath(); let pen = false;
+        for (let i = 0; i < sm.n; i++) { if (!gvInRange(set, sm.t[i]) || sm.lure[i * 3 + 1] > 40 || sm.t[i] < 8.9) { pen = false; continue; } const X = px(sm.lure[i * 3]), Y = py(sm.lure[i * 3 + yi]); if (!pen) { mctx2.moveTo(X, Y); pen = true; } else mctx2.lineTo(X, Y); }
+        mctx2.stroke(); mctx2.setLineDash([]);
+        mctx2.lineWidth = 2.4; mctx2.lineCap = 'round';
         for (let i = 1; i < sm.n; i++) {
           if (!gvInRange(set, sm.t[i]) || !gvInRange(set, sm.t[i - 1])) continue;
-          const c = gvHue(sm.t[i]); mctx.strokeStyle = `rgb(${c.r * 255 | 0},${c.g * 255 | 0},${c.b * 255 | 0})`;
-          mctx.beginPath(); mctx.moveTo(px(sm.root[(i - 1) * 3]), py(sm.root[(i - 1) * 3 + (ay === 'z' ? 2 : 1)])); mctx.lineTo(px(sm.root[i * 3]), py(sm.root[i * 3 + (ay === 'z' ? 2 : 1)])); mctx.stroke();
-          if (i % 2 === 0) mapHit.push({ x: px(sm.root[i * 3]), y: py(sm.root[i * 3 + (ay === 'z' ? 2 : 1)]), t: sm.t[i], col: ci, row: ri });
+          const c = gvHue(sm.t[i]); mctx2.strokeStyle = `rgb(${c.r * 255 | 0},${c.g * 255 | 0},${c.b * 255 | 0})`;
+          mctx2.beginPath(); mctx2.moveTo(px(sm.root[(i - 1) * 3]), py(sm.root[(i - 1) * 3 + yi])); mctx2.lineTo(px(sm.root[i * 3]), py(sm.root[i * 3 + yi])); mctx2.stroke();
+          if (i % 2 === 0) mapHit.push({ x: px(sm.root[i * 3]), y: py(sm.root[i * 3 + yi]), t: sm.t[i] });
         }
-        // time ticks
-        mctx.fillStyle = '#e8e8f0'; mctx.font = '10px system-ui';
-        for (let t = 0; t < FILM; t += 10) if (gvInRange(set, t)) { const i = sampleAt(t), X = px(sm.root[i * 3]), Y = py(sm.root[i * 3 + (ay === 'z' ? 2 : 1)]); mctx.beginPath(); mctx.arc(X, Y, 2.6, 0, 7); mctx.fill(); if (ri === 0) mctx.fillText(gvFmt(t), X + 4, Y - 4); }
-        // the hero and Ember right now
-        const dotAt = (v, col) => { mctx.fillStyle = col; mctx.strokeStyle = '#000'; mctx.beginPath(); mctx.arc(px(v[ax === 'x' ? 0 : 0]), py(v[ay === 'z' ? 2 : 1]), 5, 0, 7); mctx.fill(); mctx.stroke(); };
+        mctx2.fillStyle = '#e8e8f0'; mctx2.font = '10px system-ui';
+        for (let t = 0; t < FILM; t += 10) if (gvInRange(set, t)) { const i = sampleAt(t), X = px(sm.root[i * 3]), Y = py(sm.root[i * 3 + yi]); mctx2.beginPath(); mctx2.arc(X, Y, 2.6, 0, 7); mctx2.fill(); if (ri === 0) mctx2.fillText(gvFmt(t), X + 4, Y - 4); }
+        const dotAt = (v, col) => { mctx2.fillStyle = col; mctx2.strokeStyle = '#000'; mctx2.beginPath(); mctx2.arc(px(v[0]), py(v[yi]), 5, 0, 7); mctx2.fill(); mctx2.stroke(); };
         if (world.cur === set) { dotAt([S.root.x, S.root.y, S.root.z], '#ff6a50'); if (S.lure.y < 40) dotAt([S.lure.x, S.lure.y, S.lure.z], '#d8ff5a'); }
-        mctx.restore();
+        mctx2.restore();
       });
     });
   }
   cv.addEventListener('click', (e) => {
     const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; let best = null, bd = 18 * 18;
     for (const h of mapHit) { const d = (h.x - x) ** 2 + (h.y - y) ** 2; if (d < bd) { bd = d; best = h; } }
-    if (best) { seekTo(best.t); setPlaying(false); mapEl.classList.add('hidden'); }
+    if (best) { gv.pinned = false; seekTo(best.t); setPlaying(false); mapEl.classList.add('hidden'); }
   });
   const openMap = () => { mapEl.classList.remove('hidden'); drawMap(); };
   $g('gvMapBtn').onclick = () => (mapEl.classList.contains('hidden') ? openMap() : mapEl.classList.add('hidden'));
   $g('gvMapClose').onclick = () => mapEl.classList.add('hidden');
-  addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-    const k = e.key.toLowerCase();
-    if (k === 'm') $g('gvMapBtn').click(); else if (k === 'escape') mapEl.classList.add('hidden');
-    else if (k === '1') setView('top'); else if (k === '2') setView('aerial'); else if (k === '3') setView('side'); else if (k === '4') setView('south');
-    else if (k === 'g') { layers.grid = !layers.grid; document.querySelector('[data-layer=grid]').checked = layers.grid; }
-  });
-  mapEl.addEventListener('transitionend', () => {});
   setInterval(() => { if (!mapEl.classList.contains('hidden')) drawMap(); }, 500);
 
-  // ready: hide the boot veil and the film's start screen, show the scene paused at the start
+  // The desk owns the keyboard: the film's own shortcuts (camera modes, notes) must not fire here.
+  addEventListener('keydown', (e) => {
+    const tag = e.target.tagName; if (tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') return; if (tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase(); let used = true;
+    if (e.code === 'Space') togglePlay();
+    else if (k === 'arrowleft') seekTo(st.T - (e.shiftKey ? 1 : 1 / 24)); else if (k === 'arrowright') seekTo(st.T + (e.shiftKey ? 1 : 1 / 24));
+    else if (k === 'arrowup') stepShot(-1); else if (k === 'arrowdown') stepShot(1);
+    else if (k === 'm') $g('gvMapBtn').click(); else if (k === 'escape') { mapEl.classList.add('hidden'); $g('gvHelp').classList.add('hidden'); }
+    else if (k === '1') setView('top'); else if (k === '2') setView('aerial'); else if (k === '3') setView('side'); else if (k === '4') setView('south');
+    else if (k === 'g') { layers.grid = !layers.grid; document.querySelector('[data-layer=grid]').checked = layers.grid; }
+    else if (k === 'f') setView(curView); else if (k === 's') frameShot(gv.sel);
+    else if (k === 't') { state.follow = !state.follow; syncChecks(); } else if (k === 'c') { state.clipOn = !state.clipOn; syncChecks(); }
+    else if (k === 'e') { if (gv.editOn) exitEdit(); else enterEdit(gv.sel); rebuildEdit(); }
+    else if (k === 'k') { addKeyHere(); rebuildEdit(); } else if (k === 'delete' || k === 'backspace') { deleteKey(); rebuildEdit(); }
+    else if (k === '?' || k === '/') $g('gvHelp').classList.toggle('hidden');
+    else if (k === '=' || k === '+') gv.tl?.zoomBy(1.4); else if (k === '-') gv.tl?.zoomBy(1 / 1.4);
+    else if (k === 'home') seekTo(0); else if (k === 'end') seekTo(FILM - 0.05);
+    else used = false;
+    if (used) { e.preventDefault(); e.stopImmediatePropagation(); } else e.stopImmediatePropagation();
+  }, true);
+
+  /* ---------- 9. restore saved work, build panels, start ---------- */
+  try {
+    const saved = JSON.parse(localStorage.getItem(GV_LS.edits) || 'null');
+    const src = saved || JSON.parse(JSON.stringify(SHOT_OVERRIDES));
+    for (const [t0, ov] of Object.entries(src)) if (applyShotOverride(+t0, ov)) gv.ov[t0] = ov;
+    const gs = JSON.parse(localStorage.getItem(GV_LS.grade) || 'null');
+    if (gs && gs.vals) { Object.assign(G, { base: gs.base, exposure: gs.exposure ?? 1, bloom: gs.bloom ?? 1, applyGod: !!gs.applyGod, touched: !!gs.touched }); G.vals = gs.vals; GRADE_PRESETS.gvcustom = G.vals; }
+  } catch (e) { /* saved edits unreadable: start clean */ }
+  if (Object.keys(gv.ov).length) { for (const t0 of Object.keys(gv.ov)) applyShotOverride(+t0, gv.ov[t0]); sampleRange(0, FILM); computeBounds(); SHOTS.forEach((_, i) => buildShotGlyph(i)); for (const set of Object.keys(GV_RANGES)) buildCamPath(set); }
+  gv.tl = gvTimeline(gv);
+  renderShotRows(); renderBeatRows(); renderInspector(); renderGrade(); renderExport(); syncChecks();
+  gv.tl.fillTrackMenu();
   for (const id of ['start', 'loader']) $g(id)?.classList.add('gone', 'hidden');
   st.started = true; seekTo(GV_SET_TIME.atrium); setPlaying(false);
-  setSet('atrium', false); setView('aerial'); renderLists();
+  $g('gvLTabs').querySelector('button').click();
+  setSet('atrium', false); setView('aerial'); selectShot(director.shotAt(st.T), false);
   $g('gvBoot').classList.add('hidden');
-  window.__godview = { sm, bounds, state, layers, setView, setSet, openMap, frameSet };
+  fitStage();
+  Object.assign(gv, { setView, setSet, openMap, frameSet, frameShot, startCapture, shotOfSet, keyWorld, rebuildEdit, renderShotRows, state, layers, sm, bounds, cap });
+  window.__godview = gv;
 }
 
+/* ==========================================================================
+   DIRECTOR'S DESK: TIMELINE  (injected after godview.inject.js, same module scope)
+   One canvas: overview strip, ruler, then tracks for chapters, beats, shots (with captured
+   thumbnails), camera keyframes, light flashes, events and curves of any animation channel.
+   ========================================================================== */
+function gvTimeline(gv) {
+  const { st, seekTo, setPlaying } = gv.film;
+  const sm = gv.sm, $t = (id) => document.getElementById(id);
+  const cv = $t('gvTLCanvas'), ctx = cv.getContext('2d');
+  const HW = 122, OV_H = 14, RULER_H = 22, TOP = OV_H + RULER_H;
+  const COL = { bg: '#0f1218', row: '#12161e', line: '#242a38', text: '#dde2ee', dim: '#8b94a9', faint: '#5d667b', gold: '#f1d9a6', cyan: '#6cc4ff', edit: '#ffb347', hero: '#ff7a5c', ember: '#c8f060', head: '#ff4d6d' };
+  const tl = { pps: 10, t0: 0, scrollY: 0, w: 0, h: 0, lastT: -1, dpr: 1, follow: true, userView: 0 };
+  let tracks = [];
+  const curveDefs = new Map();   // id -> { name, fn(t), min, max, keys(): [t...] , fmt }
+  const heightArr = new Float32Array(sm.n), speedArr = new Float32Array(sm.n);
+  const smoothSeries = () => {
+    for (let i = 0; i < sm.n; i++) heightArr[i] = sm.root[i * 3 + 1];
+    const raw = new Float32Array(sm.n);
+    for (let i = 1; i < sm.n; i++) raw[i] = Math.hypot(sm.root[i * 3] - sm.root[(i - 1) * 3], sm.root[i * 3 + 1] - sm.root[(i - 1) * 3 + 1], sm.root[i * 3 + 2] - sm.root[(i - 1) * 3 + 2]) / (1 / 20);
+    for (let i = 0; i < sm.n; i++) { let a = 0, c = 0; for (let k = -3; k <= 3; k++) { const j = i + k; if (j >= 0 && j < sm.n) { a += raw[j]; c++; } } speedArr[i] = a / c; }
+    // a hard cut between sets teleports the robot; keep those spikes out of the scale
+    for (let i = 1; i < sm.n; i++) if (speedArr[i] > 60) speedArr[i] = speedArr[i - 1];
+  };
+  smoothSeries();
+  const seriesRange = (arr) => { let lo = Infinity, hi = -Infinity; for (let i = 0; i < arr.length; i++) { lo = Math.min(lo, arr[i]); hi = Math.max(hi, arr[i]); } return [lo, hi]; };
+  const [hLo, hHi] = seriesRange(heightArr), [sLo, sHi] = seriesRange(speedArr);
+  curveDefs.set('height', { name: 'Robot height', fn: (t) => heightArr[gv.sampleAt(t)], min: Math.min(0, hLo), max: hHi, keys: () => [], fmt: (v) => `${v.toFixed(1)} m` });
+  curveDefs.set('speed', { name: 'Robot speed', fn: (t) => speedArr[gv.sampleAt(t)], min: 0, max: Math.max(1, sHi), keys: () => [], fmt: (v) => `${v.toFixed(1)} m/s` });
+  const chanRange = new Map();
+  function chanDef(name) {
+    const id = 'ch:' + name; if (curveDefs.has(id)) return id;
+    const ch = CH[name]; let lo = Infinity, hi = -Infinity;
+    for (let t = 0; t <= FILM; t += 0.25) { const v = ch.sample(t); lo = Math.min(lo, v); hi = Math.max(hi, v); }
+    for (const k of ch.k) { lo = Math.min(lo, k.v); hi = Math.max(hi, k.v); }
+    if (hi - lo < 1e-6) { hi = lo + 1; }
+    curveDefs.set(id, { name: name, fn: (t) => ch.sample(t), min: lo, max: hi, keys: () => ch.k.map((k) => k.t), fmt: (v) => v.toFixed(2), channel: true });
+    return id;
+  }
+  const BASE = [
+    { id: 'chap', name: 'Chapters', h: 20 }, { id: 'beat', name: 'Beats', h: 20 }, { id: 'shot', name: 'Shots', h: 50 },
+    { id: 'keys', name: 'Camera keys', h: 22 }, { id: 'light', name: 'Flashes', h: 28 }, { id: 'ev', name: 'Events', h: 18 },
+  ];
+  const userCurves = ['height', 'speed'];
+  const rebuildTracks = () => { tracks = [...BASE, ...userCurves.map((id) => ({ id: 'c:' + id, curve: id, name: curveDefs.get(id).name, h: 46, removable: true }))]; let y = TOP; for (const t of tracks) { t.y = y; y += t.h + 2; } tl.contentH = y - TOP; };
+  chanDef('fly'); chanDef('power'); userCurves.push('ch:fly', 'ch:power'); rebuildTracks();
+
+  function fillTrackMenu() {
+    const sel = $t('gvTrackAdd'); const names = Object.keys(CH).sort();
+    sel.innerHTML = '<option value="">+ Add curve track…</option>' + names.map((n) => `<option value="${n}">${n}</option>`).join('');
+    sel.onchange = () => { if (!sel.value) return; const id = chanDef(sel.value); if (!userCurves.includes(id)) userCurves.push(id); rebuildTracks(); sel.value = ''; gv.dirty = true; };
+  }
+
+  /* geometry helpers */
+  const tx = (t) => HW + (t - tl.t0) * tl.pps;
+  const tAt = (x) => tl.t0 + (x - HW) / tl.pps;
+  const viewW = () => Math.max(40, tl.w - HW);
+  const minPps = () => viewW() / FILM;
+  function clampView() { tl.pps = clamp(tl.pps, minPps(), 220); tl.t0 = clamp(tl.t0, 0, Math.max(0, FILM - viewW() / tl.pps)); const maxS = Math.max(0, tl.contentH - (tl.h - TOP)); tl.scrollY = clamp(tl.scrollY, 0, maxS); }
+  function zoomAt(factor, t) { const x = tx(t); tl.pps = clamp(tl.pps * factor, minPps(), 220); tl.t0 = t - (x - HW) / tl.pps; clampView(); gv.dirty = true; }
+  const zoomBy = (f) => zoomAt(f, st.T);
+  function fit() { tl.pps = minPps(); tl.t0 = 0; clampView(); gv.dirty = true; }
+  function zoomShot() { const i = gv.sel, a = SHOTS[i].t0, b = SHOTS[i].t1; tl.pps = clamp(viewW() * 0.62 / (b - a), minPps(), 220); tl.t0 = (a + b) / 2 - viewW() / tl.pps / 2; clampView(); gv.dirty = true; }
+  $t('gvZoomIn').onclick = () => zoomBy(1.5); $t('gvZoomOut').onclick = () => zoomBy(1 / 1.5); $t('gvZoomFit').onclick = fit; $t('gvZoomShot').onclick = zoomShot;
+  $t('gvTLFollow').onchange = (e) => { tl.follow = e.target.checked; };
+
+  function resize() {
+    const r = cv.parentElement.getBoundingClientRect(); tl.dpr = Math.min(devicePixelRatio || 1, 2);
+    tl.w = Math.max(100, Math.floor(r.width)); tl.h = Math.max(60, Math.floor(r.height));
+    cv.width = Math.floor(tl.w * tl.dpr); cv.height = Math.floor(tl.h * tl.dpr);
+    if (!tl.inited) { tl.inited = true; tl.pps = 12; tl.t0 = 0; } clampView(); gv.dirty = true;
+  }
+  new ResizeObserver(resize).observe(cv.parentElement); resize();
+
+  /* drawing */
+  const rr = (x, y, w, h, r = 3) => { ctx.beginPath(); ctx.roundRect(x, y, Math.max(0, w), h, r); };
+  const shade = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+  function text(s, x, y, color = COL.text, font = '11.5px system-ui,sans-serif', align = 'left') { ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(s, x, y); }
+  function fitText(s, maxW) { if (ctx.measureText(s).width <= maxW) return s; let n = s.length; while (n > 1 && ctx.measureText(s.slice(0, n) + '…').width > maxW) n--; return n > 1 ? s.slice(0, n) + '…' : ''; }
+
+  function draw(T) {
+    tl.lastT = T; const W = tl.w, H = tl.h;
+    if (tl.follow && st.playing && !tl.dragView) { const vis = viewW() / tl.pps; if (T < tl.t0 + vis * 0.08 || T > tl.t0 + vis * 0.9) { tl.t0 = clamp(T - vis * 0.25, 0, Math.max(0, FILM - vis)); } }
+    clampView();
+    ctx.setTransform(tl.dpr, 0, 0, tl.dpr, 0, 0); ctx.clearRect(0, 0, W, H); ctx.fillStyle = COL.bg; ctx.fillRect(0, 0, W, H);
+    const vis = viewW() / tl.pps, ta = tl.t0 - 1, tb = tl.t0 + vis + 1;
+    const selI = gv.sel, selShot = SHOTS[selI], ov = gv.ov[selShot.t0];
+
+    // tracks (clipped below the ruler, scrolled)
+    ctx.save(); ctx.beginPath(); ctx.rect(0, TOP, W, H - TOP); ctx.clip(); ctx.translate(0, -tl.scrollY);
+    for (const tr of tracks) {
+      const y = tr.y, h = tr.h;
+      if (y - tl.scrollY > H || y + h - tl.scrollY < TOP) continue;
+      ctx.fillStyle = COL.row; ctx.fillRect(HW, y, W - HW, h);
+      ctx.save(); ctx.beginPath(); ctx.rect(HW, y, W - HW, h); ctx.clip();
+      if (tr.id === 'chap') {
+        CHAPTERS.forEach((c, i) => { const x0 = tx(c.t0), x1 = tx(c.t1); if (x1 < HW || x0 > W) return; ctx.fillStyle = shade(GV_CHAP_COL[i], 0.28); rr(x0 + 1, y + 2, x1 - x0 - 2, h - 8, 4); ctx.fill(); ctx.fillStyle = GV_CHAP_COL[i]; ctx.fillRect(x0 + 1, y + 2, 3, h - 8); text(fitText(`${c.num}  ${c.name}`, x1 - x0 - 14), Math.max(x0, HW) + 9, y + h / 2 - 2, COL.text, '600 11.5px system-ui'); });
+        for (const [t0, set] of SET_SCHEDULE) { const idx = SET_SCHEDULE.findIndex((a) => a[0] === t0), t1 = SET_SCHEDULE[idx + 1] ? SET_SCHEDULE[idx + 1][0] : FILM; ctx.fillStyle = GV_SET_COL[set]; ctx.fillRect(tx(t0) + 1, y + h - 5, Math.max(1, tx(t1) - tx(t0) - 2), 3); }
+      } else if (tr.id === 'beat') {
+        BEATS.forEach((b, i) => { const x0 = tx(b.t0), x1 = tx(b.t1); if (x1 < HW || x0 > W) return; const ci = chapterAt(b.t0 + 0.01); ctx.fillStyle = shade(GV_CHAP_COL[ci], i % 2 ? 0.2 : 0.3); rr(x0 + 1, y + 2, x1 - x0 - 2, h - 4, 4); ctx.fill(); if (x1 - x0 > 30) text(fitText(b.name, x1 - x0 - 10), Math.max(x0, HW) + 6, y + h / 2, COL.text, '11px system-ui'); });
+      } else if (tr.id === 'shot') {
+        SHOTS.forEach((s, i) => {
+          const x0 = tx(s.t0), x1 = tx(s.t1); if (x1 < HW || x0 > W) return; const w = x1 - x0 - 1, ci = chapterAt(s.t0 + 0.01), sel = i === selI, edited = !!gv.ov[s.t0];
+          ctx.fillStyle = shade(GV_CHAP_COL[ci], 0.2); rr(x0, y + 2, w, h - 4, 4); ctx.fill();
+          const th = gv.thumbs[i]; if (th && w > 22) { ctx.save(); rr(x0, y + 2, w, h - 4, 4); ctx.clip(); const hh = h - 4, ww = hh * (192 / 108); for (let k = 0; k * ww < w; k++) ctx.drawImage(th, x0 + k * ww, y + 2, ww, hh); ctx.fillStyle = 'rgba(8,10,14,.35)'; ctx.fillRect(x0, y + 2, w, hh); ctx.restore(); }
+          ctx.strokeStyle = sel ? COL.cyan : shade(GV_CHAP_COL[ci], 0.75); ctx.lineWidth = sel ? 2 : 1; rr(x0 + 0.5, y + 2.5, w - 1, h - 5, 4); ctx.stroke();
+          if (edited) { ctx.fillStyle = COL.edit; ctx.fillRect(x0 + 1, y + 2, w - 2, 3); }
+          if (w > 26) { ctx.font = '600 11px system-ui'; const label = fitText(`S${i + 1} ${gvShotTitle(s.t0, i)}`, w - 8); if (label) { ctx.fillStyle = 'rgba(8,10,14,.7)'; const tw = ctx.measureText(label).width; ctx.fillRect(Math.max(x0, HW) + 3, y + h - 20, tw + 8, 15); text(label, Math.max(x0, HW) + 7, y + h - 12.5, sel ? COL.cyan : COL.text, '600 11px system-ui'); } }
+        });
+      } else if (tr.id === 'keys') {
+        // edited shots are marked everywhere; the selected shot shows its keyframes
+        for (const t0 of Object.keys(gv.ov)) { const i = SHOTS.findIndex((s) => s.t0 === +t0), s = SHOTS[i]; const x0 = tx(s.t0), x1 = tx(s.t1); if (x1 < HW || x0 > W) continue; ctx.fillStyle = shade(COL.edit, i === selI ? 0.2 : 0.1); rr(x0, y + 2, x1 - x0 - 1, h - 4, 4); ctx.fill(); }
+        if (ov) {
+          const x0 = tx(selShot.t0), x1 = tx(selShot.t1); ctx.strokeStyle = shade(COL.edit, 0.6); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0, y + h / 2); ctx.lineTo(x1, y + h / 2); ctx.stroke();
+          ov.keys.forEach((k, n) => { const x = tx(gv.shotT(selI, k.u)), cy = y + h / 2, on = n === gv.selKey; ctx.save(); ctx.translate(x, cy); ctx.rotate(Math.PI / 4); ctx.fillStyle = on ? COL.edit : '#7a5a24'; ctx.strokeStyle = on ? '#fff' : '#1a1408'; ctx.lineWidth = 1.5; ctx.fillRect(-5, -5, 10, 10); ctx.strokeRect(-5, -5, 10, 10); ctx.restore(); });
+        } else { const x0 = tx(selShot.t0), x1 = tx(selShot.t1); ctx.setLineDash([4, 3]); ctx.strokeStyle = COL.faint; ctx.lineWidth = 1; rr(x0 + 0.5, y + 3.5, x1 - x0 - 1, h - 7, 4); ctx.stroke(); ctx.setLineDash([]); if (x1 - x0 > 90) text('Press E to key this shot', Math.max(x0, HW) + 8, y + h / 2, COL.faint, '11px system-ui'); }
+      } else if (tr.id === 'light') {
+        const sa = Math.max(SYNC_T0, ta), sb = Math.min(213.6, tb);
+        if (sb > sa) { if (tl.pps > 6) { ctx.strokeStyle = 'rgba(200,240,96,.14)'; ctx.lineWidth = 1; ctx.beginPath(); for (let t = SYNC_T0 + Math.ceil((sa - SYNC_T0) / SYNC_P) * SYNC_P; t < sb; t += SYNC_P) { ctx.moveTo(tx(t) + 0.5, y + 2); ctx.lineTo(tx(t) + 0.5, y + h - 2); } ctx.stroke(); } else { ctx.fillStyle = 'rgba(200,240,96,.07)'; ctx.fillRect(tx(sa), y + 2, tx(sb) - tx(sa), h - 4); } }
+        ctx.lineWidth = 2; ctx.strokeStyle = COL.ember; ctx.beginPath(); for (const t of EMBER_FLASHES) if (t > ta && t < tb) { ctx.moveTo(tx(t), y + h - 3); ctx.lineTo(tx(t), y + h / 2 + 2); } ctx.stroke();
+        ctx.strokeStyle = COL.hero; ctx.beginPath(); for (const [t, a] of HERO_FLASHES) if (t > ta && t < tb) { ctx.moveTo(tx(t), y + h / 2 - 1); ctx.lineTo(tx(t), y + h / 2 - 1 - Math.min(1, a) * (h / 2 - 5)); } ctx.stroke();
+        text('Robot', HW + 4 + 0, y + 7, shade(COL.hero, 0.7), '9.5px system-ui'); text('Ember', HW + 4, y + h - 7, shade(COL.ember, 0.7), '9.5px system-ui');
+      } else if (tr.id === 'ev') {
+        for (const e of EVENTS) { if (e.t < ta || e.t > tb) continue; const x = tx(e.t); ctx.fillStyle = COL.dim; ctx.beginPath(); ctx.moveTo(x, y + 4); ctx.lineTo(x + 4, y + 11); ctx.lineTo(x - 4, y + 11); ctx.fill(); if (tl.pps > 13) text(e.name, x + 6, y + 14, COL.dim, '10px system-ui'); }
+      } else if (tr.curve) {
+        const def = curveDefs.get(tr.curve), pad = 4, ih = h - pad * 2, span = def.max - def.min || 1;
+        ctx.strokeStyle = COL.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(HW, y + h - pad - ((0 - def.min) / span) * ih + 0.5); ctx.lineTo(W, y + h - pad - ((0 - def.min) / span) * ih + 0.5); ctx.stroke();
+        const col = def.channel ? COL.cyan : COL.gold; ctx.beginPath(); let first = true;
+        const pts = [];
+        for (let x = HW; x <= W; x += 1.5) { const t = tAt(x); if (t < 0 || t > FILM) continue; const v = def.fn(t), yy = y + h - pad - ((v - def.min) / span) * ih; pts.push([x, yy]); }
+        if (pts.length) { ctx.beginPath(); ctx.moveTo(pts[0][0], y + h - pad); pts.forEach(([x, yy]) => ctx.lineTo(x, yy)); ctx.lineTo(pts[pts.length - 1][0], y + h - pad); ctx.closePath(); ctx.fillStyle = shade(col, 0.12); ctx.fill(); ctx.beginPath(); pts.forEach(([x, yy], n) => (n ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy))); ctx.strokeStyle = col; ctx.lineWidth = 1.4; ctx.stroke(); }
+        if (def.channel && tl.pps > 3) { ctx.fillStyle = '#fff'; for (const kt of def.keys()) { if (kt < ta || kt > tb) continue; const yy = y + h - pad - ((def.fn(kt) - def.min) / span) * ih, x = tx(kt); ctx.save(); ctx.translate(x, yy); ctx.rotate(Math.PI / 4); ctx.fillStyle = COL.cyan; ctx.fillRect(-2.5, -2.5, 5, 5); ctx.restore(); } }
+      }
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // header column
+    ctx.fillStyle = '#0d1016'; ctx.fillRect(0, TOP, HW, H - TOP);
+    ctx.save(); ctx.beginPath(); ctx.rect(0, TOP, HW, H - TOP); ctx.clip(); ctx.translate(0, -tl.scrollY);
+    for (const tr of tracks) {
+      const y = tr.y; ctx.fillStyle = '#12161e'; ctx.fillRect(0, y, HW - 2, tr.h);
+      text(tr.name, 10, y + (tr.curve ? 12 : tr.h / 2), COL.dim, '600 11.5px system-ui');
+      if (tr.curve) { const def = curveDefs.get(tr.curve); text(def.fmt(def.fn(T)), 10, y + 28, def.channel ? COL.cyan : COL.gold, '11px ui-monospace,monospace'); if (tr.removable) text('×', HW - 14, y + 11, COL.faint, '15px system-ui', 'center'); }
+      if (tr.id === 'shot') text(`S${selI + 1} selected`, 10, y + tr.h / 2 + 14, COL.cyan, '10.5px system-ui');
+    }
+    ctx.restore();
+
+    // ruler and overview
+    ctx.fillStyle = '#0d1016'; ctx.fillRect(0, 0, W, TOP);
+    // overview: the whole film with the visible window
+    const ovx0 = HW, ovw = W - HW - 6;
+    CHAPTERS.forEach((c, i) => { ctx.fillStyle = shade(GV_CHAP_COL[i], 0.5); ctx.fillRect(ovx0 + (c.t0 / FILM) * ovw, 3, ((c.t1 - c.t0) / FILM) * ovw - 1, OV_H - 6); });
+    ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1; const wx = ovx0 + (tl.t0 / FILM) * ovw, ww = Math.max(6, (vis / FILM) * ovw); ctx.fillRect(wx, 1, ww, OV_H - 2); ctx.strokeRect(wx + 0.5, 1.5, ww - 1, OV_H - 3);
+    ctx.fillStyle = COL.head; ctx.fillRect(ovx0 + (T / FILM) * ovw - 1, 0, 2, OV_H);
+    text(`${gvFmt(T)}`, 10, OV_H / 2 + 1, COL.dim, '10px ui-monospace,monospace');
+    // ruler ticks
+    const steps = [0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 30, 60]; let major = steps.find((s) => s * tl.pps >= 70) || 60; const minor = major / (major >= 5 ? 5 : major >= 1 ? 4 : 5);
+    ctx.save(); ctx.beginPath(); ctx.rect(HW, OV_H, W - HW, RULER_H); ctx.clip();
+    ctx.strokeStyle = COL.faint; ctx.lineWidth = 1; ctx.beginPath();
+    for (let t = Math.floor(ta / minor) * minor; t < tb; t += minor) { const x = Math.round(tx(t)) + 0.5, isMajor = Math.abs(t / major - Math.round(t / major)) < 1e-6; ctx.moveTo(x, OV_H + RULER_H - (isMajor ? 10 : 5)); ctx.lineTo(x, OV_H + RULER_H); }
+    ctx.stroke();
+    for (let t = Math.floor(ta / major) * major; t < tb; t += major) if (t >= 0) text(major < 1 ? gvFmtF(t) : gvFmt(t), tx(t) + 4, OV_H + 8, COL.dim, '10.5px ui-monospace,monospace');
+    ctx.restore();
+    ctx.strokeStyle = COL.line; ctx.beginPath(); ctx.moveTo(0, TOP - 0.5); ctx.lineTo(W, TOP - 0.5); ctx.moveTo(HW - 0.5, 0); ctx.lineTo(HW - 0.5, H); ctx.stroke();
+
+    // vertical scrollbar when the tracks overflow
+    const maxS = Math.max(0, tl.contentH - (H - TOP));
+    if (maxS > 0) { const th = Math.max(24, (H - TOP) * ((H - TOP) / tl.contentH)), ty = TOP + (tl.scrollY / maxS) * (H - TOP - th); ctx.fillStyle = 'rgba(255,255,255,.22)'; rr(W - 7, ty, 4, th, 2); ctx.fill(); }
+
+    // playhead
+    const px = tx(T); if (px >= HW - 1 && px <= W) { ctx.strokeStyle = COL.head; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(px, OV_H); ctx.lineTo(px, H); ctx.stroke(); ctx.fillStyle = COL.head; ctx.beginPath(); ctx.moveTo(px - 6, OV_H); ctx.lineTo(px + 6, OV_H); ctx.lineTo(px, OV_H + 9); ctx.fill(); }
+  }
+
+  /* interaction */
+  const trackAtY = (y) => { const yy = y + tl.scrollY; return tracks.find((t) => yy >= t.y && yy < t.y + t.h); };
+  const pos = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  let mode = null, wasPlaying = false, keyDrag = -1, ovDrag = null;
+  function scrubTo(x) { seekTo(clamp(tAt(x), 0, FILM - 0.02)); gv.dirty = true; }
+  cv.addEventListener('pointerdown', (e) => {
+    const [x, y] = pos(e); cv.setPointerCapture(e.pointerId); wasPlaying = st.playing;
+    if (y < OV_H) { const ovw = tl.w - HW - 6; const wx = HW + (tl.t0 / FILM) * ovw, ww = (viewW() / tl.pps / FILM) * ovw; if (x >= wx && x <= wx + ww) { mode = 'pan'; ovDrag = { x, t0: tl.t0 }; } else { tl.t0 = ((x - HW) / ovw) * FILM - viewW() / tl.pps / 2; clampView(); mode = 'pan'; ovDrag = { x, t0: tl.t0 }; } tl.dragView = true; gv.dirty = true; return; }
+    if (x < HW) { const tr = trackAtY(y); if (tr?.removable && x > HW - 24) { const id = tr.curve, n = userCurves.indexOf(id); if (n >= 0) userCurves.splice(n, 1); rebuildTracks(); gv.dirty = true; } return; }
+    const tr = y >= TOP ? trackAtY(y) : null;
+    if (tr?.id === 'keys') { const ov = gv.ov[SHOTS[gv.sel].t0]; if (ov) { let best = -1, bd = 10; ov.keys.forEach((k, n) => { const d = Math.abs(tx(gv.shotT(gv.sel, k.u)) - x); if (d < bd) { bd = d; best = n; } }); if (best >= 0) { gv.selKey = best; mode = 'key'; keyDrag = best; setPlaying(false); seekTo(gv.shotT(gv.sel, ov.keys[best].u)); gv.dirty = true; gv.rebuildEdit(); document.querySelectorAll('#gvIShot .keys button').forEach((b) => b.classList.toggle('on', +b.dataset.key === best)); return; } } }
+    mode = 'scrub'; setPlaying(false); gv.pinned = false; scrubTo(x);
+  });
+  cv.addEventListener('pointermove', (e) => {
+    const [x, y] = pos(e);
+    if (mode === 'scrub') { scrubTo(x); return; }
+    if (mode === 'pan') { const ovw = tl.w - HW - 6; tl.t0 = ovDrag.t0 + ((x - ovDrag.x) / ovw) * FILM; clampView(); gv.dirty = true; return; }
+    if (mode === 'key') { const ov = gv.ov[SHOTS[gv.sel].t0]; if (!ov) return; const u = (tAt(x) - SHOTS[gv.sel].t0) / gv.shotDur(gv.sel); gv.moveKeyU(keyDrag, u); seekTo(gv.shotT(gv.sel, ov.keys[keyDrag].u)); return; }
+    // hover tooltip: time under the cursor
+    const tip = $t('gvTip');
+    if (x > HW && y > OV_H) { const t = clamp(tAt(x), 0, FILM), si = SHOTS.findIndex((s) => t < s.t1), b = BEATS[beatAt(t)]; tip.innerHTML = `<b>${gvFmtF(t)}</b><br>S${(si < 0 ? SHOTS.length : si + 1)} · ${gvEsc(gvShotTitle(SHOTS[Math.max(0, si)].t0, Math.max(0, si)))}<br>${gvEsc(b.name)}`; tip.style.left = Math.min(innerWidth - 220, e.clientX + 12) + 'px'; tip.style.top = Math.max(8, e.clientY - 76) + 'px'; tip.classList.remove('hidden'); } else tip.classList.add('hidden');
+    const tr = y >= TOP ? trackAtY(y) : null; cv.style.cursor = tr?.id === 'keys' && gv.ov[SHOTS[gv.sel].t0] ? 'pointer' : y < OV_H ? 'grab' : 'default';
+  });
+  cv.addEventListener('pointerleave', () => $t('gvTip').classList.add('hidden'));
+  const end = (e) => { if (!mode) return; if (mode === 'key') gv.commitKeys(); if (mode === 'scrub') setPlaying(wasPlaying); mode = null; tl.dragView = false; try { cv.releasePointerCapture(e.pointerId); } catch (err) { /* already released */ } gv.dirty = true; };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  cv.addEventListener('wheel', (e) => {
+    e.preventDefault(); const [x] = pos(e);
+    if (e.shiftKey || x < HW) { tl.scrollY += e.deltaY; clampView(); gv.dirty = true; return; }
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { tl.t0 += (e.deltaX / tl.pps); clampView(); gv.dirty = true; return; }
+    zoomAt(Math.exp(-e.deltaY * 0.0016), x > HW ? tAt(x) : st.T);
+  }, { passive: false });
+  // double-click a shot to zoom to it
+  cv.addEventListener('dblclick', (e) => { const [x, y] = pos(e); const tr = trackAtY(y); if (tr?.id === 'shot' && x > HW) zoomShot(); });
+
+  return { draw, zoomBy, fit, zoomShot, fillTrackMenu, get lastT() { return tl.lastT; }, tl };
+}
 
 setTimeout(() => {
   boot().catch(err => {
@@ -6994,57 +7877,140 @@ setTimeout(() => {
 </script>
 <div id="gvBoot" class="gvCard hidden">Sampling the whole film (robot, Ember, authored cameras)…</div>
 
-<aside id="gvPanel">
-  <h1>God's-eye view</h1>
-  <section>
-    <h2>Set</h2>
-    <div class="seg">
+<div id="gv">
+  <header id="gvTop">
+    <div class="brand">Clockwork Firefly<i>Director's desk</i></div>
+    <button class="tbtn narrow" id="gvLeftBtn">Shots</button>
+    <div class="grp" id="gvSets">
       <button data-set="atrium">Atrium</button><button data-set="roof">Rooftops</button><button data-set="forest">Glade</button>
     </div>
-    <label class="chk"><input type="checkbox" id="gvAuto" checked> Follow the film's set</label>
-  </section>
-  <section>
-    <h2>Camera <span class="hint">1 to 4</span></h2>
-    <div class="seg four">
-      <button data-view="top">Top</button><button data-view="aerial">Aerial</button><button data-view="side">Side</button><button data-view="south">South</button>
+    <div class="grp transport">
+      <button class="iconbtn" id="gvPrevShot" title="Previous shot (↑)"><svg class="ic" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+      <button class="iconbtn" id="gvPlay" title="Play / pause (Space)"><svg class="ic" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg></button>
+      <button class="iconbtn" id="gvNextShot" title="Next shot (↓)"><svg class="ic" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5l11 7L4 19z"/></svg></button>
+      <span id="gvClock">0:00.0</span>
+      <select id="gvSpeed" title="Playback speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
     </div>
-    <label class="chk"><input type="checkbox" id="gvFollow"> Track the robot</label>
-    <label class="chk"><input type="checkbox" id="gvClipOn"> Cut away above <b id="gvClipV">30 m</b></label>
-    <input type="range" id="gvClipY" min="1" max="80" step="1" value="30">
-  </section>
-  <section>
-    <h2>Layers</h2>
-    <label class="chk"><input type="checkbox" data-layer="paths"> Robot path <i class="sw" style="background:linear-gradient(90deg,#5cf,#fc5,#f55)"></i></label>
-    <label class="chk"><input type="checkbox" data-layer="ember"> Ember path <i class="sw" style="background:#c8ff5a"></i></label>
-    <label class="chk"><input type="checkbox" data-layer="ticks"> Time ticks (5 s)</label>
-    <label class="chk"><input type="checkbox" data-layer="beats"> Beat labels</label>
-    <label class="chk"><input type="checkbox" data-layer="cams"> Authored cameras</label>
-    <label class="chk"><input type="checkbox" data-layer="shots"> Shot labels</label>
-    <label class="chk"><input type="checkbox" data-layer="live"> Live markers</label>
-    <label class="chk"><input type="checkbox" data-layer="grid"> Grid <span class="hint">G</span></label>
-  </section>
-  <section>
-    <h2>Image</h2>
-    <label class="chk"><input type="checkbox" id="gvFog" checked> Remove fog</label>
-    <label class="rng">Exposure <b id="gvExpV">1.6×</b><input type="range" id="gvExp" min="0.6" max="4" step="0.1" value="1.6"></label>
-  </section>
-  <button id="gvMapBtn" class="big">Whole-film map <span class="hint">M</span></button>
-  <p class="foot">Drag to orbit, right-drag to pan, wheel to zoom. Hover a path for the time, click it to jump there. The bar below plays and scrubs the film.</p>
-</aside>
+    <div class="gsp"></div>
+    <button class="tbtn" id="gvMapBtn">Map</button>
+    <button class="tbtn" id="gvHelpBtn" title="Shortcuts">?</button>
+    <button class="tbtn narrow" id="gvRightBtn">Monitor</button>
+  </header>
 
-<aside id="gvSide">
-  <div class="tabs"><button class="gvTab on" data-tab="beats">Beats</button><button class="gvTab" data-tab="shots">Shots</button></div>
-  <ul id="gvBeats"></ul>
-  <ul id="gvShots" class="hidden"></ul>
-</aside>
+  <aside id="gvLeft">
+    <div class="tabs" id="gvLTabs"><button data-ltab="shots" class="on">Shots</button><button data-ltab="beats">Beats</button><button data-ltab="view">View</button></div>
+    <div class="lbody" id="gvLShots"></div>
+    <div class="lbody hidden" id="gvLBeats"></div>
+    <div id="gvBeatNote" class="hidden"></div>
+    <div class="lbody hidden" id="gvLView">
+      <div class="sect">Camera</div>
+      <label class="chk"><input type="checkbox" id="gvAuto" checked> Follow the film's set</label>
+      <label class="chk"><input type="checkbox" id="gvFollow"> Track the robot</label>
+      <label class="chk"><input type="checkbox" id="gvClipOn"> Cut away above <b id="gvClipV">30 m</b></label>
+      <input type="range" id="gvClipY" min="1" max="80" step="1" value="30">
+      <div class="sect">Layers</div>
+      <label class="chk"><input type="checkbox" data-layer="paths"> Robot path <span class="sw" style="background:linear-gradient(90deg,#4fa0ff,#4fe08a,#ffd34f,#ff5a4f)"></span></label>
+      <label class="chk"><input type="checkbox" data-layer="ember"> Ember path <span class="sw" style="background:#c8f060"></span></label>
+      <label class="chk"><input type="checkbox" data-layer="ticks"> Time ticks (5 s)</label>
+      <label class="chk"><input type="checkbox" data-layer="beats"> Beat labels</label>
+      <label class="chk"><input type="checkbox" data-layer="cams"> Authored cameras</label>
+      <label class="chk"><input type="checkbox" data-layer="shots"> Shot labels</label>
+      <label class="chk"><input type="checkbox" data-layer="live"> Live markers</label>
+      <label class="chk"><input type="checkbox" data-layer="grid"> Grid <span style="color:var(--gv-faint)">G</span></label>
+      <div class="sect">God view image</div>
+      <label class="chk"><input type="checkbox" id="gvFog" checked> Remove fog</label>
+      <div class="rg"><label for="gvExp">Exposure</label><input type="range" id="gvExp" min="0.6" max="4" step="0.1" value="1.6"><output id="gvExpV">1.6×</output></div>
+      <div class="sect">Director's cut monitor</div>
+      <label class="chk"><input type="checkbox" id="gvMonOn" checked> Render the monitor</label>
+      <div class="rg"><label for="gvMonRate">Rate</label><select id="gvMonRate" class="sel" style="grid-column:2/4"><option value="1">Every frame</option><option value="2">Every 2nd frame</option><option value="4">Every 4th frame</option></select></div>
+      <div class="sect">Shot thumbnails</div>
+      <div class="btns"><button class="btn" id="gvCapture">Capture all shots</button><span id="gvCapStat" class="lens"></span></div>
+    </div>
+  </aside>
 
-<div id="gvReadout"></div>
+  <main id="gvStage">
+    <div class="hud tl">
+      <div class="grp" id="gvViews">
+        <button data-view="top">Top</button><button data-view="aerial">Aerial</button><button data-view="side">Side</button><button data-view="south">South</button>
+      </div>
+      <button class="tbtn" id="gvFrame" title="Frame the set (F)">Frame set</button>
+      <button class="tbtn" id="gvFocus" title="Frame the selected shot (S)">Frame shot</button>
+    </div>
+    <div class="hud tr">
+      <button class="tbtn" id="gvTrackBtn" title="Camera follows the robot (T)">Track robot</button>
+      <button class="tbtn" id="gvClipBtn" title="Cut away the upper part of the set (C)">Cut-away</button>
+    </div>
+    <div id="gvEditBadge" class="hidden">Editing camera</div>
+    <div class="hud bl"><div id="gvReadout"></div></div>
+  </main>
+
+  <aside id="gvRight">
+    <section class="gcard" id="gvMonCard">
+      <div class="gcardhead"><b>Director's cut</b><span class="sub" id="gvMonShot"></span><span class="gsp"></span><label class="chk" style="padding:0"><input type="checkbox" id="gvGuidesOn"> Guides</label></div>
+      <div class="monwrap">
+        <canvas id="gvMon" width="800" height="450"></canvas>
+        <div id="gvGuides"><i style="left:33.33%;top:0;bottom:0;width:1px"></i><i style="left:66.66%;top:0;bottom:0;width:1px"></i><i style="top:33.33%;left:0;right:0;height:1px"></i><i style="top:66.66%;left:0;right:0;height:1px"></i><div class="box" style="inset:5%"></div><div class="box" style="inset:10%"></div></div>
+        <div id="gvMonOff">Monitor is off</div>
+        <div id="gvMonHud"><span id="gvMonTc"></span><span id="gvMonLens"></span></div>
+      </div>
+      <div class="monbar">
+        <button class="tbtn iconbtn" id="gvMonPrev" title="Previous shot"><svg class="ic" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+        <button class="tbtn iconbtn" id="gvMonPlay" title="Play / pause"><svg class="ic" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg></button>
+        <button class="tbtn iconbtn" id="gvMonNext" title="Next shot"><svg class="ic" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5l11 7L4 19z"/></svg></button>
+        <span class="sp"></span><span class="lens" id="gvMonPose"></span>
+      </div>
+    </section>
+    <section class="gcard gsp">
+      <div class="itabs" id="gvITabs"><button data-itab="shot" class="on">Shot</button><button data-itab="grade">Grade</button><button data-itab="export">Export</button></div>
+      <div class="ibody" id="gvIShot"></div>
+      <div class="ibody hidden" id="gvIGrade"></div>
+      <div class="ibody hidden" id="gvIExport"></div>
+    </section>
+  </aside>
+
+  <section id="gvTL">
+    <div id="gvTLGrip" title="Drag to resize"></div>
+    <div class="tlbar">
+      <span class="lbl">Timeline</span>
+      <button class="tbtn iconbtn" id="gvZoomOut" title="Zoom out (-)"><svg class="ic ln" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      <button class="tbtn iconbtn" id="gvZoomIn" title="Zoom in (+)"><svg class="ic ln" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+      <button class="tbtn" id="gvZoomFit">Fit film</button>
+      <button class="tbtn" id="gvZoomShot">Zoom to shot</button>
+      <label class="chk" style="padding:0"><input type="checkbox" id="gvTLFollow" checked> Follow playhead</label>
+      <span class="sp"></span>
+      <select id="gvTrackAdd" title="Add a curve track"><option value="">+ Add curve track…</option></select>
+    </div>
+    <div id="gvTLWrap"><canvas id="gvTLCanvas"></canvas></div>
+  </section>
+</div>
+
 <div id="gvTip" class="hidden"></div>
 
 <div id="gvMap" class="hidden">
-  <div class="mapHead"><b>Whole film, every set at once</b><span>Robot path coloured by time (blue early, red late), Ember dashed, blue squares are authored camera positions. Click a point to jump there.</span><button id="gvMapClose">Close (Esc)</button></div>
+  <div class="mapHead"><b>Whole film, every set at once</b><span>Robot path coloured by time (blue early, red late), Ember dashed, blue squares are authored camera positions. Click a point to jump there.</span><button class="tbtn" id="gvMapClose">Close (Esc)</button></div>
   <canvas id="gvMapCanvas"></canvas>
 </div>
+
+<div id="gvHelp" class="hidden"><div class="sheet">
+  <h2>Director's desk</h2>
+  <p>The film is a pure function of time, so everything here is live: scrub the timeline and the viewport, the director's-cut monitor and the curves all follow.</p>
+  <table>
+    <tr><td>Space</td><td>Play or pause</td></tr>
+    <tr><td>← →</td><td>Step one frame (hold Shift for one second)</td></tr>
+    <tr><td>↑ ↓</td><td>Previous or next shot</td></tr>
+    <tr><td>1 2 3 4</td><td>Top, Aerial, Side, South view</td></tr>
+    <tr><td>F / S</td><td>Frame the set / frame the selected shot</td></tr>
+    <tr><td>T / C / G</td><td>Track robot / cut-away / grid</td></tr>
+    <tr><td>E</td><td>Edit the selected shot's camera</td></tr>
+    <tr><td>K</td><td>Add a camera keyframe at the playhead (while editing)</td></tr>
+    <tr><td>Delete</td><td>Delete the selected keyframe</td></tr>
+    <tr><td>M</td><td>Whole-film map</td></tr>
+    <tr><td>Timeline wheel</td><td>Zoom (Shift + wheel scrolls the tracks)</td></tr>
+    <tr><td>Esc</td><td>Close map or this sheet</td></tr>
+  </table>
+  <p>Edited cameras are saved in this browser. Use Export to download them, then <code>node tools/apply-overrides.cjs edits.json</code> to bake them into the film.</p>
+  <div class="btns"><button class="btn pri" id="gvHelpClose">Close</button></div>
+</div></div>
 
 </body>
 </html>

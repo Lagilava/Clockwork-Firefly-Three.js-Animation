@@ -5646,24 +5646,38 @@ const at = (o, p, tgt, fov, shake = 0.25, roll = 0) => { o.pos.copy(p); o.target
 
 const SHOTS = [
   /* ---- I. The Atrium ---- */
+  // ESTABLISHING PUSH-IN — a slow push on the sleeping robot
   { t0: 0, blend: 0, fn: (t, u, o) => { lerpV(o.pos, [9.5, 3.3, 12.5], [5.0, 2.4, 7.2], eo(u)); o.target.set(0, 1.0 + u * 0.3, 0); o.fov = lerp(38, 33, eo(u)); o.shake = 0.3; } },
+  // KEY INSERT — over the shoulder as the winding key turns
   { t0: 6.0, blend: 0, fn: (t, u, o, d) => { d.anim.bot.keySpin.getWorldPosition(_c1); at(o, _c2.copy(_c1).addScaledVector(HF, -1.9).addScaledVector(HR, 1.1).add(_v1.set(0, 0.55, 0)), _c1, 30, 0.15); } },
+  // EYES IGNITE — close on the face as the lantern wakes
   { t0: 8.6, blend: 0, fn: (t, u, o) => at(o, _c1.copy(S.head).add(_v1.set(lerp(2.2, 1.7, u), 0.45, lerp(3.0, 2.5, u))), _c2.copy(S.head).add(_v1.set(0, -0.04, 0)), 30, 0.14) },
+  // LOOK UP — floor-level tilt up the oculus shaft
   { t0: 10.2, blend: 0, fn: (t, u, o) => { o.pos.set(4.8, 0.55, 6.0); lerpV(o.target, [0.6, 7.5, 0.4], [2.4, 3.0, 0.6], smooth(range(t, 10.2, 11.7))); o.fov = 46; o.shake = 0.22; } },
+  // NOTICE — medium shot as it spots her
   { t0: 11.9, blend: 0.6, fn: (t, u, o) => { mid(0.35); o.pos.set(MID.x + 3.4 - u * 0.4, 1.6 + u * 0.15, MID.z + 4.9 - u * 0.6); o.target.set(MID.x, 1.35 + MID.y * 0.1, MID.z); o.fov = 40; o.shake = 0.3; } },
+  // APPROACH — medium shot, it walks toward her
   { t0: 14.6, blend: 0.8, fn: (t, u, o) => { mid(0.3); o.pos.set(MID.x + 3.0 - u * 0.4, 1.8, MID.z + 5.2 - u * 0.3); o.target.set(MID.x, 1.9, MID.z); o.fov = 38; o.shake = 0.3; } },
+  // HEAD-HEIGHT HOLD — tight on the face for the tease
   { t0: 17.2, blend: 0, fn: (t, u, o) => { lerpV(o.pos, [3.0, 3.25, 4.6], [2.8, 3.2, 4.2], u); o.target.set(1.0, 3.0, 1.2); o.fov = 31; o.shake = 0.12; } },
+  // BONK — a fast shaking close-up on the nose
   { t0: 20.0, blend: 0, fn: (t, u, o) => { o.pos.set(3.8, 2.5, 5.2); o.target.set(0.95, 2.6, 1.0); o.fov = 34; o.shake = 2.0 * Math.pow(1 - u, 2) + 0.2; } },
+  // FIRST-FLIGHT CROUCH — floor level, coil then leap
   { t0: 21.6, blend: 0.5, fn: (t, u, o) => {
     o.pos.set(4.7, 0.38 + u * 0.52, 3.5 - u * 0.25);
     const k = smooth(range(t, 22.8, 24.4)); o.target.set(lerp(0.8, S.root.x, k), lerp(1.0, S.root.y, k), lerp(0.85, S.root.z, k));
     o.fov = lerp(34, 42, smooth(range(t, 22.7, 23.4))); o.shake = 0.42 + smooth(range(t, 23, 23.5)) * 0.58; } },
+  // CHASE ORBIT — the camera circles the pair as it learns to fly
   { t0: 24.6, blend: 0.9, fn: (t, u, o) => {
     const th = 0.72 + EASE.inOutQuad(u) * 2.6, R = lerp(7.0, 6.3, u), h = lerp(2.2, 5.5, EASE.inOutSine(u));
     o.pos.set(Math.sin(th) * R, h, -0.7 + Math.cos(th) * R); mid(0.5); o.target.set(MID.x * 0.9, MID.y, MID.z * 0.9); o.fov = lerp(36, 40, Math.sin(u * Math.PI)); o.shake = 0.4; } },
+  // MEET — a slow push to two hands that almost touch
   { t0: 32.6, blend: 0.7, fn: (t, u, o) => { mid(0.5); o.pos.set(MID.x + lerp(1.15, -0.35, eo(u)), MID.y + lerp(0.15, -0.05, u), MID.z + lerp(5.2, 3.65, eo(u))); o.target.copy(MID); o.fov = lerp(31, 26, eo(u)); o.shake = 0.1; } },
+  // LOW HESITATION — looking up while she waits at the oculus
   { t0: 35.2, blend: 0.8, fn: (t, u, o) => { o.pos.copy(S.root).add(_v1.set(1.4, -1.7, 3.2)); o.pos.y = Math.max(0.6, o.pos.y); o.target.copy(S.root).lerp(S.lure, 0.6); o.fov = 44; o.shake = 0.25; } },
+  // HOME OR HER — close on the head as it looks down, then up
   { t0: 38.0, blend: 0.6, fn: (t, u, o) => at(o, _c1.copy(S.head).add(_v1.set(1.5, 0.15, 2.3)), S.head, 31, 0.12) },
+  // ASCENT — a rising wide as the spiral begins
   { t0: 39.9, blend: 0.8, fn: (t, u, o) => { lerpV(o.pos, [3.0, 0.7, 6.4], [1.8, 1.6, 4.6], eo(u)); o.target.copy(S.root).lerp(_v1.set(0, 10, 0), 0.35); o.fov = lerp(48, 58, u); o.shake = 0.3; } },
 
   /* ---- II. Rooftops -------------------------------------------------------
@@ -5879,6 +5893,42 @@ SHOTS.forEach((s, i) => { s.t1 = i < SHOTS.length - 1 ? SHOTS[i + 1].t0 : FILM; 
 // the scene (and through the actors). Every shot change is a clean cut to a new set-up, and the springs reset on
 // the cut so each shot starts at rest and then moves on its own authored path.
 SHOTS.forEach((s) => { s.blend = 0; });
+
+/* ---- Shot overrides: hand-placed camera keyframes -------------------------------------------------
+   Written by the god's-eye editor (Clockwork_Firefly_godview.html, "Export") and applied by tools/apply-overrides.cjs.
+   Keyed by the shot's start time. Each key is { u: 0..1 through the shot, pos, target, fov, roll, shake }.
+   With rel set, pos and target are offsets from the robot, so the camera follows it. An overridden shot
+   drops its DRIFT move; handheld still applies.                                                          */
+const SHOT_OVERRIDES = /*OVERRIDES-BEGIN*/{}/*OVERRIDES-END*/;
+const _ovP = V(), _ovT = V();
+function overrideShotFn(ov) {
+  const ks = ov.keys.slice().sort((a, b) => a.u - b.u), n = ks.length;
+  const cr = (p0, p1, p2, p3, t) => { const t2 = t * t, t3 = t2 * t; return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3); };
+  const vec = (key, i) => (i === 0 ? key.pos[0] : i === 1 ? key.pos[1] : i === 2 ? key.pos[2] : i === 3 ? key.target[0] : i === 4 ? key.target[1] : i === 5 ? key.target[2] : i === 6 ? key.fov : i === 7 ? (key.roll || 0) : (key.shake ?? 0.15));
+  const out = new Array(9);
+  return (t, u, o) => {
+    let i = 0; while (i < n - 2 && u > ks[i + 1].u) i++;
+    if (n === 1) for (let c = 0; c < 9; c++) out[c] = vec(ks[0], c);
+    else {
+      const a = ks[i], b = ks[i + 1], span = b.u - a.u, k = span > 1e-6 ? clamp((u - a.u) / span) : 1;
+      for (let c = 0; c < 9; c++) {
+        if (n === 2) out[c] = lerp(vec(a, c), vec(b, c), smooth(k));
+        else out[c] = cr(vec(ks[Math.max(0, i - 1)], c), vec(a, c), vec(b, c), vec(ks[Math.min(n - 1, i + 2)], c), k);
+      }
+    }
+    _ovP.set(out[0], out[1], out[2]); _ovT.set(out[3], out[4], out[5]);
+    if (ov.rel) { _ovP.add(S.root); _ovT.add(S.root); }
+    o.pos.copy(_ovP); o.target.copy(_ovT); o.fov = out[6]; o.roll = out[7]; o.shake = out[8];
+  };
+}
+function applyShotOverride(t0, ov) {
+  const s = SHOTS.find((x) => x.t0 === t0); if (!s) return false;
+  if (!s.base) s.base = { fn: s.fn, drift: DRIFT.get(t0) };
+  if (ov && ov.keys && ov.keys.length) { s.fn = overrideShotFn(ov); DRIFT.delete(t0); }
+  else { s.fn = s.base.fn; if (s.base.drift) DRIFT.set(t0, s.base.drift); }
+  return true;
+}
+for (const k in SHOT_OVERRIDES) applyShotOverride(+k, SHOT_OVERRIDES[k]);
 
 // A few subjective/action setups carry the camera operator's breathing and reactions.
 // Keep the wides and quiet emotional holds on a stable support.
@@ -6212,6 +6262,9 @@ const GRADE_PRESETS = {
   villeneuve: { sh: [0.75, 0.85, 1.08], hi: [1.38, 1.08, 0.62], mid: [1.21, 1.07, 0.77], sat: 0.70, contrast: 1.10, warm: 1.38, grain: 1.18, lift: 0.012, vig: 0.91 },
   coppola:    { sh: [1.14, 1.02, 1.25], hi: [1.20, 1.06, 1.11], mid: [1.11, 0.99, 1.12], sat: 0.89, contrast: 0.82, warm: 1.12, grain: 0.72, lift: 0.018, vig: 0.72 },
 };
+/* Director's grade: written by the god's-eye editor through tools/apply-overrides.cjs (null until baked). */
+const DIRECTOR_GRADE = /*GRADE-BEGIN*/null/*GRADE-END*/;
+if (DIRECTOR_GRADE) GRADE_PRESETS.directorgrade = DIRECTOR_GRADE;
 class Post {
   constructor(renderer, scene, camera, skyScene) {
     this.renderer = renderer;
@@ -6266,7 +6319,7 @@ class Post {
     this.bloomOn = true;
     this.bloomAllowed = true;
     this.aaOn = false; // SMAA produced square artifacts on bright/clipped areas
-    this.preset = 'default';
+    this.preset = DIRECTOR_GRADE ? 'directorgrade' : 'default';
   }
   setPreset(name) { this.preset = GRADE_PRESETS[name] ? name : 'default'; }
   setSize(w, h, pr) {

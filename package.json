@@ -7,7 +7,8 @@
     "test:characters": "node tests/character-browser.cjs",
     "view:world": "node tools/worldview.cjs",
     "build:godview": "node tools/build-godview.cjs",
-    "test:godview": "node tools/gvtest.cjs .validation/godview"
+    "test:godview": "node tools/gvtest.cjs .validation/godview",
+    "apply:edits": "node tools/apply-overrides.cjs"
   },
   "devDependencies": {
     "playwright": "1.63.0",

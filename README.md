@@ -2,6 +2,8 @@
 
 Live: https://lagilava.github.io/Clockwork-Firefly-Three.js-Animation/ (film and god's-eye view)
 
+![Director's desk](docs/directors-desk.png)
+
 Open `Clockwork_Firefly_fullfilm.html` in a modern browser. The film remains a standalone HTML file; npm is only needed for the browser regression tests. Three.js and fonts load from their existing CDNs.
 
 The player has an Original color grade and six optional director-inspired looks, including Zack Snyder. Choose a look from the Color grade menu beside the camera menu; the original chapter palettes remain active underneath each preset. The robot's back clockwork now fits its mounting plate, and Ember has a mottled shell, translucent veined wings, and small reflective eyes. Run `npm run test:characters` for a focused browser check of both models, every grade preset, and the portrait control layout. It saves close-view screenshots in `.validation/`.
@@ -68,16 +70,27 @@ Animation changes:
 - Camera push and arc drift was removed from 19 shots, mostly the held and quiet ones, so the remaining pushes mean something.
 - The cut at 114 s is now a hard cut on the tumble, so the crash lands as authored. The other chapter changes still dissolve.
 
-## God's-eye viewer
+## Director's desk (god's-eye editor)
 
-`Clockwork_Firefly_godview.html` is the whole film seen from above. Open it next to the film file (it loads the same three.js from the CDN). It starts paused at 0:12.
+`Clockwork_Firefly_godview.html` is an editing app for the film, with the whole set seen from above. Open it next to the film file (it loads the same three.js from the CDN). It starts paused at 0:12 and lays out like an NLE:
 
-- Overlays: the robot path coloured by time, Ember's dashed path, 5 s time ticks, beat and shot labels, every authored camera (position, view ray and path), live robot, Ember and camera markers.
-- Views: Atrium, Rooftops, Glade tabs (or follow the film's set), Top / Aerial / Side / South camera (keys 1 to 4), track the robot, cut-away plane, fog off, exposure.
-- Hover a path for its time, click it to jump there. Beats and Shots lists seek the film. `M` opens a map of all three sets at once (top and side views), also click-to-seek.
-- Fog, vignette, fades and exposure are neutralised so you see the set, not the grade.
+- **Viewport (centre)**: the set from Top / Aerial / Side / South (keys 1 to 4) or free orbit, with the robot path coloured by time, Ember's dashed path, time ticks, beat and shot labels, every authored camera with its view cone, and live markers. Track the robot, cut away the upper set, fog off, exposure. Hover a path for its time, click to jump.
+- **Director's cut monitor (top right)**: the authored camera rendered through the film's full grade chain, live as you scrub, with rule-of-thirds and safe-area guides, timecode and lens readout.
+- **Shots / Beats / View (left)**: all 96 shots with thumbnails (Capture all shots), grouped by chapter. Click to seek, `E` to edit.
+- **Inspector (right)**: *Shot* edits the selected shot's camera keyframes (position and target gizmos in the viewport, FOV, roll, shake, follow-robot mode, numeric fields, add keyframe with `K`, delete with `Delete`). *Grade* is a full colour grade (shadows / mids / highlights tint, saturation, contrast, warmth, grain, lift, vignette, exposure, bloom) with presets. *Export* downloads or imports the edits.
+- **Timeline (bottom)**: chapters, shots, beats, events and keyframes on one scrubbable, zoomable track, plus any film curve (add from the menu). Drag the grip to resize it.
+- `?` lists every shortcut, `M` opens a map of all three sets at once.
 
-It is generated, never edited by hand: `npm run build:godview` reads `Clockwork_Firefly_fullfilm.html` and injects `tools/godview.inject.js`, `godview.ui.html` and `godview.css` into a copy. Rebuild it after any edit to the film. `npm run test:godview` boots it in headless Chromium and saves screenshots (set `GV_FILE` and use local three.js for offline runs).
+Edits are saved in your browser. To make them permanent, Export, then:
+
+```
+node tools/apply-overrides.cjs clockwork-edits.json   # bakes shot cameras and the colour grade into the film
+npm run build:godview                                  # regenerates the editor from the film
+```
+
+An overridden shot drops its automatic camera drift and follows your keyframes; the grade appears in the film's grade menu as "Director's grade" and is selected by default.
+
+The editor is generated, never edited by hand: `npm run build:godview` reads `Clockwork_Firefly_fullfilm.html` and injects `tools/godview.inject.js`, `godview.timeline.js`, `godview.ui.html` and `godview.css` into a copy. `npm run test:godview` boots it in headless Chromium and saves screenshots (set `GV_FILE`, `THREE_ROOT`, `PLAYWRIGHT_MODULE`, `GV_STEPS`, `GV_VIEWPORT` for custom runs).
 
 ## World viewing rig and town plan
 
