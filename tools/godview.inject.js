@@ -66,6 +66,8 @@ function godViewInstall(film) {
   const shotDur = (i) => SHOTS[i].t1 - SHOTS[i].t0;
   const shotT = (i, u) => SHOTS[i].t0 + u * shotDur(i);
   gv.shotT = shotT; gv.shotDur = shotDur;
+  // Where to park the playhead for a key: a key at u = 1 sits on the cut, which belongs to the next shot, so stop just short of it.
+  const keyT = (i, u) => Math.min(shotT(i, u), SHOTS[i].t1 - 0.05); gv.keyT = keyT;
 
   const bounds = {};
   const computeBounds = () => {
@@ -301,7 +303,7 @@ function godViewInstall(film) {
     ov.keys.forEach((k) => { k.pos = k.pos.map(round3); k.target = k.target.map(round3); });
     applyOv(i); saveEdits(); resampleShot(i); renderInspector();
   }
-  function selectKey(n, seek = true) { gv.selKey = n; const ov = gv.ov[SHOTS[gv.sel].t0]; if (seek && ov) { seekTo(shotT(gv.sel, ov.keys[n].u)); setPlaying(false); } renderInspector(); gv.dirty = true; }
+  function selectKey(n, seek = true) { gv.selKey = n; const ov = gv.ov[SHOTS[gv.sel].t0]; if (seek && ov) { seekTo(keyT(gv.sel, ov.keys[n].u)); setPlaying(false); } renderInspector(); gv.dirty = true; }
   function moveKeyU(n, u) {
     const i = gv.sel, ov = gv.ov[SHOTS[i].t0]; if (!ov || n === 0 || n === ov.keys.length - 1) return;
     ov.keys[n].u = round3(clamp(u, ov.keys[n - 1].u + 0.02, ov.keys[n + 1].u - 0.02)); applyOv(i); saveEdits(); gv.dirty = true;
@@ -551,7 +553,7 @@ function godViewInstall(film) {
       case 'iDone': if (gv.editOn) exitEdit(); else { gv.editOn = true; gv.pinned = true; renderInspector(); } rebuildEdit(); break;
       case 'iAddKey': addKeyHere(); rebuildEdit(); break;
       case 'iDelKey': deleteKey(); rebuildEdit(); break;
-      case 'iGoKey': if (k) { seekTo(shotT(i, k.u)); setPlaying(false); } break;
+      case 'iGoKey': if (k) { seekTo(keyT(i, k.u)); setPlaying(false); } break;
       case 'iFromGod': if (k) { setKeyWorld(i, k, camera.position, null); k.pos = k.pos.map(round3); applyOv(i); saveEdits(); resampleShot(i); renderInspector(); rebuildEdit(); } break;
       case 'iFocusGod': if (k) { setKeyWorld(i, k, null, controls.target); k.target = k.target.map(round3); applyOv(i); saveEdits(); resampleShot(i); renderInspector(); rebuildEdit(); } break;
       case 'iLookRobot': if (k) { keyRoot(i, k, _tmp); _tmp.y += 0.4; setKeyWorld(i, k, null, _tmp); k.target = k.target.map(round3); applyOv(i); saveEdits(); resampleShot(i); renderInspector(); rebuildEdit(); } break;

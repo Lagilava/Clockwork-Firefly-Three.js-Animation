@@ -181,14 +181,14 @@ function gvTimeline(gv) {
     if (y < OV_H) { const ovw = tl.w - HW - 6; const wx = HW + (tl.t0 / FILM) * ovw, ww = (viewW() / tl.pps / FILM) * ovw; if (x >= wx && x <= wx + ww) { mode = 'pan'; ovDrag = { x, t0: tl.t0 }; } else { tl.t0 = ((x - HW) / ovw) * FILM - viewW() / tl.pps / 2; clampView(); mode = 'pan'; ovDrag = { x, t0: tl.t0 }; } tl.dragView = true; gv.dirty = true; return; }
     if (x < HW) { const tr = trackAtY(y); if (tr?.removable && x > HW - 24) { const id = tr.curve, n = userCurves.indexOf(id); if (n >= 0) userCurves.splice(n, 1); rebuildTracks(); gv.dirty = true; } return; }
     const tr = y >= TOP ? trackAtY(y) : null;
-    if (tr?.id === 'keys') { const ov = gv.ov[SHOTS[gv.sel].t0]; if (ov) { let best = -1, bd = 10; ov.keys.forEach((k, n) => { const d = Math.abs(tx(gv.shotT(gv.sel, k.u)) - x); if (d < bd) { bd = d; best = n; } }); if (best >= 0) { gv.selKey = best; mode = 'key'; keyDrag = best; setPlaying(false); seekTo(gv.shotT(gv.sel, ov.keys[best].u)); gv.dirty = true; gv.rebuildEdit(); document.querySelectorAll('#gvIShot .keys button').forEach((b) => b.classList.toggle('on', +b.dataset.key === best)); return; } } }
+    if (tr?.id === 'keys') { const ov = gv.ov[SHOTS[gv.sel].t0]; if (ov) { let best = -1, bd = 10; ov.keys.forEach((k, n) => { const d = Math.abs(tx(gv.shotT(gv.sel, k.u)) - x); if (d < bd) { bd = d; best = n; } }); if (best >= 0) { gv.selKey = best; mode = 'key'; keyDrag = best; setPlaying(false); seekTo(gv.keyT(gv.sel, ov.keys[best].u)); gv.dirty = true; gv.rebuildEdit(); document.querySelectorAll('#gvIShot .keys button').forEach((b) => b.classList.toggle('on', +b.dataset.key === best)); return; } } }
     mode = 'scrub'; setPlaying(false); gv.pinned = false; scrubTo(x);
   });
   cv.addEventListener('pointermove', (e) => {
     const [x, y] = pos(e);
     if (mode === 'scrub') { scrubTo(x); return; }
     if (mode === 'pan') { const ovw = tl.w - HW - 6; tl.t0 = ovDrag.t0 + ((x - ovDrag.x) / ovw) * FILM; clampView(); gv.dirty = true; return; }
-    if (mode === 'key') { const ov = gv.ov[SHOTS[gv.sel].t0]; if (!ov) return; const u = (tAt(x) - SHOTS[gv.sel].t0) / gv.shotDur(gv.sel); gv.moveKeyU(keyDrag, u); seekTo(gv.shotT(gv.sel, ov.keys[keyDrag].u)); return; }
+    if (mode === 'key') { const ov = gv.ov[SHOTS[gv.sel].t0]; if (!ov) return; const u = (tAt(x) - SHOTS[gv.sel].t0) / gv.shotDur(gv.sel); gv.moveKeyU(keyDrag, u); seekTo(gv.keyT(gv.sel, ov.keys[keyDrag].u)); return; }
     // hover tooltip: time under the cursor
     const tip = $t('gvTip');
     if (x > HW && y > OV_H) { const t = clamp(tAt(x), 0, FILM), si = SHOTS.findIndex((s) => t < s.t1), b = BEATS[beatAt(t)]; tip.innerHTML = `<b>${gvFmtF(t)}</b><br>S${(si < 0 ? SHOTS.length : si + 1)} · ${gvEsc(gvShotTitle(SHOTS[Math.max(0, si)].t0, Math.max(0, si)))}<br>${gvEsc(b.name)}`; tip.style.left = Math.min(innerWidth - 220, e.clientX + 12) + 'px'; tip.style.top = Math.max(8, e.clientY - 76) + 'px'; tip.classList.remove('hidden'); } else tip.classList.add('hidden');
