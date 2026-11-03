@@ -1,3 +1,7 @@
+# Clockwork Firefly
+
+Live: https://lagilava.github.io/Clockwork-Firefly-Three.js-Animation/ (film and god's-eye view)
+
 Open `Clockwork_Firefly_fullfilm.html` in a modern browser. The film remains a standalone HTML file; npm is only needed for the browser regression tests. Three.js and fonts load from their existing CDNs.
 
 The player has an Original color grade and six optional director-inspired looks, including Zack Snyder. Choose a look from the Color grade menu beside the camera menu; the original chapter palettes remain active underneath each preset. The robot's back clockwork now fits its mounting plate, and Ember has a mottled shell, translucent veined wings, and small reflective eyes. Run `npm run test:characters` for a focused browser check of both models, every grade preset, and the portrait control layout. It saves close-view screenshots in `.validation/`.
