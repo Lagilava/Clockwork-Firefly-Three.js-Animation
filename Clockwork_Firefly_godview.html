@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Clockwork Firefly: Director's desk</title>
+<title>Clockwork Firefly: Sculptor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Jost:wght@400;500&display=swap" rel="stylesheet" />
@@ -111,7 +111,7 @@
   @media (prefers-reduced-motion:reduce){ #loader .gear{animation:none} .card,#start,#end,#chrome{transition:none} }
 </style>
 <style>
-/* Director's desk: the god's-eye editor. Dark, neutral chrome so the picture carries the colour. */
+/* Sculptor: the film editor. Dark, neutral chrome so the picture carries the colour. */
 :root{
   --gv-bg:#0b0d12;--gv-panel:#11141b;--gv-panel2:#171b24;--gv-raise:#1e2330;--gv-line:#242a38;--gv-line2:#323a4d;
   --gv-text:#dde2ee;--gv-dim:#8b94a9;--gv-faint:#5d667b;
@@ -6125,7 +6125,7 @@ SHOTS.forEach((s, i) => { s.t1 = i < SHOTS.length - 1 ? SHOTS[i + 1].t0 : FILM; 
 SHOTS.forEach((s) => { s.blend = 0; });
 
 /* ---- Shot overrides: hand-placed camera keyframes -------------------------------------------------
-   Written by the god's-eye editor (Clockwork_Firefly_godview.html, "Export") and applied by tools/apply-overrides.cjs.
+   Written by the Sculptor editor (Clockwork_Firefly_godview.html, "Export") and applied by tools/apply-overrides.cjs.
    Keyed by the shot's start time. Each key is { u: 0..1 through the shot, pos, target, fov, roll, shake }.
    With rel set, pos and target are offsets from the robot, so the camera follows it. An overridden shot
    drops its DRIFT move; handheld still applies.                                                          */
@@ -6158,7 +6158,7 @@ function applyShotOverride(t0, ov) {
   else { s.fn = s.base.fn; if (s.base.drift) DRIFT.set(t0, s.base.drift); }
   return true;
 }
-/* A project saved in the Director's desk (same browser) can be played with ?project=<id>.
+/* A project saved in the Sculptor (same browser) can be played with ?project=<id>.
    Its camera keys replace the baked ones and its colour grade becomes a "Project" entry in the grade menu. */
 const PROJECT = (() => {
   try {
@@ -6503,7 +6503,7 @@ const GRADE_PRESETS = {
   villeneuve: { sh: [0.75, 0.85, 1.08], hi: [1.38, 1.08, 0.62], mid: [1.21, 1.07, 0.77], sat: 0.70, contrast: 1.10, warm: 1.38, grain: 1.18, lift: 0.012, vig: 0.91 },
   coppola:    { sh: [1.14, 1.02, 1.25], hi: [1.20, 1.06, 1.11], mid: [1.11, 0.99, 1.12], sat: 0.89, contrast: 0.82, warm: 1.12, grain: 0.72, lift: 0.018, vig: 0.72 },
 };
-/* Director's grade: written by the god's-eye editor through tools/apply-overrides.cjs (null until baked). */
+/* Director's grade: written by the Sculptor editor through tools/apply-overrides.cjs (null until baked). */
 const DIRECTOR_GRADE = /*GRADE-BEGIN*/{"sh":[1,1,1],"hi":[1,1,1],"mid":[1,1,1],"sat":1.21,"contrast":0.59,"warm":1.47,"grain":1.13,"lift":0.004,"vig":1}/*GRADE-END*/;
 if (DIRECTOR_GRADE) GRADE_PRESETS.directorgrade = DIRECTOR_GRADE;
 if (PROJECT && PROJECT.grade) GRADE_PRESETS.project = PROJECT.grade;
@@ -6747,7 +6747,7 @@ async function boot() {
     const plain = location.pathname;
     if (PROJECT.missing) chip.innerHTML = 'That project was not found in this browser, so this is the original film. <a href="' + plain + '">Dismiss</a>';
     else {
-      chip.innerHTML = 'Project <b>' + esc(PROJECT.name) + '</b> <a href="' + plain.replace('fullfilm', 'godview') + '?open=' + encodeURIComponent(PROJECT.id) + '">Edit in desk</a> <a href="' + plain + '">Original film</a>';
+      chip.innerHTML = 'Project <b>' + esc(PROJECT.name) + '</b> <a href="' + plain.replace('fullfilm', 'godview') + '?open=' + encodeURIComponent(PROJECT.id) + '">Edit in Sculptor</a> <a href="' + plain + '">Original film</a>';
       if (PROJECT.grade) {
         const sel = $('selGrade'), o = document.createElement('option'); o.value = 'project'; o.textContent = 'Project grade: ' + PROJECT.name;
         sel.insertBefore(o, sel.firstChild); sel.value = 'project'; post.setPreset('project');
@@ -6929,7 +6929,7 @@ async function boot() {
 
 /* ==========================================================================
    DIRECTOR'S DESK  (injected by tools/build-godview.cjs; lives inside the film's module)
-   A god's-eye editor for the film. It samples the whole film once (robot, Ember, authored
+   A Sculptor editor for the film. It samples the whole film once (robot, Ember, authored
    cameras), draws all of it over the live scene, mirrors the director's cut in a monitor with
    the film's real grade, lets you place camera keyframes for any shot, and runs a timeline.
    ========================================================================== */
@@ -8083,7 +8083,7 @@ setTimeout(() => {
 
 <div id="gv">
   <header id="gvTop">
-    <div class="brand">Clockwork Firefly<i>Director's desk</i></div>
+    <div class="brand">Clockwork Firefly<i>Sculptor</i></div>
     <div id="gvProj">
       <button class="tbtn" id="gvProjBtn" title="Your projects"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span id="gvProjName">Project</span><span id="gvSave" class="save">Saved</span><svg class="ic car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
       <div id="gvProjMenu" class="hidden"></div>
@@ -8210,7 +8210,7 @@ setTimeout(() => {
 </div>
 
 <div id="gvHelp" class="hidden"><div class="sheet">
-  <h2>Director's desk</h2>
+  <h2>Sculptor</h2>
   <p>The film is a pure function of time, so everything here is live: scrub the timeline and the viewport, the director's-cut monitor and the curves all follow.</p>
   <table>
     <tr><td>Space</td><td>Play or pause</td></tr>

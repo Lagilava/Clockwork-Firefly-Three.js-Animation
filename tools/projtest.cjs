@@ -45,7 +45,7 @@ const ok = (name, cond, extra = '') => { console.log((cond ? 'PASS ' : 'FAIL ') 
   ok('projects page lists it', cards.includes('Test cut'), JSON.stringify(cards));
   const play = await list.$eval('.card a.btn.pri', (a) => a.getAttribute('href')); ok('play link points at the film', play === 'Clockwork_Firefly_fullfilm.html?project=' + id, play);
   const home = await ctx.newPage(); watch(home); await home.goto(base + '/'); await home.waitForTimeout(400); await home.screenshot({ path: path.join(out, 'start.png') });
-  ok('start page has three buttons', (await home.$$eval('main a', (a) => a.map((x) => x.firstChild.textContent))).join('|') === 'Custom projects|Default film|God\'s eye');
+  ok('start page has three buttons', (await home.$$eval('main a', (a) => a.map((x) => x.firstChild.textContent))).join('|') === 'Custom projects|Default film|Sculptor');
   await desk.close();
   const film = await ctx.newPage(); watch(film); await film.goto(base + '/' + play);
   await film.waitForSelector('#projChip', { timeout: 420000 }); await film.waitForTimeout(1500);

@@ -1,8 +1,8 @@
 # Clockwork Firefly
 
-Live: https://lagilava.github.io/Clockwork-Firefly-Three.js-Animation/ (film and god's-eye view)
+Live: https://lagilava.github.io/Clockwork-Firefly-Three.js-Animation/ (film and Sculptor editor)
 
-![Director's desk](docs/directors-desk.png)
+![Sculptor](docs/directors-desk.png)
 
 Open `Clockwork_Firefly_fullfilm.html` in a modern browser. The film remains a standalone HTML file; npm is only needed for the browser regression tests. Three.js and fonts load from their existing CDNs.
 
@@ -70,7 +70,7 @@ Animation changes:
 - Camera push and arc drift was removed from 19 shots, mostly the held and quiet ones, so the remaining pushes mean something.
 - The cut at 114 s is now a hard cut on the tumble, so the crash lands as authored. The other chapter changes still dissolve.
 
-## Director's desk (god's-eye editor)
+## Sculptor (the film editor)
 
 `Clockwork_Firefly_godview.html` is an editing app for the film, with the whole set seen from above. Open it next to the film file (it loads the same three.js from the CDN). It starts paused at 0:12 and lays out like an NLE:
 
@@ -83,10 +83,10 @@ Animation changes:
 
 ### Custom projects
 
-The start page (`index.html`) has three buttons: **Custom projects**, **Default film** and **God's eye** (the desk).
+The start page (`index.html`) has three buttons: **Custom projects**, **Default film** and **Sculptor** (the editor).
 
-- Your work in the desk autosaves as a draft in this browser. Press **Save project** (or Ctrl+S) to keep it as a named project. The project menu in the top bar switches, renames, copies and deletes projects, and imports or downloads a project file.
-- `projects.html` lists the saved projects. **Play in film** opens `Clockwork_Firefly_fullfilm.html?project=<id>`, which plays the film with that project's cameras and colour grade (a small chip at the bottom left says which project is playing and links back to the original). **Edit in desk** opens `Clockwork_Firefly_godview.html?open=<id>`.
+- Your work in Sculptor autosaves as a draft in this browser. Press **Save project** (or Ctrl+S) to keep it as a named project. The project menu in the top bar switches, renames, copies and deletes projects, and imports or downloads a project file.
+- `projects.html` lists the saved projects. **Play in film** opens `Clockwork_Firefly_fullfilm.html?project=<id>`, which plays the film with that project's cameras and colour grade (a small chip at the bottom left says which project is playing and links back to the original). **Edit in Sculptor** opens `Clockwork_Firefly_godview.html?open=<id>`.
 - Projects live in the browser's local storage (`clockwork.projects.v1`), so they are per browser and per device. Download a file to back one up or move it.
 
 ### Making a project permanent

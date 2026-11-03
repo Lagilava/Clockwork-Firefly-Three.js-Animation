@@ -1,4 +1,4 @@
-// Builds Clockwork_Firefly_godview.html: the film plus the injected director's desk (god's-eye editor).
+// Builds Clockwork_Firefly_godview.html: the film plus the injected director's desk (Sculptor editor).
 // Usage: node tools/build-godview.cjs   (re-run after editing the film or anything in tools/godview.*)
 const fs = require('fs'), path = require('path');
 const root = path.resolve(__dirname, '..');
@@ -32,7 +32,7 @@ html = html.replace(hook, '$1\n  godViewInstall(window.__film);');
 const boot = "setTimeout(() => {\n  boot()";
 must(html.includes(boot), 'boot call not found');
 html = html.replace(boot, inject + '\n' + boot);
-html = html.replace('<title>Clockwork Firefly</title>', "<title>Clockwork Firefly: Director's desk</title>");
+html = html.replace('<title>Clockwork Firefly</title>', "<title>Clockwork Firefly: Sculptor</title>");
 html = html.replace('</head>', `<style>\n${read('godview.css')}\n</style>\n</head>`);
 html = html.replace('</body>', `${read('godview.ui.html')}\n</body>`);
 const out = path.join(root, 'Clockwork_Firefly_godview.html');

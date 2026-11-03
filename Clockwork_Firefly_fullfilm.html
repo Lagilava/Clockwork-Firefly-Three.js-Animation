@@ -5899,7 +5899,7 @@ SHOTS.forEach((s, i) => { s.t1 = i < SHOTS.length - 1 ? SHOTS[i + 1].t0 : FILM; 
 SHOTS.forEach((s) => { s.blend = 0; });
 
 /* ---- Shot overrides: hand-placed camera keyframes -------------------------------------------------
-   Written by the god's-eye editor (Clockwork_Firefly_godview.html, "Export") and applied by tools/apply-overrides.cjs.
+   Written by the Sculptor editor (Clockwork_Firefly_godview.html, "Export") and applied by tools/apply-overrides.cjs.
    Keyed by the shot's start time. Each key is { u: 0..1 through the shot, pos, target, fov, roll, shake }.
    With rel set, pos and target are offsets from the robot, so the camera follows it. An overridden shot
    drops its DRIFT move; handheld still applies.                                                          */
@@ -5932,7 +5932,7 @@ function applyShotOverride(t0, ov) {
   else { s.fn = s.base.fn; if (s.base.drift) DRIFT.set(t0, s.base.drift); }
   return true;
 }
-/* A project saved in the Director's desk (same browser) can be played with ?project=<id>.
+/* A project saved in the Sculptor (same browser) can be played with ?project=<id>.
    Its camera keys replace the baked ones and its colour grade becomes a "Project" entry in the grade menu. */
 const PROJECT = (() => {
   try {
@@ -6277,7 +6277,7 @@ const GRADE_PRESETS = {
   villeneuve: { sh: [0.75, 0.85, 1.08], hi: [1.38, 1.08, 0.62], mid: [1.21, 1.07, 0.77], sat: 0.70, contrast: 1.10, warm: 1.38, grain: 1.18, lift: 0.012, vig: 0.91 },
   coppola:    { sh: [1.14, 1.02, 1.25], hi: [1.20, 1.06, 1.11], mid: [1.11, 0.99, 1.12], sat: 0.89, contrast: 0.82, warm: 1.12, grain: 0.72, lift: 0.018, vig: 0.72 },
 };
-/* Director's grade: written by the god's-eye editor through tools/apply-overrides.cjs (null until baked). */
+/* Director's grade: written by the Sculptor editor through tools/apply-overrides.cjs (null until baked). */
 const DIRECTOR_GRADE = /*GRADE-BEGIN*/{"sh":[1,1,1],"hi":[1,1,1],"mid":[1,1,1],"sat":1.21,"contrast":0.59,"warm":1.47,"grain":1.13,"lift":0.004,"vig":1}/*GRADE-END*/;
 if (DIRECTOR_GRADE) GRADE_PRESETS.directorgrade = DIRECTOR_GRADE;
 if (PROJECT && PROJECT.grade) GRADE_PRESETS.project = PROJECT.grade;
@@ -6521,7 +6521,7 @@ async function boot() {
     const plain = location.pathname;
     if (PROJECT.missing) chip.innerHTML = 'That project was not found in this browser, so this is the original film. <a href="' + plain + '">Dismiss</a>';
     else {
-      chip.innerHTML = 'Project <b>' + esc(PROJECT.name) + '</b> <a href="' + plain.replace('fullfilm', 'godview') + '?open=' + encodeURIComponent(PROJECT.id) + '">Edit in desk</a> <a href="' + plain + '">Original film</a>';
+      chip.innerHTML = 'Project <b>' + esc(PROJECT.name) + '</b> <a href="' + plain.replace('fullfilm', 'godview') + '?open=' + encodeURIComponent(PROJECT.id) + '">Edit in Sculptor</a> <a href="' + plain + '">Original film</a>';
       if (PROJECT.grade) {
         const sel = $('selGrade'), o = document.createElement('option'); o.value = 'project'; o.textContent = 'Project grade: ' + PROJECT.name;
         sel.insertBefore(o, sel.firstChild); sel.value = 'project'; post.setPreset('project');

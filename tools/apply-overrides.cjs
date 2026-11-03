@@ -1,4 +1,4 @@
-// Bakes an export from the god's-eye editor into the film.
+// Bakes an export from the Sculptor editor into the film.
 // Usage: node tools/apply-overrides.cjs path/to/clockwork-edits.json
 //   shot camera keyframes -> const SHOT_OVERRIDES
 //   colour grade          -> const DIRECTOR_GRADE (and a "Director's grade" entry in the grade menu)

@@ -31,9 +31,9 @@ dialog input{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #3a4
 dialog .row{justify-content:flex-end;margin-top:14px}
 </style></head><body><main>
 <header><h1>Custom projects</h1><a class="back" href="./">← Start page</a></header>
-<p class="lead">Your own cuts of the film: camera moves and colour grades you saved in the Director's desk. They play in the full film.</p>
+<p class="lead">Your own cuts of the film: camera moves and colour grades you saved in the Sculptor. They play in the full film.</p>
 <div id="list"></div>
-<div class="row" style="margin-top:18px"><a class="btn pri" href="Clockwork_Firefly_godview.html">Open the Director's desk</a><label class="btn" id="importLbl">Import a project file<input type="file" id="file" accept=".json,application/json" hidden></label></div>
+<div class="row" style="margin-top:18px"><a class="btn pri" href="Clockwork_Firefly_godview.html">Open the Sculptor</a><label class="btn" id="importLbl">Import a project file<input type="file" id="file" accept=".json,application/json" hidden></label></div>
 <p class="foot">Projects are stored in this browser on this device. To move one, download its file and import it on the other device.</p>
 <dialog id="dlg"><form method="dialog" id="dlgForm"><h3 id="dlgTitle"></h3><p id="dlgText" style="margin:0;color:#a9a393"></p><input id="dlgInput" type="text" maxlength="60" autocomplete="off"><div class="row"><button class="btn" value="cancel" id="dlgNo" type="button">Cancel</button><button class="btn pri" id="dlgYes" value="ok">OK</button></div></form></dialog>
 </main>
@@ -60,8 +60,8 @@ function render() {
   const s = read(), list = Object.values(s.projects).sort((a, b) => (b.updated || 0) - (a.updated || 0));
   const dr = s.draft, drEdits = dr && Object.keys(dr.overrides || {}).length + (dr.grade ? 1 : 0) > 0 && !(dr.from && s.projects[dr.from] && JSON.stringify([dr.overrides, dr.grade && dr.grade.vals]) === JSON.stringify([s.projects[dr.from].overrides, s.projects[dr.from].grade && s.projects[dr.from].grade.vals]));
   let h = '';
-  if (drEdits) h += '<div class="card draft"><h2>Unsaved draft</h2><div class="meta">' + meta(dr) + (dr.from && s.projects[dr.from] ? ' · changes to "' + esc(s.projects[dr.from].name) + '"' : '') + '</div><div class="row"><a class="btn pri" href="Clockwork_Firefly_fullfilm.html?project=draft">Play in film</a><a class="btn" href="Clockwork_Firefly_godview.html">Continue in desk</a></div></div>';
-  h += list.length ? list.map((p) => '<div class="card"><h2>' + esc(p.name) + '</h2><div class="meta">' + meta(p) + '</div><div class="row"><a class="btn pri" href="Clockwork_Firefly_fullfilm.html?project=' + encodeURIComponent(p.id) + '">Play in film</a><a class="btn" href="Clockwork_Firefly_godview.html?open=' + encodeURIComponent(p.id) + '">Edit in desk</a><button class="btn" data-a="dl" data-id="' + p.id + '">Download</button><button class="btn" data-a="rn" data-id="' + p.id + '">Rename</button><button class="btn warn" data-a="rm" data-id="' + p.id + '">Delete</button></div></div>').join('')
+  if (drEdits) h += '<div class="card draft"><h2>Unsaved draft</h2><div class="meta">' + meta(dr) + (dr.from && s.projects[dr.from] ? ' · changes to "' + esc(s.projects[dr.from].name) + '"' : '') + '</div><div class="row"><a class="btn pri" href="Clockwork_Firefly_fullfilm.html?project=draft">Play in film</a><a class="btn" href="Clockwork_Firefly_godview.html">Continue in Sculptor</a></div></div>';
+  h += list.length ? list.map((p) => '<div class="card"><h2>' + esc(p.name) + '</h2><div class="meta">' + meta(p) + '</div><div class="row"><a class="btn pri" href="Clockwork_Firefly_fullfilm.html?project=' + encodeURIComponent(p.id) + '">Play in film</a><a class="btn" href="Clockwork_Firefly_godview.html?open=' + encodeURIComponent(p.id) + '">Edit in Sculptor</a><button class="btn" data-a="dl" data-id="' + p.id + '">Download</button><button class="btn" data-a="rn" data-id="' + p.id + '">Rename</button><button class="btn warn" data-a="rm" data-id="' + p.id + '">Delete</button></div></div>').join('')
     : (drEdits ? '' : '<div class="empty"><b>No custom projects yet.</b><br>Open the Director\'s desk, change some cameras or the colour grade, then press <b>Save project</b>. It will appear here.</div>');
   $('list').innerHTML = h;
 }

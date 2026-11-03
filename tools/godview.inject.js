@@ -1,6 +1,6 @@
 /* ==========================================================================
    DIRECTOR'S DESK  (injected by tools/build-godview.cjs; lives inside the film's module)
-   A god's-eye editor for the film. It samples the whole film once (robot, Ember, authored
+   A Sculptor editor for the film. It samples the whole film once (robot, Ember, authored
    cameras), draws all of it over the live scene, mirrors the director's cut in a monitor with
    the film's real grade, lets you place camera keyframes for any shot, and runs a timeline.
    ========================================================================== */
