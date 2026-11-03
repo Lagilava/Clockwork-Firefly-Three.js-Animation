@@ -513,7 +513,7 @@ function godViewInstall(film) {
     let h = `<div class="shead"><h3>S${i + 1} · ${gvEsc(gvShotTitle(s.t0, i))}</h3><span class="m">${gvFmtF(s.t0)}–${gvFmtF(s.t1)} · ${shotDur(i).toFixed(1)} s</span></div>`;
     const desc = note && note.split(/\s+[—-]\s+/).length > 1 ? note.split(/\s+[—-]\s+/).slice(1).join(' — ') : '';
     h += `<div class="snote">${gvEsc(desc || 'Authored in code. Its camera follows the action with springs and a slow move.')}</div>`;
-    h += `<div class="btns"><button class="btn pri" id="iEdit">${ov ? (gv.editOn ? 'Editing…' : 'Edit camera') : 'Edit camera'}</button><button class="btn" id="iFrame">Frame shot</button><button class="btn" id="iStart">Go to start</button>${ov ? '<button class="btn warn" id="iReset">Reset to authored</button>' : ''}</div>`;
+    h += `<div class="btns"><button class="btn pri" id="iEdit">${ov ? (gv.editOn ? 'Editing…' : 'Edit camera') : 'Edit camera'}</button><button class="btn" id="iFrame">Frame</button><button class="btn" id="iStart">Start</button>${ov ? '<button class="btn warn" id="iReset">Reset to authored</button>' : ''}</div>`;
     if (!ov) {
       h += `<div class="note">This shot is driven by code: it reads the robot's position, adds spring smoothing and a slow move${drift ? ` (drift ${gvEsc(Object.entries(drift).map(([k, v]) => k + ' ' + JSON.stringify(v)).join(', '))})` : ''}${hand ? `, plus handheld sway (${hand[0]})` : ''}. <b>Edit camera</b> bakes it into ${shotDur(i) > 2.5 ? '3' : '2'} keyframes you can move with the gizmos or the numbers below.</div>`;
     } else {
@@ -522,7 +522,7 @@ function godViewInstall(film) {
       h += `<div class="sect">Keyframes <span class="hint">${ov.keys.length} · K adds one at the playhead</span></div><div class="keys">${ov.keys.map((kk, n) => `<button data-key="${n}" class="${n === gv.selKey ? 'on' : ''}">${n + 1} · ${Math.round(kk.u * 100)}%</button>`).join('')}</div>`;
       h += `<div class="btns"><button class="btn sm" id="iAddKey">+ Key at playhead</button><button class="btn sm warn" id="iDelKey" ${ov.keys.length <= 1 ? 'disabled' : ''}>Delete key</button><button class="btn sm" id="iGoKey">Go to key</button></div>`;
       h += `<div class="sect">${pf}</div><div class="xyz"><label>Camera</label>${['px', 'py', 'pz'].map((f, n) => `<input class="num" data-f="${f}" type="number" step="0.05" value="${num(k.pos[n])}">`).join('')}</div>`;
-      h += `<div class="xyz"><label>Look at</label>${['tx', 'ty', 'tz'].map((f, n) => `<input class="num" data-f="${f}" type="number" step="0.05" value="${num(k.target[n])}">`).join('')}</div>`;
+      h += `<div class="xyz"><label>Aim</label>${['tx', 'ty', 'tz'].map((f, n) => `<input class="num" data-f="${f}" type="number" step="0.05" value="${num(k.target[n])}">`).join('')}</div>`;
       h += `<div class="rg"><label for="kFov">Lens</label><input type="range" id="kFov" data-f="fov" min="12" max="90" step="0.5" value="${num(k.fov, 1)}"><output id="kFovV">${num(k.fov, 0)}° · ${(12 / Math.tan(THREE.MathUtils.degToRad(k.fov / 2))).toFixed(0)} mm</output></div>`;
       h += `<div class="rg"><label for="kRoll">Dutch</label><input type="range" id="kRoll" data-f="roll" min="-15" max="15" step="0.25" value="${num((k.roll || 0) * 57.2958, 2)}"><output id="kRollV">${num((k.roll || 0) * 57.2958, 1)}°</output></div>`;
       h += `<div class="rg"><label for="kShake">Shake</label><input type="range" id="kShake" data-f="shake" min="0" max="1" step="0.01" value="${num(k.shake ?? 0.15)}"><output id="kShakeV">${num(k.shake ?? 0.15)}</output></div>`;
@@ -580,7 +580,7 @@ function godViewInstall(film) {
   const hexTint = (h) => [1, 3, 5].map((n) => 0.5 + parseInt(h.slice(n, n + 2), 16) / 255);
   function renderGrade() {
     const names = Object.entries(gradeNames).filter(([k]) => k !== 'gvcustom');
-    let h = `<div class="note">Applies to the director's-cut monitor and the thumbnails, on top of the film's own chapter colour script. ${G.touched ? '<b>Edited.</b>' : ''}</div>`;
+    let h = `<div class="note">Applies to the director's-cut monitor and the thumbnails, on top of the film's own chapter colour script. Look, tone and colour are baked into the film on export; exposure and bloom are for previewing only. ${G.touched ? '<b>Edited.</b>' : ''}</div>`;
     h += `<div class="sect">Look</div><select class="sel" id="gBase">${names.map(([k, v]) => `<option value="${k}" ${k === G.base ? 'selected' : ''}>${gvEsc(v)}</option>`).join('')}</select>`;
     h += `<label class="chk"><input type="checkbox" id="gBypass" ${G.bypass ? 'checked' : ''}> Bypass grade (compare with the original)</label><label class="chk"><input type="checkbox" id="gGod" ${G.applyGod ? 'checked' : ''}> Also apply to the god view</label>`;
     h += `<div class="sect">Exposure and light</div><div class="rg"><label>Exposure</label><input type="range" data-g="exposure" min="0.4" max="2.5" step="0.01" value="${G.exposure}"><output>${G.exposure.toFixed(2)}</output></div><div class="rg"><label>Bloom</label><input type="range" data-g="bloom" min="0" max="3" step="0.01" value="${G.bloom}"><output>${G.bloom.toFixed(2)}</output></div>`;
@@ -794,5 +794,6 @@ function godViewInstall(film) {
   $g('gvBoot').classList.add('hidden');
   fitStage();
   Object.assign(gv, { setView, setSet, openMap, frameSet, frameShot, startCapture, shotOfSet, keyWorld, rebuildEdit, renderShotRows, state, layers, sm, bounds, cap });
+  gv.dbg = { proxyPos, proxyTgt, camera, renderer, THREE };
   window.__godview = gv;
 }

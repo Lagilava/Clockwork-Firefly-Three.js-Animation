@@ -11,7 +11,7 @@ body.godview{background:var(--gv-bg)}
 body.godview #titleCard,body.godview #chapterCard,body.godview #end,body.godview #start,body.godview #loader,body.godview #chrome,body.godview #notes,body.godview #toast{display:none!important}
 #gv,#gvBoot,#gvMap,#gvHelp,#gvTip{font:13px/1.4 var(--gv-font);color:var(--gv-text)}
 #gv *{box-sizing:border-box}
-#gv{position:fixed;inset:0;z-index:20;display:grid;grid-template-columns:268px minmax(0,1fr) 360px;grid-template-rows:46px minmax(0,1fr) var(--gv-tlh,284px);grid-template-areas:"top top top" "left stage right" "tl tl tl";background:var(--gv-bg)}
+#gv{position:fixed;inset:0;z-index:20;display:grid;grid-template-columns:268px minmax(0,1fr) 360px;grid-template-rows:46px minmax(0,1fr) var(--gv-tlh,min(284px,28vh));grid-template-areas:"top top top" "left stage right" "tl tl tl";background:var(--gv-bg)}
 #gv button,#gv select,#gv input,#gv textarea{font:inherit}
 :where(#gv) button,:where(#gv) select,:where(#gv) input,:where(#gv) textarea{color:var(--gv-text)}
 #gv button{cursor:pointer}
@@ -106,7 +106,7 @@ input[type=range]{width:100%;accent-color:var(--gv-gold);height:18px;background:
 #gvReadout{font:11.5px var(--gv-mono);padding:6px 10px;background:rgba(11,13,18,.82);border:1px solid var(--gv-line);border-radius:8px;color:var(--gv-dim);pointer-events:none;line-height:1.55}
 #gvReadout b{color:var(--gv-gold);font-weight:600}
 #gvReadout .r{color:var(--gv-hero)}#gvReadout .e{color:var(--gv-ember)}
-#gvEditBadge{position:absolute;z-index:3;left:50%;top:10px;transform:translateX(-50%);padding:5px 12px;background:rgba(40,28,10,.9);border:1px solid var(--gv-edit);color:var(--gv-edit);border-radius:99px;font-weight:600;pointer-events:none}
+#gvEditBadge{position:absolute;z-index:3;right:12px;bottom:12px;padding:5px 12px;background:rgba(40,28,10,.9);border:1px solid var(--gv-edit);color:var(--gv-edit);border-radius:99px;font-weight:600;pointer-events:none}
 #gvTip{position:fixed;z-index:70;pointer-events:none;background:rgba(10,12,18,.96);border:1px solid var(--gv-line2);border-radius:8px;padding:6px 10px;font:12px var(--gv-mono)}
 
 /* monitor */
@@ -179,3 +179,7 @@ textarea.num{height:120px;resize:vertical}
   #gvTop .brand i{display:none}
 }
 @media (prefers-reduced-motion:reduce){#gvLeft,#gvRight{transition:none}}
+
+@media (max-height:980px) and (min-width:901px){.monbar{display:none}}
+#gvIShot .btns .btn{padding:4px 9px;font-size:12.5px}
+@media (max-height:980px) and (min-width:901px){#gvMonCard .monwrap{width:82%;margin:0 auto}}

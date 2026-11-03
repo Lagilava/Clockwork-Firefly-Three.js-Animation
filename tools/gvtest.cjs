@@ -26,6 +26,9 @@ const server = http.createServer((req, res) => {
   for (const s of steps) {
     if (s.eval) { const r = await p.evaluate(s.eval); if (r !== undefined) console.log(s.name || 'eval', JSON.stringify(r)); }
     if (s.click) await p.evaluate((sel) => document.querySelector(sel).click(), s.click);
+    if (s.mclick) await p.click(s.mclick);
+    if (s.drag) { const [x1, y1, x2, y2] = s.drag; await p.mouse.move(x1, y1); await p.mouse.down(); for (let i = 1; i <= 8; i++) await p.mouse.move(x1 + (x2 - x1) * i / 8, y1 + (y2 - y1) * i / 8); await p.mouse.up(); }
+    if (s.fill) await p.fill(s.fill[0], s.fill[1]);
     if (s.key) await p.keyboard.press(s.key);
     if (s.wait) await p.waitForTimeout(s.wait);
     if (s.shot) await shot(s.shot);
