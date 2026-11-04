@@ -167,6 +167,13 @@ function gvTimeline(gv) {
     const maxS = Math.max(0, tl.contentH - (H - TOP));
     if (maxS > 0) { const th = Math.max(24, (H - TOP) * ((H - TOP) / tl.contentH)), ty = TOP + (tl.scrollY / maxS) * (H - TOP - th); ctx.fillStyle = 'rgba(255,255,255,.22)'; rr(W - 7, ty, 4, th, 2); ctx.fill(); }
 
+    // the In-Out range, or the loop span, as a band with end markers
+    { const rg = gv.range; if (rg && (rg.a != null || rg.b != null || rg.loop)) {
+      const sp = gv.spanNow(), has = rg.a != null && rg.b != null && rg.b - rg.a > 0.05, xa = tx(has || rg.a == null ? sp.a : rg.a), xb = tx(has || rg.b == null ? sp.b : rg.b);
+      if (has || (rg.loop && rg.a == null && rg.b == null)) { const x0 = Math.max(HW, xa), x1 = Math.min(W, xb); if (x1 > x0) { ctx.fillStyle = has ? 'rgba(108,196,255,.13)' : 'rgba(108,196,255,.06)'; ctx.fillRect(x0, OV_H, x1 - x0, H - OV_H); } }
+      ctx.save(); ctx.beginPath(); ctx.rect(HW, OV_H, W - HW, H - OV_H); ctx.clip(); ctx.strokeStyle = COL.cyan; ctx.fillStyle = COL.cyan; ctx.lineWidth = 1.5;
+      const flag = (x, label, dir) => { ctx.beginPath(); ctx.moveTo(x, OV_H); ctx.lineTo(x, H); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, OV_H); ctx.lineTo(x + dir * 14, OV_H); ctx.lineTo(x + dir * 14, OV_H + 14); ctx.lineTo(x, OV_H + 14); ctx.fill(); text(label, x + dir * 7, OV_H + 7.5, '#06121c', '700 10px system-ui', 'center'); };
+      if (rg.a != null) flag(tx(rg.a), 'I', 1); if (rg.b != null) flag(tx(rg.b), 'O', -1); ctx.restore(); } }
     // playhead
     const px = tx(T); if (px >= HW - 1 && px <= W) { ctx.strokeStyle = COL.head; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(px, OV_H); ctx.lineTo(px, H); ctx.stroke(); ctx.fillStyle = COL.head; ctx.beginPath(); ctx.moveTo(px - 6, OV_H); ctx.lineTo(px + 6, OV_H); ctx.lineTo(px, OV_H + 9); ctx.fill(); }
   }

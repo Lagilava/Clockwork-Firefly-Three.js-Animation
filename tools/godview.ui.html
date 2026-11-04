@@ -7,6 +7,7 @@
       <button class="tbtn" id="gvProjBtn" title="Your projects"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span id="gvProjName">Project</span><span id="gvSave" class="save">Saved</span><svg class="ic car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
       <div id="gvProjMenu" class="hidden"></div>
     </div>
+    <span id="gvViewing" class="hidden"></span>
     <button class="tbtn iconbtn" id="gvUndo" title="Undo (Ctrl+Z)" disabled><svg class="ic ln" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 010 10h-3"/></svg></button><button class="tbtn iconbtn" id="gvRedo" title="Redo (Ctrl+Shift+Z)" disabled><svg class="ic ln" viewBox="0 0 24 24"><path d="M15 7l5 5-5 5M20 12H9a5 5 0 000 10h3"/></svg></button>
     <button class="tbtn sv" id="gvSaveBtn" title="Save as a project (Ctrl+S)">Save project</button>
     <button class="tbtn narrow" id="gvLeftBtn">Shots</button>
@@ -18,9 +19,12 @@
       <button class="iconbtn" id="gvPlay" title="Play / pause (Space)"><svg class="ic" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg></button>
       <button class="iconbtn" id="gvNextShot" title="Next shot (↓)"><svg class="ic" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5l11 7L4 19z"/></svg></button>
       <span id="gvClock">0:00.0</span>
-      <select id="gvSpeed" title="Playback speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+      <select id="gvSpeed" title="Playback speed"><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+      <button class="iconbtn" id="gvLoopBtn" title="Loop the In–Out range, or the selected shot (R)" aria-pressed="false"><svg class="ic ln" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 01-3 3H3"/></svg></button>
+      <span id="gvShuttle" class="hidden" title="Shuttle speed (J / K / L)"></span>
     </div>
     <div class="gsp"></div>
+    <button class="tbtn" id="gvExportBtn" title="Export a video clip or a still sequence of a range">Export…</button>
     <button class="tbtn pf" id="gvPlayFilm" title="Open the film with this project's cameras and grade">Play in film</button>
     <button class="tbtn" id="gvMapBtn">Map</button>
     <button class="tbtn" id="gvHelpBtn" title="Shortcuts">?</button>
@@ -72,16 +76,19 @@
       <button class="tbtn" id="gvTrackBtn" title="Camera follows the robot (T)">Track robot</button>
       <button class="tbtn" id="gvClipBtn" title="Cut away the upper part of the set (C)">Cut-away</button>
     </div>
+    <div class="hud br">
+      <label class="qsel" title="Preview quality: lower it if the desk feels slow. Exports always render at full quality."><span>Preview</span><select id="gvQuality"><option value="auto">Auto</option><option value="full">Full</option><option value="balanced">Balanced</option><option value="light">Light</option></select></label>
+    </div>
     <div id="gvEditBadge" class="hidden">Editing camera</div>
     <div class="hud bl"><div id="gvReadout"></div></div>
   </main>
 
   <aside id="gvRight">
     <section class="gcard" id="gvMonCard">
-      <div class="gcardhead"><b>Director's cut</b><span class="sub" id="gvMonShot"></span><span class="gsp"></span><label class="chk" style="padding:0"><input type="checkbox" id="gvGuidesOn"> Guides</label><button class="tbtn sm" id="gvStill" title="Save the current monitor frame as a PNG">Save still</button><button class="tbtn iconbtn sm" id="gvMonFold" title="Collapse the monitor"><svg class="ic ln" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button></div>
+      <div class="gcardhead"><b>Director's cut</b><span class="sub" id="gvMonShot"></span><span class="gsp"></span><button class="tbtn sm" id="gvGuideBtn" title="Frame guides: crop shapes, thirds, safe areas">Guides ▾</button><button class="tbtn sm" id="gvStill" title="Save the current monitor frame as a PNG">Save still</button><button class="tbtn iconbtn sm" id="gvMonFold" title="Collapse the monitor"><svg class="ic ln" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button></div>
       <div class="monwrap">
         <canvas id="gvMon" width="800" height="450"></canvas>
-        <div id="gvGuides"><i style="left:33.33%;top:0;bottom:0;width:1px"></i><i style="left:66.66%;top:0;bottom:0;width:1px"></i><i style="top:33.33%;left:0;right:0;height:1px"></i><i style="top:66.66%;left:0;right:0;height:1px"></i><div class="box" style="inset:5%"></div><div class="box" style="inset:10%"></div></div>
+        <div id="gvGuides"></div>
         <div id="gvMonOff">Monitor is off</div>
         <div id="gvMonHud"><span id="gvMonTc"></span><span id="gvMonLens"></span></div>
       </div>
@@ -94,9 +101,10 @@
     </section>
     <div class="rgrip" id="gvMonGrip" title="Drag to resize the monitor"></div>
     <section class="gcard gsp">
-      <div class="itabs" id="gvITabs"><button data-itab="shot" class="on">Shot</button><button data-itab="grade">Grade</button><button data-itab="export">Export</button></div>
+      <div class="itabs" id="gvITabs"><button data-itab="shot" class="on">Shot</button><button data-itab="grade">Grade</button><button data-itab="versions">Versions</button><button data-itab="export">Project</button></div>
       <div class="ibody" id="gvIShot"></div>
       <div class="ibody hidden" id="gvIGrade"></div>
+      <div class="ibody hidden" id="gvIVers"></div>
       <div class="ibody hidden" id="gvIExport"></div>
     </section>
   </aside>
@@ -110,6 +118,10 @@
       <button class="tbtn" id="gvZoomFit">Fit film</button>
       <button class="tbtn" id="gvZoomShot">Zoom to shot</button>
       <label class="chk" style="padding:0"><input type="checkbox" id="gvTLFollow" checked> Follow playhead</label>
+      <span class="tlsep"></span>
+      <span class="lbl">Range</span>
+      <div class="grp sm" id="gvRangeGrp"><button id="gvIn" title="Set the In point at the playhead (I)">In</button><button id="gvOut" title="Set the Out point at the playhead (O)">Out</button><button id="gvRangeShot" title="Use the selected shot as the range">Shot</button><button id="gvRangeClr" title="Clear the range (X)">Clear</button></div>
+      <span class="lens" id="gvRangeInfo">No range</span>
       <span class="sp"></span>
       <select id="gvTrackAdd" title="Add a curve track"><option value="">+ Add curve track…</option></select>
     </div>
@@ -125,6 +137,23 @@
 </div>
 
 <div id="gvTip" class="hidden"></div>
+<div id="gvPop" class="hidden"></div>
+<div id="gvWelcome" class="hidden"><b>Welcome to the Sculptor</b><span>Pick a shot on the left, press <kbd>E</kbd> to edit its camera, and try the Grade tab for colour. Everything autosaves.</span><button class="btn pri sm" id="gvWelcomeGo">Quick start</button><button class="iconbtn sm" id="gvWelcomeX" title="Dismiss" aria-label="Dismiss">✕</button></div>
+<div id="gvXp" class="hidden"><div class="dlg wide">
+  <h3>Export a clip or stills</h3>
+  <p>Frames are rendered one by one at full quality, so the result is smooth even if this computer is slow. Keep this tab in front while it runs.</p>
+  <div class="xgrid">
+    <label for="xpRange">Range</label><select id="xpRange" class="sel"><option value="shot">Selected shot</option><option value="range">In to Out</option><option value="film">Whole film</option></select>
+    <label for="xpFmt">Format</label><select id="xpFmt" class="sel"><option value="webm">Video clip (.webm)</option><option value="png">Still frames, PNG (.zip)</option><option value="jpg">Still frames, JPEG (.zip, smaller)</option></select>
+    <label for="xpSize">Size</label><select id="xpSize" class="sel"><option value="draft">Draft · 640 × 360 (fast)</option><option value="hd" selected>HD · 1280 × 720</option><option value="fhd">Full HD · 1920 × 1080</option></select>
+    <label for="xpAspect">Shape</label><select id="xpAspect" class="sel"><option value="off">Full frame (16:9)</option><option value="16:9">16:9 · film, YouTube</option><option value="2.39:1">2.39:1 · cinemascope</option><option value="4:5">4:5 · feed post</option><option value="1:1">1:1 · square</option><option value="9:16">9:16 · vertical, reels</option></select>
+    <label for="xpFps">Frame rate</label><select id="xpFps" class="sel"><option value="12">12 fps</option><option value="24" selected>24 fps</option><option value="30">30 fps</option><option value="60">60 fps</option></select>
+  </div>
+  <div class="note" id="xpSummary"></div>
+  <div class="note edit hidden" id="xpWarn">This browser has no video encoder (WebCodecs). Pick a still sequence, or open the Sculptor in a recent Chrome or Edge.</div>
+  <div id="xpProg" class="hidden"><div class="bar"><i></i></div><div class="sub" id="xpProgText"></div></div>
+  <div class="btns r"><button type="button" class="btn" id="xpCancel">Close</button><button type="button" class="btn pri" id="xpGo">Start export</button></div>
+</div></div>
 <div id="gvToast" class="hidden" role="status"></div>
 <div id="gvDrop" class="hidden"><div>Drop a <b>.cube</b> LUT or a <b>.json</b> project to import it</div></div>
 
@@ -141,25 +170,48 @@
 </div>
 
 <div id="gvHelp" class="hidden"><div class="sheet">
-  <h2>Sculptor</h2>
-  <p>The film is a pure function of time, so everything here is live: scrub the timeline and the viewport, the director's-cut monitor and the curves all follow.</p>
-  <table>
-    <tr><td>Space</td><td>Play or pause</td></tr>
-    <tr><td>← →</td><td>Step one frame (hold Shift for one second)</td></tr>
-    <tr><td>↑ ↓</td><td>Previous or next shot</td></tr>
-    <tr><td>1 2 3 4</td><td>Top, Aerial, Side, South view</td></tr>
-    <tr><td>F / S</td><td>Frame the set / frame the selected shot</td></tr>
-    <tr><td>T / C / G</td><td>Track robot / cut-away / grid</td></tr>
-    <tr><td>E</td><td>Edit the selected shot's camera</td></tr>
-    <tr><td>K</td><td>Add a camera keyframe at the playhead (while editing)</td></tr>
-    <tr><td>Delete</td><td>Delete the selected keyframe</td></tr>
-    <tr><td>Ctrl Z / Ctrl Shift Z</td><td>Undo / redo (cameras, grade, notes)</td></tr>
-    <tr><td>Ctrl C / Ctrl V</td><td>Copy / paste the selected shot's camera (Shift: its grade)</td></tr>
-    <tr><td>/</td><td>Find a shot</td></tr>
-    <tr><td>M</td><td>Whole-film map (drag cameras there too)</td></tr>
-    <tr><td>Timeline wheel</td><td>Zoom (Shift + wheel scrolls the tracks)</td></tr>
-    <tr><td>Esc</td><td>Close map or this sheet</td></tr>
-  </table>
-  <p>Your work lives in a project (top left). Every change is saved automatically in this browser. Use <b>Play in film</b> to watch the film with your cameras and grade, or Export to download a file and bake it into the film with <code>node tools/apply-overrides.cjs edits.json</code>.</p>
-  <div class="btns"><button class="btn pri" id="gvHelpClose">Close</button></div>
+  <h2>Sculptor <span>the director's desk</span></h2>
+  <p>The film is a pure function of time, so everything here is live: scrub the timeline and the viewport, the director's-cut monitor and the curves all follow. Your work autosaves in this browser.</p>
+  <ol class="steps">
+    <li><b>Pick a shot</b> in the list on the left, or click the timeline. The monitor shows what the camera sees.</li>
+    <li><b>Edit its camera</b> with <kbd>E</kbd>: drag the gizmos in the viewport, or on the map (<kbd>M</kbd>) for the big picture.</li>
+    <li><b>Grade the picture</b> in the Grade tab. Use the shot scope to colour one shot, or load a <code>.cube</code> LUT.</li>
+    <li><b>Try ideas safely.</b> Save a version in the Versions tab, then flip between A and B with <kbd>\</kbd>.</li>
+    <li><b>Share it.</b> Export a clip or stills of any range, or press Play in film to watch the whole cut.</li>
+  </ol>
+  <div class="cols">
+    <div><h4>Playback</h4><table>
+      <tr><td>Space</td><td>Play or pause</td></tr>
+      <tr><td>J K L</td><td>Reverse, pause, forward (press again for 2× and 4×)</td></tr>
+      <tr><td>← →</td><td>Step a frame (Shift: one second)</td></tr>
+      <tr><td>↑ ↓</td><td>Previous or next shot</td></tr>
+      <tr><td>R</td><td>Loop the range, or the selected shot</td></tr>
+      <tr><td>I / O / X</td><td>Set In, set Out, clear the range</td></tr>
+      <tr><td>Home / End</td><td>Start or end of the film</td></tr>
+    </table></div>
+    <div><h4>Camera and view</h4><table>
+      <tr><td>E</td><td>Edit the selected shot's camera</td></tr>
+      <tr><td>K</td><td>Add a keyframe at the playhead (while editing); otherwise pause</td></tr>
+      <tr><td>Delete</td><td>Delete the selected keyframe</td></tr>
+      <tr><td>1 2 3 4</td><td>Top, Aerial, Side, South view</td></tr>
+      <tr><td>F / S</td><td>Frame the set / the selected shot</td></tr>
+      <tr><td>T / C / G</td><td>Track robot / cut-away / grid</td></tr>
+      <tr><td>M</td><td>Whole-film map (drag cameras there too)</td></tr>
+    </table></div>
+    <div><h4>Edit</h4><table>
+      <tr><td>Ctrl Z / Ctrl Shift Z</td><td>Undo / redo</td></tr>
+      <tr><td>Ctrl C / Ctrl V</td><td>Copy / paste the shot's camera (Shift: its grade)</td></tr>
+      <tr><td>Ctrl S</td><td>Save the project</td></tr>
+      <tr><td>\</td><td>Flip between version A and B</td></tr>
+      <tr><td>/</td><td>Find a shot</td></tr>
+    </table></div>
+    <div><h4>Timeline and panels</h4><table>
+      <tr><td>+ / −</td><td>Zoom the timeline (or use the wheel)</td></tr>
+      <tr><td>Shift + wheel</td><td>Scroll the tracks</td></tr>
+      <tr><td>Drag an edge</td><td>Resize the shot list, inspector, monitor or timeline (double-click resets)</td></tr>
+      <tr><td>? / Esc</td><td>This sheet / close things</td></tr>
+    </table></div>
+  </div>
+  <p>Use <b>Preview</b> (top right of the viewport) to lighten the desk on a slow machine. Exports always render at full quality. To bake your work into the film itself, download the file from the Project tab and run <code>node tools/apply-overrides.cjs edits.json</code>.</p>
+  <div class="btns"><button class="btn pri" id="gvHelpClose">Got it</button></div>
 </div></div>

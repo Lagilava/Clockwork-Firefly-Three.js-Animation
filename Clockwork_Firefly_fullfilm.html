@@ -6719,13 +6719,13 @@ async function boot() {
     requestAnimationFrame(frame);
     const wallDt = Math.max(0, (now - lastNow) / 1000); lastNow = now;
     if (document.hidden) return;
-    const rawDt = Math.min(0.1, wallDt);
+    const rawDt = st.fixedDt || Math.min(0.1, wallDt); // st.fixedDt: the Sculptor's exporter steps the film by exact frames
     if (wallDt < 0.5 && wallDt > 0) watchPerformance(wallDt);
     renderer.info.reset();
     const renderStart = performance.now();
     let dt = 0;
     if (st.playing && !dragging) {
-      dt = rawDt * st.speed;
+      dt = st.fixedDt || rawDt * st.speed;
       if (st.T + dt >= FILM - 0.02) { dt = Math.max(0, FILM - 0.02 - st.T); st.playing = false; st.ended = true; $('end').classList.add('on'); setPlaying(false); st.ended = true; $('end').classList.add('on'); }
       if (dt > 0) anim.step(dt);
       st.T = anim.T; st.elapsed += dt;

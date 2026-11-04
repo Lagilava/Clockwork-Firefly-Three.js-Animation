@@ -24,7 +24,7 @@ for (const line of html.slice(shotsStart, shotsEnd).split('\n')) {
   const c = line.match(/^\s*\/\/\s*(.+)$/), s = line.match(/^\s*\{ t0: ([\d.]+)/);
   if (c) pending.push(c[1].trim()); else if (s) { if (pending.length) notes[parseFloat(s[1])] = pending.join(' '); pending = []; } else if (/^\s*\/\*/.test(line)) pending = [];
 }
-const inject = [read('godview.inject.js').replace('/*__GV_NOTES__*/{}', JSON.stringify(notes)), read('godview.timeline.js')].join('\n');
+const inject = [read('godview.inject.js').replace('/*__GV_NOTES__*/{}', JSON.stringify(notes)).replace('/*__GV_STUDIO__*/', () => read('godview.studio.js')), read('godview.timeline.js')].join('\n');
 
 const hook = /(window\.__film = \{[^}]*\};)/;
 must(hook.test(html), '__film assignment not found');

@@ -32,7 +32,7 @@ function godViewInstall(film) {
 
   /* ---------- 0. stage: the film's canvas lives in the viewport cell ---------- */
   const stage = $g('gvStage'); stage.prepend(renderer.domElement);
-  const fitStage = () => { const r = stage.getBoundingClientRect(); GV_VIEW.w = Math.max(64, Math.round(r.width)); GV_VIEW.h = Math.max(64, Math.round(r.height)); window.dispatchEvent(new Event('resize')); lineMats.forEach((m) => m.resolution.set(GV_VIEW.w, GV_VIEW.h)); };
+  const fitStage = () => { const r = stage.getBoundingClientRect(), q = gv.qscale || 1; GV_VIEW.w = Math.max(64, Math.round(r.width * q)); GV_VIEW.h = Math.max(64, Math.round(r.height * q)); if (gv.xp && gv.xp.view) { GV_VIEW.w = gv.xp.view.w; GV_VIEW.h = gv.xp.view.h; } window.dispatchEvent(new Event('resize')); lineMats.forEach((m) => m.resolution.set(GV_VIEW.w, GV_VIEW.h)); };
   const lineMats = [];
   new ResizeObserver(() => { clearTimeout(fitStage.h); fitStage.h = setTimeout(fitStage, 30); }).observe(stage);
 
@@ -288,7 +288,7 @@ function godViewInstall(film) {
     const p = curProject(), st = projState(), el = $g('gvSave');
     $g('gvProjName').textContent = p ? p.name : 'Untitled draft';
     el.textContent = !storageOk ? 'Not stored (browser storage blocked)' : st === 'clean' ? 'Saved' : st === 'dirty' ? 'Unsaved changes' : st === 'draft' ? 'Draft, autosaved' : 'No changes yet';
-    el.className = 'save ' + (!storageOk ? 'blocked' : st === 'dirty' || st === 'draft' ? 'saving' : '');
+    el.title = el.textContent; el.className = 'save ' + (!storageOk ? 'blocked' : st === 'dirty' || st === 'draft' ? 'saving' : '');
     $g('gvSaveBtn').disabled = st === 'clean' || st === 'empty'; $g('gvSaveBtn').textContent = p ? 'Save' : 'Save project';
     $g('gvPlayFilm').disabled = !storageOk;
   }
@@ -389,6 +389,7 @@ function godViewInstall(film) {
   const monitor = $g('gvMon'), mctx = monitor.getContext('2d');
   const pv = gv.pv = { on: true, rate: 1, pos: V(), quat: new THREE.Quaternion(), fov: 40, lastT: -1, dirty: true, need: false, fog: 0 };
   const cap = { active: false, i: 0, restoreT: 0, restoreSet: 'atrium' };
+  const xp = gv.xp = { active: false, want: false, ready: null, view: null }; // the exporter (godview.studio.js) steps the film frame by frame
   const thumbCv = document.createElement('canvas'); thumbCv.width = 192; thumbCv.height = 108; const thumbCtx = thumbCv.getContext('2d');
   const origUpdate = director.update;
   const _gp = V(), _gq = new THREE.Quaternion();
@@ -414,6 +415,7 @@ function godViewInstall(film) {
     const src = renderer.domElement;
     mctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, monitor.width, monitor.height);
     if (cap.active) captureThumb();
+    if (xp.active && xp.want) { xp.want = false; setPlaying(false); xp.ready && xp.ready(); }
     hideDuring.forEach((h, n) => { h.visible = vis[n]; }); renderer.clippingPlanes = clips; scene.fog.density = fog;
     camera.position.copy(gp); camera.quaternion.copy(gq); camera.fov = gfov; camera.aspect = GV_VIEW.w / Math.max(1, GV_VIEW.h); camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
     world.sky.follow(camera);
@@ -499,7 +501,7 @@ function godViewInstall(film) {
     // the director's camera, as the film's own director computes it
     gv.frameNo++;
     const playing = st.playing, moved = T !== pv.lastT;
-    if (pv.on && (cap.active || pv.dirty || (moved && (!playing || gv.frameNo % monRate() === 0)))) { computePreviewPose(T, dt || 1 / 60); pv.need = true; pv.dirty = false; }
+    if (pv.on && (cap.active || xp.active || pv.dirty || (moved && (!playing || gv.frameNo % monRate() === 0)))) { computePreviewPose(T, dt || 1 / 60); pv.need = true; pv.dirty = false; }
     liveCam.position.copy(pv.pos); liveCam.scale.setScalar(g * 1.4); _fwd.set(0, 0, -1).applyQuaternion(pv.quat); liveCam.lookAt(_tmp.copy(pv.pos).add(_fwd));
     liveRay.position.copy(pv.pos); const L = 25 * g; liveRay.scale.set(1, 1, L); liveRay.quaternion.setFromUnitVectors(V(0, 0, 1), _fwd.normalize());
     world.sky.follow(camera);
@@ -761,7 +763,8 @@ function godViewInstall(film) {
   }
   document.querySelectorAll('#gvITabs button').forEach((b) => b.onclick = () => {
     document.querySelectorAll('#gvITabs button').forEach((x) => x.classList.toggle('on', x === b));
-    $g('gvIShot').classList.toggle('hidden', b.dataset.itab !== 'shot'); $g('gvIGrade').classList.toggle('hidden', b.dataset.itab !== 'grade'); $g('gvIExport').classList.toggle('hidden', b.dataset.itab !== 'export');
+    for (const [t, id] of [['shot', 'gvIShot'], ['grade', 'gvIGrade'], ['versions', 'gvIVers'], ['export', 'gvIExport']]) $g(id).classList.toggle('hidden', b.dataset.itab !== t);
+    if (b.dataset.itab === 'versions' && gv.renderVersions) gv.renderVersions();
   });
 
   /* ---------- 8. controls: toolbar, view options, pointer, keyboard, map ---------- */
@@ -779,7 +782,6 @@ function godViewInstall(film) {
   $g('gvExp').oninput = (e) => { state.exposure = +e.target.value; $g('gvExpV').textContent = state.exposure.toFixed(1) + '×'; };
   $g('gvMonOn').onchange = (e) => { pv.on = e.target.checked; pv.dirty = true; $g('gvMonOff').style.display = pv.on ? 'none' : 'grid'; };
   $g('gvMonRate').onchange = (e) => { mon.auto = e.target.value === 'auto'; if (!mon.auto) pv.rate = +e.target.value; else mon.level = 1; };
-  $g('gvGuidesOn').onchange = (e) => $g('gvGuides').classList.toggle('on', e.target.checked);
   $g('gvCapture').onclick = startCapture;
   document.querySelectorAll('[data-layer]').forEach((c) => { c.checked = layers[c.dataset.layer]; c.onchange = () => { layers[c.dataset.layer] = c.checked; }; });
   const togglePlay = () => setPlaying(!st.playing);
@@ -996,7 +998,7 @@ function godViewInstall(film) {
   // The desk owns the keyboard: the film's own shortcuts (camera modes, notes) must not fire here.
   addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); e.stopImmediatePropagation(); saveProject(false); return; }
-    if (!$g('gvDlg').classList.contains('hidden')) return;
+    if (!$g('gvDlg').classList.contains('hidden') || !$g('gvXp').classList.contains('hidden')) return;
     const tag = e.target.tagName; if (tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') return; if (tag === 'TEXTAREA' || tag === 'SELECT') return;
     if ((e.metaKey || e.ctrlKey) && !e.altKey) {
       const ck = e.key.toLowerCase(); let hit = true;
@@ -1006,10 +1008,11 @@ function godViewInstall(film) {
     }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase(); let used = true;
+    if (gv.studioKey && gv.studioKey(k, e)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
     if (e.code === 'Space') togglePlay();
     else if (k === 'arrowleft') seekTo(st.T - (e.shiftKey ? 1 : 1 / 24)); else if (k === 'arrowright') seekTo(st.T + (e.shiftKey ? 1 : 1 / 24));
     else if (k === 'arrowup') stepShot(-1); else if (k === 'arrowdown') stepShot(1);
-    else if (k === 'm') $g('gvMapBtn').click(); else if (k === 'escape') { mapEl.classList.add('hidden'); $g('gvHelp').classList.add('hidden'); closeProjMenu(); }
+    else if (k === 'm') $g('gvMapBtn').click(); else if (k === 'escape') { gv.closePop && gv.closePop(); mapEl.classList.add('hidden'); $g('gvHelp').classList.add('hidden'); closeProjMenu(); }
     else if (k === '1') setView('top'); else if (k === '2') setView('aerial'); else if (k === '3') setView('side'); else if (k === '4') setView('south');
     else if (k === 'g') { layers.grid = !layers.grid; document.querySelector('[data-layer=grid]').checked = layers.grid; }
     else if (k === 'f') setView(curView); else if (k === 's') frameShot(gv.sel);
@@ -1271,6 +1274,8 @@ function godViewInstall(film) {
     persistNow(); const id = PFROM && projState() === 'clean' ? PFROM : 'draft';
     window.open(location.pathname.replace(/[^/]*$/, '') + 'Clockwork_Firefly_fullfilm.html?project=' + encodeURIComponent(id), '_blank');
   };
+
+  /*__GV_STUDIO__*/
 
   /* ---------- 9. restore saved work, build panels, start ---------- */
   try {

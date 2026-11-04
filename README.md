@@ -100,7 +100,7 @@ npm run build:godview                                  # regenerates the editor 
 
 An overridden shot drops its automatic camera drift and follows your keyframes; the grade appears in the film's grade menu as "Director's grade" and is selected by default.
 
-The editor is generated, never edited by hand: `npm run build:godview` reads `Clockwork_Firefly_fullfilm.html` and injects `tools/godview.inject.js`, `godview.timeline.js`, `godview.ui.html` and `godview.css` into a copy. `npm run test:godview` boots it in headless Chromium and saves screenshots (set `GV_FILE`, `THREE_ROOT`, `PLAYWRIGHT_MODULE`, `GV_STEPS`, `GV_VIEWPORT` for custom runs). `npm run test:projects` checks the whole save, list and play-in-film flow.
+The editor is generated, never edited by hand: `npm run build:godview` reads `Clockwork_Firefly_fullfilm.html` and injects `tools/godview.inject.js` (with `godview.studio.js` spliced in), `godview.timeline.js`, `godview.ui.html` and `godview.css` into a copy. `npm run test:godview` boots it in headless Chromium and saves screenshots (set `GV_FILE`, `THREE_ROOT`, `PLAYWRIGHT_MODULE`, `GV_STEPS`, `GV_VIEWPORT` for custom runs). `npm run test:projects` checks the whole save, list and play-in-film flow.
 
 ## World viewing rig and town plan
 
@@ -153,4 +153,12 @@ Edited camera shots also get a **Motion** setting: smooth (default), linear, eas
 - **Layout:** drag the edges of the shot list, the inspector and the monitor (double-click an edge to reset), or fold the monitor away. The layout is remembered.
 - **Map.** Open it with `M`. Pick a set to see it large with a metre grid; the wheel zooms, dragging the background pans, double-click resets the view. In Cameras mode the camera keys of edited shots are squares and their aim points diamonds: drag them directly, or click a blue dot to pick that shot. "Edit camera" turns an authored shot into editable keys. The camera you are looking through is drawn with its aim line and lens cone.
 
-`npm run test:desk` and `npm run test:map` check these (they are slow under software GL).
+## Studio tools: versions, loop, guides, quality and export
+
+- **Versions.** The Versions tab saves named snapshots of the whole cut (cameras, grade, notes). Pick two as A and B and press `\` to flip between them; the desk re-samples only the shots that differ, lists what changed, and keeps any unsaved work as an automatic version before it switches, so a flip never loses anything. Versions are stored in this browser.
+- **Loop and shuttle.** `J` plays backwards, `K` pauses, `L` plays forward (press again for 2× and 4×). `R` loops the selected shot, or the In to Out range if one is set (`I`, `O`, `X` to set and clear; the range is a blue band on the timeline). While a camera is being edited, `K` still adds a keyframe.
+- **Frame guides.** The Guides menu on the monitor crops to 16:9, 2.39:1, 4:5, 1:1 or 9:16 and can show thirds, action and title safe areas and a centre mark.
+- **Preview quality.** Auto, Full, Balanced or Light (bottom right of the viewport). Balanced and Light render the viewport at 75% or 50% resolution and the monitor every 2nd or 4th frame. Exports always render at full quality.
+- **Export.** The Export button renders a range (selected shot, In to Out, or the whole film) frame by frame, so the result is exact even on a slow machine. Choose a video clip (`.webm`, VP8 via WebCodecs) or a still sequence (`.zip` of PNG or JPEG), 640×360, 1280×720 or 1920×1080, 12 to 60 fps, and any guide shape to crop to. The film is stepped by whole frames through `st.fixedDt`, which is unset during normal playback.
+
+`npm run test:desk`, `npm run test:map` and `npm run test:studio` check the editor tools (they are slow under software GL; the studio test also checks the zip and the webm with `ffprobe`).
