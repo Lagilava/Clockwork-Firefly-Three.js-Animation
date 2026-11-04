@@ -141,3 +141,16 @@ Switch the scope at the top of the tab from **Whole film** to **S# only** to gra
 Edited camera shots also get a **Motion** setting: smooth (default), linear, ease in, ease out or slow-fast-slow. With three or more keys, anything other than smooth runs straight segments between keys with that easing.
 
 `npm run test:grade` checks the sliders, per-shot scope, undo and reset, the Motion setting, and that a saved project plays its shot grade in the film.
+
+## Sculptor editor tools
+
+- **LUTs.** Import a `.cube` file (3D, or 1D which is converted) with the button under Colour LUT in the Grade tab, or drop it anywhere on the desk. Its strength is a slider and can differ per shot. The LUT runs after tone mapping on the final image, is stored inside the grade (resampled to at most 33 points) and is baked into the film on export. The film adds the pass only when a LUT is present.
+- **Undo and redo** (Ctrl+Z, Ctrl+Shift+Z or the top bar buttons) cover cameras, grade and notes, 60 steps.
+- **Copy and paste** a shot's camera (Ctrl+C, Ctrl+V) or its grade (Ctrl+Shift+C, Ctrl+Shift+V, or "Paste to chapter").
+- **My looks:** save the current grade by name; it is available in every project in this browser.
+- **Notes** per shot, shown in the shot list with a marker, and a find box (`/`) with Camera, Graded and Notes filters.
+- **Save still** writes the monitor frame as a PNG.
+- **Layout:** drag the edges of the shot list, the inspector and the monitor (double-click an edge to reset), or fold the monitor away. The layout is remembered.
+- **Map.** Open it with `M`. Pick a set to see it large with a metre grid; the wheel zooms, dragging the background pans, double-click resets the view. In Cameras mode the camera keys of edited shots are squares and their aim points diamonds: drag them directly, or click a blue dot to pick that shot. "Edit camera" turns an authored shot into editable keys. The camera you are looking through is drawn with its aim line and lens cone.
+
+`npm run test:desk` and `npm run test:map` check these (they are slow under software GL).

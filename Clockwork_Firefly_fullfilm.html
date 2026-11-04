@@ -6301,7 +6301,7 @@ function gradeKeyAt(t) {
 // color script remains underneath every selectable look.
 /* Every grade value the film understands. A preset, the director's grade or a project may set any of them; the rest stay
    neutral. A grade may also carry `shots: { "<shot start time>": { ...any of these } }` to override values for one shot. */
-const GRADE_NEUTRAL = { exposure: 1, bloom: 1, gamma: 1, temp: 0, tint: 0, hue: 0, vibrance: 0, shadows: 0, highlights: 0, matte: 0, sharpen: 0, aberr: 1, vigSoft: 1, vigAmt: 0.28, halation: 0, streak: 0, letterbox: 0, grainSize: 1, pivot: 0.18 };
+const GRADE_NEUTRAL = { exposure: 1, bloom: 1, gamma: 1, temp: 0, tint: 0, hue: 0, vibrance: 0, shadows: 0, highlights: 0, matte: 0, sharpen: 0, aberr: 1, vigSoft: 1, vigAmt: 0.28, halation: 0, streak: 0, letterbox: 0, grainSize: 1, pivot: 0.18, lutAmount: 1 };
 const GRADE_PRESETS = {
   default:    { sh: [1, 1, 1], hi: [1, 1, 1], mid: [1, 1, 1], sat: 1, contrast: 1, warm: 1, grain: 1, lift: 0.004, vig: 1 },
   snyder:     { sh: [0.56, 0.76, 1.32], hi: [1.36, 1.08, 0.65], mid: [0.81, 0.91, 1.13], sat: 0.70, contrast: 1.35, warm: 0.58, grain: 1.28, lift: 0.002, vig: 1.24 },
@@ -6312,9 +6312,34 @@ const GRADE_PRESETS = {
   coppola:    { sh: [1.14, 1.02, 1.25], hi: [1.20, 1.06, 1.11], mid: [1.11, 0.99, 1.12], sat: 0.89, contrast: 0.82, warm: 1.12, grain: 0.72, lift: 0.018, vig: 0.72 },
 };
 /* Director's grade: written by the Sculptor editor through tools/apply-overrides.cjs (null until baked). */
-const DIRECTOR_GRADE = /*GRADE-BEGIN*/{"sh":[1,1,1],"hi":[1,1,1],"mid":[1,1,1],"sat":1.55,"contrast":0.5,"warm":1.56,"grain":0.63,"lift":0,"vig":1.17}/*GRADE-END*/;
+const DIRECTOR_GRADE = /*GRADE-BEGIN*/{"sh":[1,1,1],"hi":[1,1,1],"mid":[1,1,1],"sat":2.5,"contrast":0.48,"warm":1.56,"grain":0.9,"lift":0,"vig":1.17,"aberr":0,"streak":0,"halation":0,"sharpen":0.09,"grainSize":0.9,"tint":-0.61,"hue":4,"matte":0.12,"pivot":0.6,"gamma":0.8,"bloom":2.08,"exposure":1.71,"temp":0.32}/*GRADE-END*/;
 if (DIRECTOR_GRADE) GRADE_PRESETS.directorgrade = DIRECTOR_GRADE;
 if (PROJECT && PROJECT.grade) GRADE_PRESETS.project = PROJECT.grade;
+/* A colour LUT (a .cube file imported in the Sculptor) lives in the grade as { name, n, data }: n^3 RGB bytes, red fastest, as base64.
+   It runs after tone mapping, on the display image, so it behaves like any grading LUT. */
+const LUT_CACHE = new Map();
+function lutTexture(lut) {
+  let t = LUT_CACHE.get(lut.data);
+  if (!t) {
+    const bin = atob(lut.data), n = lut.n, px = new Uint8Array(n * n * n * 4);
+    for (let i = 0, j = 0; i < n * n * n; i++) { px[j++] = bin.charCodeAt(i * 3); px[j++] = bin.charCodeAt(i * 3 + 1); px[j++] = bin.charCodeAt(i * 3 + 2); px[j++] = 255; }
+    t = new THREE.Data3DTexture(px, n, n, n); t.format = THREE.RGBAFormat; t.type = THREE.UnsignedByteType;
+    t.minFilter = t.magFilter = THREE.LinearFilter; t.wrapS = t.wrapT = t.wrapR = THREE.ClampToEdgeWrapping; t.unpackAlignment = 1; t.needsUpdate = true;
+    if (LUT_CACHE.size >= 4) { const k = LUT_CACHE.keys().next().value; LUT_CACHE.get(k).dispose(); LUT_CACHE.delete(k); }
+    LUT_CACHE.set(lut.data, t);
+  }
+  return t;
+}
+class LutPass extends ShaderPass {
+  constructor() {
+    super({
+      uniforms: { tDiffuse: { value: null }, tLut: { value: null }, uSize: { value: 2 }, uAmount: { value: 1 } },
+      vertexShader: GradeShader.vertexShader,
+      fragmentShader: 'precision highp sampler3D; uniform sampler2D tDiffuse; uniform sampler3D tLut; uniform float uSize; uniform float uAmount; varying vec2 vUv; void main(){ vec4 c = texture2D(tDiffuse, vUv); vec3 g = texture(tLut, clamp(c.rgb, 0.0, 1.0) * ((uSize - 1.0) / uSize) + 0.5 / uSize).rgb; gl_FragColor = vec4(mix(c.rgb, g, uAmount), c.a); }',
+    });
+    this.material.toneMapped = false; this.enabled = false;
+  }
+}
 const _eg = {};
 function effectiveGrade(p, t) {
   Object.assign(_eg, GRADE_NEUTRAL, p);
@@ -6370,6 +6395,7 @@ class Post {
     this.grade = new ShaderPass(GradeShader);
     this.composer.addPass(this.grade);
     this.composer.addPass(new OutputPass());
+    this.lut = new LutPass(); this.composer.addPass(this.lut);
     this.smaa = new SMAAPass(size.x, size.y);
     this.composer.addPass(this.smaa);
     this.dissolve = new ChapterDissolve(); this.composer.addPass(this.dissolve);
@@ -6411,6 +6437,9 @@ class Post {
     u.uGamma.value = Math.max(0.2, p.gamma); u.uTemp.value = p.temp; u.uTint.value = p.tint; u.uHue.value = p.hue * Math.PI / 180; u.uVibrance.value = p.vibrance;
     u.uShadowAmt.value = p.shadows; u.uHighAmt.value = p.highlights; u.uMatte.value = p.matte; u.uSharp.value = p.sharpen;
     u.uVigSoft.value = Math.max(0.1, p.vigSoft); u.uVigAmt.value = p.vigAmt; u.uGrainSize.value = Math.max(0.2, p.grainSize); u.uPivot.value = Math.max(0.02, p.pivot);
+    const lutOn = !!(p.lut && p.lut.data && p.lutAmount > 0.001);
+    this.lut.enabled = lutOn;
+    if (lutOn) { const lu = this.lut.uniforms; lu.tLut.value = lutTexture(p.lut); lu.uSize.value = p.lut.n; lu.uAmount.value = Math.min(1, p.lutAmount); }
     const cinematic = o.cinematic !== false;
     u.uFade.value = cinematic ? CH.fade.sample(t) : 1;
     u.uFlash.value = CH.flashW.sample(t) * (t < 46 ? 0.22 : 1);

@@ -12,6 +12,8 @@ const server = http.createServer((req, res) => {
   res.setHeader('Content-Type', /\.html$/.test(f) ? 'text/html' : 'application/octet-stream');
   res.end(fs.readFileSync(full, 'utf8').replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.180\.0\/build\//g, '/three/build/').replace(/https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.180\.0\/examples\/jsm\//g, '/three/examples/jsm/'));
 });
+// the film's own director grade may carry a hue shift; other shots must keep exactly that
+const BASE_HUE = (() => { const m = fs.readFileSync(path.join(root, 'Clockwork_Firefly_fullfilm.html'), 'utf8').match(/GRADE-BEGIN\*\/(\{.*?\})\/\*GRADE-END/); return m ? (JSON.parse(m[1]).hue || 0) * Math.PI / 180 : 0; })();
 const ok = (name, cond, extra = '') => { console.log((cond ? 'PASS ' : 'FAIL ') + name + (extra ? ' ' + extra : '')); if (!cond) process.exitCode = 1; };
 // renders once at film time T and reads back what the grade pass was given
 const probe = (T, desk) => desk
@@ -43,7 +45,7 @@ const probe = (T, desk) => desk
   const inside = await desk.evaluate(probe(shotT + 0.1, true)), other = await desk.evaluate(probe(shotT + 40, true));
   await desk.evaluate(() => window.__godview.selectShot(30)); await desk.waitForTimeout(300);
   ok('the shot grade applies inside the shot', Math.abs(inside.hue - 40 * Math.PI / 180) < 1e-6 && inside.sat < 0.6, JSON.stringify(inside));
-  ok('and not in other shots', other.hue === 0 && Math.abs(other.gamma - 1.4) < 1e-6, JSON.stringify(other));
+  ok('and not in other shots', Math.abs(other.hue - BASE_HUE) < 1e-6 && Math.abs(other.gamma - 1.4) < 1e-6, JSON.stringify(other));
   await desk.screenshot({ path: path.join(process.env.OUT || '/tmp', 'grade-tab.png') });
   const exp = await desk.evaluate(() => { const g = window.__godview.grade.vals; return { shots: g.shots, gamma: g.gamma, letterbox: g.letterbox }; });
   ok('the export carries the new values and the shot grade', exp.gamma === 1.4 && exp.letterbox === 0.1 && exp.shots[key[0]].hue === 40, JSON.stringify(exp));
@@ -68,7 +70,7 @@ const probe = (T, desk) => desk
   await film.waitForFunction(() => window.__film && window.__film.st.ready && !document.getElementById('start').classList.contains('hidden'), null, { timeout: 480000 });
   await film.evaluate(() => { document.getElementById('start').click(); window.__film.setPlaying(false); window.__film.st.lockScale = true; });
   const fin = await film.evaluate(probe(shotT + 0.1)), fout = await film.evaluate(probe(shotT + 40));
-  ok('the saved project plays its shot grade in the film', Math.abs(fin.hue - 25 * Math.PI / 180) < 1e-6 && fout.hue === 0 && Math.abs(fout.gamma - 1.4) < 1e-6, JSON.stringify({ fin, fout }));
+  ok('the saved project plays its shot grade in the film', Math.abs(fin.hue - 25 * Math.PI / 180) < 1e-6 && Math.abs(fout.hue - BASE_HUE) < 1e-6 && Math.abs(fout.gamma - 1.4) < 1e-6, JSON.stringify({ fin, fout }));
   console.log('errors', errs.slice(0, 5));
   await b.close(); server.close();
 })();

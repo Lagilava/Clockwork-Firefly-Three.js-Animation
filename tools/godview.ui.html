@@ -7,6 +7,7 @@
       <button class="tbtn" id="gvProjBtn" title="Your projects"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span id="gvProjName">Project</span><span id="gvSave" class="save">Saved</span><svg class="ic car" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
       <div id="gvProjMenu" class="hidden"></div>
     </div>
+    <button class="tbtn iconbtn" id="gvUndo" title="Undo (Ctrl+Z)" disabled><svg class="ic ln" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 010 10h-3"/></svg></button><button class="tbtn iconbtn" id="gvRedo" title="Redo (Ctrl+Shift+Z)" disabled><svg class="ic ln" viewBox="0 0 24 24"><path d="M15 7l5 5-5 5M20 12H9a5 5 0 000 10h3"/></svg></button>
     <button class="tbtn sv" id="gvSaveBtn" title="Save as a project (Ctrl+S)">Save project</button>
     <button class="tbtn narrow" id="gvLeftBtn">Shots</button>
     <div class="grp" id="gvSets">
@@ -28,6 +29,7 @@
 
   <aside id="gvLeft">
     <div class="tabs" id="gvLTabs"><button data-ltab="shots" class="on">Shots</button><button data-ltab="beats">Beats</button><button data-ltab="view">View</button></div>
+    <div id="gvLFilter"><input type="search" id="gvShotQ" placeholder="Find a shot…" autocomplete="off" spellcheck="false"><div class="chips" id="gvShotChips"><button data-f="all" class="on">All</button><button data-f="cam">Camera</button><button data-f="grade">Graded</button><button data-f="note">Notes</button></div></div>
     <div class="lbody" id="gvLShots"></div>
     <div class="lbody hidden" id="gvLBeats"></div>
     <div id="gvBeatNote" class="hidden"></div>
@@ -58,6 +60,7 @@
   </aside>
 
   <main id="gvStage">
+    <div class="vgrip l" id="gvLGrip" title="Drag to resize the shot list"></div><div class="vgrip r" id="gvRGrip" title="Drag to resize the inspector"></div>
     <div class="hud tl">
       <div class="grp" id="gvViews">
         <button data-view="top">Top</button><button data-view="aerial">Aerial</button><button data-view="side">Side</button><button data-view="south">South</button>
@@ -75,7 +78,7 @@
 
   <aside id="gvRight">
     <section class="gcard" id="gvMonCard">
-      <div class="gcardhead"><b>Director's cut</b><span class="sub" id="gvMonShot"></span><span class="gsp"></span><label class="chk" style="padding:0"><input type="checkbox" id="gvGuidesOn"> Guides</label></div>
+      <div class="gcardhead"><b>Director's cut</b><span class="sub" id="gvMonShot"></span><span class="gsp"></span><label class="chk" style="padding:0"><input type="checkbox" id="gvGuidesOn"> Guides</label><button class="tbtn sm" id="gvStill" title="Save the current monitor frame as a PNG">Save still</button><button class="tbtn iconbtn sm" id="gvMonFold" title="Collapse the monitor"><svg class="ic ln" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button></div>
       <div class="monwrap">
         <canvas id="gvMon" width="800" height="450"></canvas>
         <div id="gvGuides"><i style="left:33.33%;top:0;bottom:0;width:1px"></i><i style="left:66.66%;top:0;bottom:0;width:1px"></i><i style="top:33.33%;left:0;right:0;height:1px"></i><i style="top:66.66%;left:0;right:0;height:1px"></i><div class="box" style="inset:5%"></div><div class="box" style="inset:10%"></div></div>
@@ -89,6 +92,7 @@
         <span class="sp"></span><span class="lens" id="gvMonPose"></span>
       </div>
     </section>
+    <div class="rgrip" id="gvMonGrip" title="Drag to resize the monitor"></div>
     <section class="gcard gsp">
       <div class="itabs" id="gvITabs"><button data-itab="shot" class="on">Shot</button><button data-itab="grade">Grade</button><button data-itab="export">Export</button></div>
       <div class="ibody" id="gvIShot"></div>
@@ -116,15 +120,23 @@
   <input type="text" id="gvDlgInput" maxlength="60" autocomplete="off" spellcheck="false">
   <div class="btns r"><button type="button" class="btn" id="gvDlgNo">Cancel</button><button type="submit" class="btn pri" id="gvDlgYes">OK</button></div>
 </form></div>
+<input type="file" id="gvLutIn" accept=".cube,.txt,text/plain" class="hidden">
 <input type="file" id="gvFileIn" accept="application/json,.json" class="hidden">
 </div>
 
 <div id="gvTip" class="hidden"></div>
+<div id="gvToast" class="hidden" role="status"></div>
+<div id="gvDrop" class="hidden"><div>Drop a <b>.cube</b> LUT or a <b>.json</b> project to import it</div></div>
 
 
 
 <div id="gvMap" class="hidden">
-  <div class="mapHead"><b>Whole film, every set at once</b><span>Robot path coloured by time (blue early, red late), Ember dashed, blue squares are authored camera positions. Click a point to jump there.</span><button class="tbtn" id="gvMapClose">Close (Esc)</button></div>
+  <div class="mapHead"><b>Map</b>
+    <div class="seg mini" id="gvMapSets"><button data-ms="all" class="on">All sets</button><button data-ms="atrium">Atrium</button><button data-ms="roof">Rooftops</button><button data-ms="forest">Glade</button></div>
+    <div class="seg mini hidden" id="gvMapTool"><button data-mt="seek" class="on" title="Click the path to jump to a moment">Jump</button><button data-mt="cams" title="Drag cameras and aim points">Cameras</button></div>
+    <button class="tbtn hidden" id="gvMapEdit">Edit camera</button>
+    <span id="gvMapHint"></span>
+    <button class="tbtn hidden" id="gvMapReset">Reset view</button><button class="tbtn" id="gvMapClose">Close (Esc)</button></div>
   <canvas id="gvMapCanvas"></canvas>
 </div>
 
@@ -141,7 +153,10 @@
     <tr><td>E</td><td>Edit the selected shot's camera</td></tr>
     <tr><td>K</td><td>Add a camera keyframe at the playhead (while editing)</td></tr>
     <tr><td>Delete</td><td>Delete the selected keyframe</td></tr>
-    <tr><td>M</td><td>Whole-film map</td></tr>
+    <tr><td>Ctrl Z / Ctrl Shift Z</td><td>Undo / redo (cameras, grade, notes)</td></tr>
+    <tr><td>Ctrl C / Ctrl V</td><td>Copy / paste the selected shot's camera (Shift: its grade)</td></tr>
+    <tr><td>/</td><td>Find a shot</td></tr>
+    <tr><td>M</td><td>Whole-film map (drag cameras there too)</td></tr>
     <tr><td>Timeline wheel</td><td>Zoom (Shift + wheel scrolls the tracks)</td></tr>
     <tr><td>Esc</td><td>Close map or this sheet</td></tr>
   </table>

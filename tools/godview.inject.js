@@ -27,7 +27,7 @@ function godViewInstall(film) {
   document.body.classList.add('godview');
   $g('gvBoot').classList.remove('hidden');
   const MON_ASPECT = 16 / 9;
-  const gv = { sel: 0, selKey: 0, pinned: false, editOn: false, ov: {}, thumbs: [], grade: null, tl: null, dirty: true, frameNo: 0 };
+  const gv = { notes: {}, clip: {}, sel: 0, selKey: 0, pinned: false, editOn: false, ov: {}, thumbs: [], grade: null, tl: null, dirty: true, frameNo: 0 };
   gv.film = film;
 
   /* ---------- 0. stage: the film's canvas lives in the viewport cell ---------- */
@@ -275,9 +275,9 @@ function godViewInstall(film) {
   /* older saves kept exposure and bloom beside the values; fold them in */
   const legacyVals = (gs) => { const v = clone(gs.vals); if (gs.exposure != null && gs.exposure !== 1 && v.exposure == null) v.exposure = gs.exposure; if (gs.bloom != null && gs.bloom !== 1 && v.bloom == null) v.bloom = gs.bloom; return v; };
   const setVals = (v) => { G.vals = v; GRADE_PRESETS.gvcustom = v; };
-  const snapshot = () => ({ overrides: clone(gv.ov), grade: G.touched ? clone(gradeState()) : null });
-  const baseline = () => ({ overrides: clone(SHOT_OVERRIDES), grade: null });
-  const sameWork = (a, b) => JSON.stringify([a.overrides || {}, a.grade ? a.grade.vals : null]) === JSON.stringify([b.overrides || {}, b.grade ? b.grade.vals : null]);
+  const snapshot = () => ({ overrides: clone(gv.ov), grade: G.touched ? clone(gradeState()) : null, notes: clone(gv.notes) });
+  const baseline = () => ({ overrides: clone(SHOT_OVERRIDES), grade: null, notes: {} });
+  const sameWork = (a, b) => JSON.stringify([a.overrides || {}, a.grade ? a.grade.vals : null, a.notes || {}]) === JSON.stringify([b.overrides || {}, b.grade ? b.grade.vals : null, b.notes || {}]);
   const curProject = () => (PFROM && PS.projects[PFROM]) || null;
   function projState() { // clean: matches the saved project, dirty: changed since saving, draft: edits with no project, empty: nothing yet
     const w = snapshot(), p = curProject();
@@ -292,7 +292,8 @@ function godViewInstall(film) {
     $g('gvSaveBtn').disabled = st === 'clean' || st === 'empty'; $g('gvSaveBtn').textContent = p ? 'Save' : 'Save project';
     $g('gvPlayFilm').disabled = !storageOk;
   }
-  function persistNow() { clearTimeout(ptimer); ptimer = 0; PS.draft = { ...snapshot(), from: PFROM, updated: Date.now() }; writeStore(); renderProjectBar(); }
+  function persistNow() { clearTimeout(ptimer); ptimer = 0; PS.draft = { ...snapshot(), from: PFROM, updated: Date.now() }; writeStore(); renderProjectBar(); if (typeof histPush === 'function' && hist) histPush(); }
+  let hist = null; // undo history, created once the desk is built
   function schedulePersist() { clearTimeout(ptimer); ptimer = setTimeout(persistNow, 250); }
   const saveEdits = schedulePersist, saveGrade = schedulePersist;
   addEventListener('pagehide', () => { if (ptimer) persistNow(); });
@@ -543,9 +544,9 @@ function godViewInstall(film) {
     SHOTS.forEach((s, i) => {
       const ci = chapterAt(s.t0 + 0.01); if (ci !== lastChap) { lastChap = ci; html += `<div class="chead" style="--cc:${GV_CHAP_COL[ci]}">Chapter ${CHAPTERS[ci].num} · ${CHAPTERS[ci].name}</div>`; }
       const th = gv.thumbs[i]; if (th && !thumbURL[i]) thumbURL[i] = th.toDataURL('image/jpeg', 0.72);
-      html += `<div class="srow" data-shot="${i}"><div class="th" ${thumbURL[i] ? `style="background-image:url(${thumbURL[i]})"` : ''}>${thumbURL[i] ? '' : 'S' + (i + 1)}</div><div class="tx"><div class="nm">S${i + 1} · ${gvEsc(gvShotTitle(s.t0, i))}</div><div class="sb">${gvFmt(s.t0)} · ${(s.t1 - s.t0).toFixed(1)} s · ${GV_SET_NAMES[setAt(s.t0)]}</div></div>${gv.ov[s.t0] ? '<span class="ed" title="Camera edited">✎</span>' : ''}${gv.grade.vals && gv.grade.vals.shots && gv.grade.vals.shots[s.t0] ? '<span class="ed" title="Own colour grade">◐</span>' : ''}</div>`;
+      html += `<div class="srow" data-shot="${i}"><div class="th" ${thumbURL[i] ? `style="background-image:url(${thumbURL[i]})"` : ''}>${thumbURL[i] ? '' : 'S' + (i + 1)}</div><div class="tx"><div class="nm">S${i + 1} · ${gvEsc(gvShotTitle(s.t0, i))}</div><div class="sb">${gvFmt(s.t0)} · ${(s.t1 - s.t0).toFixed(1)} s · ${GV_SET_NAMES[setAt(s.t0)]}</div></div>${gv.ov[s.t0] ? '<span class="ed" title="Camera edited">✎</span>' : ''}${gv.grade.vals && gv.grade.vals.shots && gv.grade.vals.shots[s.t0] ? '<span class="ed" title="Own colour grade">◐</span>' : ''}${gv.notes[s.t0] ? '<span class="ed" title="Has a note">¶</span>' : ''}</div>`;
     });
-    const top = box.scrollTop; box.innerHTML = html; box.scrollTop = top; lastShotRow = -1;
+    const top = box.scrollTop; box.innerHTML = html; box.scrollTop = top; lastShotRow = -1; applyShotFilter();
   }
   function markShotRows() {
     const rows = $g('gvLShots').querySelectorAll('.srow'); let act = null;
@@ -567,7 +568,7 @@ function godViewInstall(film) {
   $g('gvLBeats').addEventListener('click', (e) => { const r = e.target.closest('.brow'); if (r) { seekTo(BEATS[+r.dataset.beat].t0); setPlaying(false); } });
   document.querySelectorAll('#gvLTabs button').forEach((b) => b.onclick = () => {
     document.querySelectorAll('#gvLTabs button').forEach((x) => x.classList.toggle('on', x === b));
-    $g('gvLShots').classList.toggle('hidden', b.dataset.ltab !== 'shots'); $g('gvLBeats').classList.toggle('hidden', b.dataset.ltab !== 'beats'); $g('gvLView').classList.toggle('hidden', b.dataset.ltab !== 'view'); $g('gvBeatNote').classList.toggle('hidden', b.dataset.ltab !== 'beats');
+    $g('gvLShots').classList.toggle('hidden', b.dataset.ltab !== 'shots'); $g('gvLBeats').classList.toggle('hidden', b.dataset.ltab !== 'beats'); $g('gvLView').classList.toggle('hidden', b.dataset.ltab !== 'view'); $g('gvBeatNote').classList.toggle('hidden', b.dataset.ltab !== 'beats'); $g('gvLFilter').classList.toggle('hidden', b.dataset.ltab !== 'shots');
   });
 
   /* inspector: shot tab */
@@ -597,6 +598,8 @@ function godViewInstall(film) {
       h += `<div class="note edit">${ov.rel ? 'This shot follows the robot.' : 'Fixed world positions: the camera will not follow the robot unless you tick Follow.'} ${gv.editOn ? 'Drag the amber gizmo for the camera and the pink one for what it looks at.' : 'Press Edit camera to show the gizmos.'}</div>`;
       h += `<div class="btns"><button class="btn" id="iDone">${gv.editOn ? 'Done editing' : 'Show gizmos'}</button></div>`;
     }
+    h += `<div class="sect">Notes</div><textarea class="notebox" id="iNote" placeholder="Director's notes for this shot…" spellcheck="true">${gvEsc(gv.notes[s.t0] || '')}</textarea>`;
+    h += `<div class="btns"><button class="btn sm" id="iCopyCam" ${ov ? '' : 'disabled'} title="Ctrl+C">Copy camera</button><button class="btn sm" id="iPasteCam" ${gv.clip.cam ? '' : 'disabled'} title="Ctrl+V">Paste camera</button></div>`;
     const top = box.scrollTop; box.innerHTML = h; box.scrollTop = top;
   }
   function syncKeyFields() {
@@ -614,6 +617,8 @@ function godViewInstall(film) {
       case 'iFrame': frameShot(i); break;
       case 'iStart': seekTo(SHOTS[i].t0 + 0.05); setPlaying(false); break;
       case 'iReset': resetShot(i); break;
+      case 'iCopyCam': copyCam(); break;
+      case 'iPasteCam': pasteCam(); break;
       case 'iDone': if (gv.editOn) exitEdit(); else { gv.editOn = true; gv.pinned = true; renderInspector(); } rebuildEdit(); break;
       case 'iAddKey': addKeyHere(); rebuildEdit(); break;
       case 'iDelKey': deleteKey(); rebuildEdit(); break;
@@ -628,6 +633,7 @@ function godViewInstall(film) {
   insp.addEventListener('input', (e) => {
     const el = e.target, f = el.dataset.f, i = gv.sel, ov = gv.ov[SHOTS[i].t0], k = ov?.keys[gv.selKey];
     if (el.id === 'iRel') return toggleRel(el.checked), rebuildEdit();
+    if (el.id === 'iNote') { const t0 = SHOTS[i].t0; if (el.value.trim()) gv.notes[t0] = el.value; else delete gv.notes[t0]; saveEdits(); return; }
     if (el.id === 'iEase') { if (ov) { if (el.value === 'smooth') delete ov.ease; else ov.ease = el.value; applyOv(i); saveEdits(); resampleShot(i); renderExport(); } return; }
     if (!f || !k) return;
     const v = parseFloat(el.value); if (Number.isNaN(v)) return;
@@ -639,7 +645,8 @@ function godViewInstall(film) {
     else if (f === 'u') { moveKeyU(gv.selKey, v / 100); $g('kUV').textContent = `${v}%`; }
     applyOv(i); saveEdits(); rebuildEdit();
   });
-  insp.addEventListener('change', (e) => { if (e.target.dataset.f) { resampleShot(gv.sel); renderInspector(); } });
+  insp.addEventListener('change', (e) => { if (e.target.dataset.f) { resampleShot(gv.sel); renderInspector(); } else if (e.target.id === 'iNote') { renderShotRows(); } });
+  insp.addEventListener('keydown', (e) => { if (e.target.id === 'iNote') e.stopPropagation(); });
 
   /* inspector: colour grade tab */
   const GRADE_GROUPS = [
@@ -649,6 +656,7 @@ function godViewInstall(film) {
     ['Frame', [['vig', 'Vignette', 0, 2.2, 0.01, 1], ['vigSoft', 'Vignette softness', 0.3, 2, 0.01, 1], ['vigAmt', 'Vignette depth', 0, 0.9, 0.01, 0.28], ['letterbox', 'Letterbox bars', 0, 0.2, 0.002, 0]]],
   ];
   const GRADE_DEFS = {}; GRADE_GROUPS.forEach(([, rows]) => rows.forEach((r) => { GRADE_DEFS[r[0]] = r; }));
+  GRADE_DEFS.lutAmount = ['lutAmount', 'LUT strength', 0, 1, 0.01, 1];
   const gdec = (k) => (GRADE_DEFS[k][4] < 0.01 ? 3 : GRADE_DEFS[k][4] < 1 ? 2 : 0);
   const tintHex = (v) => '#' + v.map((c) => Math.round(clamp(c - 0.5, 0, 1) * 255).toString(16).padStart(2, '0')).join('');
   const hexTint = (h) => [1, 3, 5].map((n) => 0.5 + parseInt(h.slice(n, n + 2), 16) / 255);
@@ -665,13 +673,22 @@ function godViewInstall(film) {
     h += sc ? `<div class="note edit">Changes you make now only affect shot S${i + 1}. A highlighted row differs from the film grade; its ↺ puts it back. ${shotsGraded().length ? `${shotsGraded().length} shot${shotsGraded().length === 1 ? '' : 's'} have their own grade.` : ''}</div>` : '';
     if (!sc) {
       h += `<div class="sect">Look</div><select class="sel" id="gBase">${names.map(([k, v]) => `<option value="${k}" ${k === G.base ? 'selected' : ''}>${gvEsc(v)}</option>`).join('')}</select>`;
+      const looks = readLooks(), ln = Object.keys(looks);
+      h += `<div class="btns"><button class="btn sm" id="gLookSave">Save as my look…</button>${ln.length ? `<select class="sel" id="gLookPick" style="flex:1;min-width:0"><option value="">My looks…</option>${ln.map((n) => `<option value="${gvEsc(n)}">${gvEsc(n)}</option>`).join('')}</select><button class="btn sm warn" id="gLookDel" title="Delete the look shown in the list">Delete</button>` : ''}</div>`;
       h += `<label class="chk"><input type="checkbox" id="gBypass" ${G.bypass ? 'checked' : ''}> Bypass grade (compare with the original)</label><label class="chk"><input type="checkbox" id="gGod" ${G.applyGod ? 'checked' : ''}> Also apply to the god view</label>`;
     }
-    h += GRADE_GROUPS.map(([title, rows]) => `<div class="sect">${title}</div>` + rows.map(([k, l, a, b, st]) => {
+    const row = ([k, l, a, b, st]) => {
       const v = gVal(k), d = gdec(k), ov = gIsOv(k);
       return `<div class="rg ${ov ? 'ov' : ''}"><label title="${k}">${l}</label><input type="range" data-gv="${k}" min="${a}" max="${b}" step="${st}" value="${v}"><output>${(+v).toFixed(d)}</output>${sc ? `<button class="gundo" data-undo="${k}" title="Use the film value" ${ov ? '' : 'disabled'}>↺</button>` : ''}</div>`;
-    }).join('')).join('');
+    };
+    h += GRADE_GROUPS.map(([title, rows]) => `<div class="sect">${title}</div>` + rows.map(row).join('')).join('');
+    const lut = G.vals.lut;
+    h += `<div class="sect">Colour LUT <span class="hint">.cube, 3D or 1D</span></div>`;
+    if (lut) h += `<div class="lutrow"><b title="${gvEsc(lut.name)}">${gvEsc(lut.name)}</b><span>${lut.n}³</span>${sc ? '' : '<button class="btn sm warn" id="gLutRm">Remove</button>'}</div>${row(GRADE_DEFS.lutAmount)}`;
+    else h += `<div class="note">Import a look from your colourist or a LUT pack. It runs after the grade, on the final image, and is baked into the film on export.</div>`;
+    if (!sc) h += `<div class="btns"><button class="btn" id="gLutImport">${lut ? 'Replace LUT…' : 'Import LUT (.cube)…'}</button></div>`;
     h += `<div class="sect">Tint</div>` + [['sh', 'Shadows'], ['mid', 'Midtones'], ['hi', 'Highlights']].map(([k, l]) => { const o = sc ? shotGrade(false) : null, ov = !!(o && o[k]); return `<div class="tint ${ov ? 'ov' : ''}"><label>${l}</label><div class="cols"><input type="color" data-gt="${k}" value="${tintHex(ov ? o[k] : G.vals[k])}">${sc ? `<button class="gundo" data-undo="${k}" title="Use the film value" ${ov ? '' : 'disabled'}>↺</button>` : ''}</div></div>`; }).join('');
+    if (sc) h += `<div class="btns"><button class="btn sm" id="gCopy" title="Ctrl+Shift+C">Copy shot grade</button><button class="btn sm" id="gPaste" ${gv.clip.grade ? '' : 'disabled'} title="Ctrl+Shift+V">Paste</button><button class="btn sm" id="gPasteChap" ${gv.clip.grade ? '' : 'disabled'}>Paste to chapter</button></div>`;
     h += `<div class="btns">${sc ? `<button class="btn" id="gShotReset" ${shotGrade(false) && Object.keys(shotGrade(false)).length ? '' : 'disabled'}>Reset S${i + 1}'s grade</button>` : `<button class="btn" id="gReset">Reset to ${gvEsc(gradeNames[G.base] || G.base)}</button>`}${shotsGraded().length ? '<button class="btn warn" id="gShotsClear">Clear all shot grades</button>' : ''}</div>`;
     const box = $g('gvIGrade'), top = box.scrollTop; box.innerHTML = h; box.scrollTop = top;
   }
@@ -692,11 +709,17 @@ function godViewInstall(film) {
     else if (el.id === 'gGod') { G.applyGod = el.checked; pv.dirty = true; saveGrade(); renderExport(); }
   });
   gradeBox.addEventListener('change', (e) => {
+    if (e.target.id === 'gLookPick') { const l = readLooks()[e.target.value]; if (l) { const shots = G.vals.shots; setVals(clone(l)); if (shots) G.vals.shots = shots; gradeChanged(); renderGrade(); gvToast('Look applied'); } return; }
     if (e.target.id === 'gBase') { const shots = G.vals.shots; G.base = e.target.value; setVals(gradeDefaults()); if (shots) G.vals.shots = shots; G.touched = G.base !== 'default' || !!shots; pv.dirty = true; saveGrade(); renderGrade(); renderExport(); }
   });
   gradeBox.addEventListener('click', (e) => {
     const t = e.target.closest('button'); if (!t) return;
     if (t.dataset.scope) { G.scope = t.dataset.scope; renderGrade(); return; }
+    if (t.id === 'gLutImport') { $g('gvLutIn').click(); return; }
+    if (t.id === 'gLutRm') { delete G.vals.lut; gradeChanged(); renderGrade(); gvToast('LUT removed'); return; }
+    if (t.id === 'gCopy') return copyGrade(); if (t.id === 'gPaste') return pasteGrade(false); if (t.id === 'gPasteChap') return pasteGrade(true);
+    if (t.id === 'gLookSave') return saveLook();
+    if (t.id === 'gLookDel') { const sel = $g('gLookPick'); if (sel && sel.value) { const l = readLooks(); delete l[sel.value]; writeLooks(l); renderGrade(); gvToast('Look deleted'); } return; }
     if (t.dataset.undo) { const o = shotGrade(false); if (o) { delete o[t.dataset.undo]; if (!Object.keys(o).length) delete G.vals.shots[shotKey()]; } gradeChanged(); renderGrade(); renderShotRows(); return; }
     if (t.id === 'gShotReset') { if (G.vals.shots) delete G.vals.shots[shotKey()]; gradeChanged(); renderGrade(); renderShotRows(); }
     else if (t.id === 'gShotsClear') { delete G.vals.shots; gradeChanged(); renderGrade(); renderShotRows(); }
@@ -704,7 +727,7 @@ function godViewInstall(film) {
   });
 
   /* inspector: export tab */
-  const editsJSON = () => JSON.stringify({ version: 1, name: curProject()?.name, overrides: gv.ov, ...(G.touched ? { grade: G.vals } : {}) }, null, 1);
+  const editsJSON = () => JSON.stringify({ version: 1, name: curProject()?.name, overrides: gv.ov, ...(Object.keys(gv.notes).length ? { notes: gv.notes } : {}), ...(G.touched ? { grade: G.vals } : {}) }, null, 1);
   function renderExport() {
     const keys = Object.keys(gv.ov);
     let h = `<div class="note">Your work autosaves as a draft in this browser. Press Save project (top bar) to keep it under Custom projects, or export a file to bake it into the film itself.</div><div class="sect">Edited shots <span class="hint">${keys.length}</span></div>`;
@@ -770,7 +793,7 @@ function godViewInstall(film) {
   // timeline height grip
   { const grip = $g('gvTLGrip'); let y0 = 0, h0 = 0, on = false; grip.addEventListener('pointerdown', (e) => { on = true; y0 = e.clientY; h0 = $g('gvTL').getBoundingClientRect().height; grip.setPointerCapture(e.pointerId); });
     grip.addEventListener('pointermove', (e) => { if (!on) return; const h = clamp(h0 + (y0 - e.clientY), 150, innerHeight * 0.65); $g('gv').style.setProperty('--gv-tlh', h + 'px'); gv.dirty = true; });
-    grip.addEventListener('pointerup', () => { on = false; }); }
+    grip.addEventListener('pointerup', () => { on = false; lay.tlh = Math.round($g('gvTL').getBoundingClientRect().height); saveLay(); }); }
 
   /* hover on the paths: nearest hero or Ember sample in screen space */
   const tip = $g('gvTip'), _p = V();
@@ -805,59 +828,182 @@ function godViewInstall(film) {
     const n = nearestSample(e.clientX, e.clientY); if (n) { gv.pinned = false; seekTo(sm.t[n.i]); setPlaying(false); }
   });
 
-  /* whole-film map (every set at once, top-down and side) */
+  /* the map: every set at once, or one set up close with pan, zoom and draggable cameras */
   const mapEl = $g('gvMap'), cv = $g('gvMapCanvas'), mapCtx = cv.getContext('2d');
-  let mapHit = [];
-  function drawMap() {
-    const mctx2 = mapCtx, dpr = Math.min(devicePixelRatio || 1, 2), W = cv.clientWidth, H = cv.clientHeight;
-    cv.width = W * dpr; cv.height = H * dpr; mctx2.setTransform(dpr, 0, 0, dpr, 0, 0); mctx2.clearRect(0, 0, W, H);
-    mapHit = []; const sets = ['atrium', 'roof', 'forest'], wide = W > 760, padX = 24, colW = wide ? (W - padX * 4) / 3 : W - padX * 2, rowH = wide ? (H - 90) / 2 : (H - 60) / 6 - 14;
-    sets.forEach((set, ci) => {
-      const b = bounds[set], x0 = padX + (wide ? ci * (colW + padX) : 0);
-      [['top', 'x', 'z'], ['side', 'x', 'y']].forEach(([view, ax, ay], ri) => {
-        const y0 = wide ? 48 + ri * (rowH + 14) : 40 + (ci * 2 + ri) * (rowH + 22), bx0 = b.min[ax], bx1 = b.max[ax], by0 = b.min[ay], by1 = b.max[ay];
-        const spanX = Math.max(bx1 - bx0, 4), spanY = Math.max(by1 - by0, 4), s = Math.min((colW - 16) / spanX, (rowH - 16) / spanY);
-        const ox = x0 + (colW - spanX * s) / 2, oy = y0 + (rowH - spanY * s) / 2;
-        const px = (v) => ox + (v - bx0) * s, py = (v) => (view === 'top' ? oy + (v - by0) * s : oy + (by1 - v) * s), yi = ay === 'z' ? 2 : 1;
-        mctx2.fillStyle = '#0d1018'; mctx2.strokeStyle = '#242c3d'; mctx2.lineWidth = 1; mctx2.beginPath(); mctx2.roundRect(x0, y0, colW, rowH, 8); mctx2.fill(); mctx2.stroke();
-        if (ri === 0) { mctx2.fillStyle = '#d8d0c0'; mctx2.font = '600 15px system-ui'; mctx2.fillText(GV_SET_NAMES[set], x0 + 4, y0 - 20); mctx2.fillStyle = '#7f8aa0'; mctx2.font = '12px system-ui'; mctx2.fillText(`${gvFmt(GV_RANGES[set][0][0])}–${gvFmt(GV_RANGES[set].at(-1)[1])} · top view (x→, z↓)`, x0 + 4, y0 - 5); }
-        else { mctx2.fillStyle = '#7f8aa0'; mctx2.font = '12px system-ui'; mctx2.fillText('side view (x→, height↑)', x0 + 8, y0 + 16); }
-        mctx2.save(); mctx2.beginPath(); mctx2.rect(x0, y0, colW, rowH); mctx2.clip();
-        mctx2.fillStyle = 'rgba(160,200,255,.7)';
-        for (let i = 0; i < sm.n; i += 20) if (gvInRange(set, sm.t[i])) mctx2.fillRect(px(sm.cam[i * 3]) - 1.5, py(sm.cam[i * 3 + yi]) - 1.5, 3, 3);
-        mctx2.strokeStyle = 'rgba(200,255,90,.8)'; mctx2.setLineDash([4, 3]); mctx2.lineWidth = 1.2; mctx2.beginPath(); let pen = false;
-        for (let i = 0; i < sm.n; i++) { if (!gvInRange(set, sm.t[i]) || sm.lure[i * 3 + 1] > 40 || sm.t[i] < 8.9) { pen = false; continue; } const X = px(sm.lure[i * 3]), Y = py(sm.lure[i * 3 + yi]); if (!pen) { mctx2.moveTo(X, Y); pen = true; } else mctx2.lineTo(X, Y); }
-        mctx2.stroke(); mctx2.setLineDash([]);
-        mctx2.lineWidth = 2.4; mctx2.lineCap = 'round';
-        for (let i = 1; i < sm.n; i++) {
-          if (!gvInRange(set, sm.t[i]) || !gvInRange(set, sm.t[i - 1])) continue;
-          const c = gvHue(sm.t[i]); mctx2.strokeStyle = `rgb(${c.r * 255 | 0},${c.g * 255 | 0},${c.b * 255 | 0})`;
-          mctx2.beginPath(); mctx2.moveTo(px(sm.root[(i - 1) * 3]), py(sm.root[(i - 1) * 3 + yi])); mctx2.lineTo(px(sm.root[i * 3]), py(sm.root[i * 3 + yi])); mctx2.stroke();
-          if (i % 2 === 0) mapHit.push({ x: px(sm.root[i * 3]), y: py(sm.root[i * 3 + yi]), t: sm.t[i] });
-        }
-        mctx2.fillStyle = '#e8e8f0'; mctx2.font = '10px system-ui';
-        for (let t = 0; t < FILM; t += 10) if (gvInRange(set, t)) { const i = sampleAt(t), X = px(sm.root[i * 3]), Y = py(sm.root[i * 3 + yi]); mctx2.beginPath(); mctx2.arc(X, Y, 2.6, 0, 7); mctx2.fill(); if (ri === 0) mctx2.fillText(gvFmt(t), X + 4, Y - 4); }
-        const dotAt = (v, col) => { mctx2.fillStyle = col; mctx2.strokeStyle = '#000'; mctx2.beginPath(); mctx2.arc(px(v[0]), py(v[yi]), 5, 0, 7); mctx2.fill(); mctx2.stroke(); };
-        if (world.cur === set) { dotAt([S.root.x, S.root.y, S.root.z], '#ff6a50'); if (S.lure.y < 40) dotAt([S.lure.x, S.lure.y, S.lure.z], '#d8ff5a'); }
-        mctx2.restore();
-      });
-    });
+  const mp = { set: 'all', tool: 'seek', views: {}, hit: [], panels: [], drag: null, raf: 0 };
+  const MAP_SETS = ['atrium', 'roof', 'forest'];
+  const mapAxes = { top: ['x', 'z'], side: ['x', 'y'] };
+  function panelView(set, view, w, h) { // the user's pan and zoom for this panel, or the fit-to-set default
+    const k = set + ':' + view, b = bounds[set], [ax, ay] = mapAxes[view];
+    const spanX = Math.max(b.max[ax] - b.min[ax], 4), spanY = Math.max(b.max[ay] - b.min[ay], 4);
+    const fit = { s: Math.min((w - 16) / spanX, (h - 16) / spanY), cx: (b.min[ax] + b.max[ax]) / 2, cy: (b.min[ay] + b.max[ay]) / 2 };
+    return mp.views[k] ? { ...mp.views[k], fit } : { ...fit, fit };
   }
-  cv.addEventListener('click', (e) => {
-    const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; let best = null, bd = 18 * 18;
-    for (const h of mapHit) { const d = (h.x - x) ** 2 + (h.y - y) ** 2; if (d < bd) { bd = d; best = h; } }
-    if (best) { gv.pinned = false; seekTo(best.t); setPlaying(false); mapEl.classList.add('hidden'); }
+  function drawPanel(set, view, x0, y0, w, h, focus) {
+    const c = mapCtx, [ax, ay] = mapAxes[view], yi = ay === 'z' ? 2 : 1, V0 = panelView(set, view, w, h), s = V0.s;
+    const px = (v) => x0 + w / 2 + (v - V0.cx) * s, py = (v) => (view === 'top' ? y0 + h / 2 + (v - V0.cy) * s : y0 + h / 2 - (v - V0.cy) * s);
+    mp.panels.push({ set, view, x0, y0, w, h, V: V0, px, py });
+    c.fillStyle = '#0d1018'; c.strokeStyle = '#242c3d'; c.lineWidth = 1; c.beginPath(); c.roundRect(x0, y0, w, h, 8); c.fill(); c.stroke();
+    c.save(); c.beginPath(); c.rect(x0, y0, w, h); c.clip();
+    if (focus) { // a faint metre grid so distances read
+      const step = [1, 2, 5, 10, 20, 50, 100].find((q) => q * s >= 38) || 100; c.strokeStyle = '#161c29'; c.lineWidth = 1; c.beginPath();
+      const wx0 = V0.cx - w / 2 / s, wx1 = V0.cx + w / 2 / s, wy0 = V0.cy - h / 2 / s, wy1 = V0.cy + h / 2 / s;
+      for (let X = Math.ceil(wx0 / step) * step; X <= wx1; X += step) { c.moveTo(px(X), y0); c.lineTo(px(X), y0 + h); }
+      for (let Y = Math.ceil(wy0 / step) * step; Y <= wy1; Y += step) { c.moveTo(x0, py(Y)); c.lineTo(x0 + w, py(Y)); }
+      c.stroke(); c.fillStyle = '#4b556b'; c.font = '10px system-ui'; c.fillText(step + ' m grid', x0 + 8, y0 + h - 8);
+    }
+    const selShot = gv.sel;
+    // authored camera positions, the selected shot's path in amber
+    c.fillStyle = 'rgba(160,200,255,.65)';
+    for (let i = 0; i < sm.n; i += focus ? 8 : 20) if (gvInRange(set, sm.t[i]) && sm.shot[i] !== selShot) c.fillRect(px(sm.cam[i * 3]) - 1.5, py(sm.cam[i * 3 + yi]) - 1.5, 3, 3);
+    if (focus) for (let i = 0; i < sm.n; i += 3) if (gvInRange(set, sm.t[i]) && sm.shot[i] !== undefined && i % 12 === 0 && mp.tool === 'cams') mp.hit.push({ kind: 'shot', x: px(sm.cam[i * 3]), y: py(sm.cam[i * 3 + yi]), shot: sm.shot[i], panel: mp.panels.length - 1 });
+    c.strokeStyle = '#ffb347'; c.lineWidth = 2; c.beginPath(); let pen = false;
+    for (let i = 0; i < sm.n; i++) { if (sm.shot[i] !== selShot || !gvInRange(set, sm.t[i])) { pen = false; continue; } const X = px(sm.cam[i * 3]), Y = py(sm.cam[i * 3 + yi]); if (!pen) { c.moveTo(X, Y); pen = true; } else c.lineTo(X, Y); }
+    c.stroke();
+    // Ember, dashed
+    c.strokeStyle = 'rgba(200,255,90,.8)'; c.setLineDash([4, 3]); c.lineWidth = 1.2; c.beginPath(); pen = false;
+    for (let i = 0; i < sm.n; i++) { if (!gvInRange(set, sm.t[i]) || sm.lure[i * 3 + 1] > 40 || sm.t[i] < 8.9) { pen = false; continue; } const X = px(sm.lure[i * 3]), Y = py(sm.lure[i * 3 + yi]); if (!pen) { c.moveTo(X, Y); pen = true; } else c.lineTo(X, Y); }
+    c.stroke(); c.setLineDash([]);
+    // the robot's path, coloured by time
+    c.lineWidth = focus ? 2.8 : 2.4; c.lineCap = 'round';
+    for (let i = 1; i < sm.n; i++) {
+      if (!gvInRange(set, sm.t[i]) || !gvInRange(set, sm.t[i - 1])) continue;
+      const col = gvHue(sm.t[i]); c.strokeStyle = `rgb(${col.r * 255 | 0},${col.g * 255 | 0},${col.b * 255 | 0})`;
+      c.beginPath(); c.moveTo(px(sm.root[(i - 1) * 3]), py(sm.root[(i - 1) * 3 + yi])); c.lineTo(px(sm.root[i * 3]), py(sm.root[i * 3 + yi])); c.stroke();
+      if (i % 2 === 0) mp.hit.push({ kind: 'time', x: px(sm.root[i * 3]), y: py(sm.root[i * 3 + yi]), t: sm.t[i], panel: mp.panels.length - 1 });
+    }
+    c.fillStyle = '#e8e8f0'; c.font = '10px system-ui';
+    for (let t = 0; t < FILM; t += focus ? 5 : 10) if (gvInRange(set, t)) { const i = sampleAt(t), X = px(sm.root[i * 3]), Y = py(sm.root[i * 3 + yi]); c.beginPath(); c.arc(X, Y, 2.6, 0, 7); c.fill(); if (view === 'top' || focus) c.fillText(gvFmt(t), X + 4, Y - 4); }
+    // the camera you are looking through right now: position, aim line and lens cone
+    if (gvInRange(set, st.T)) {
+      const i = sampleAt(st.T), X = px(sm.cam[i * 3]), Y = py(sm.cam[i * 3 + yi]), TX = px(sm.tgt[i * 3]), TY = py(sm.tgt[i * 3 + yi]);
+      const ang = Math.atan2(TY - Y, TX - X), half = THREE.MathUtils.degToRad(sm.fov[i] / 2) * (view === 'top' ? 1 : 0.6), L = Math.min(Math.hypot(TX - X, TY - Y), 90);
+      c.fillStyle = 'rgba(255,179,71,.14)'; c.beginPath(); c.moveTo(X, Y); c.lineTo(X + Math.cos(ang - half) * L, Y + Math.sin(ang - half) * L); c.lineTo(X + Math.cos(ang + half) * L, Y + Math.sin(ang + half) * L); c.closePath(); c.fill();
+      c.strokeStyle = 'rgba(255,179,71,.7)'; c.lineWidth = 1; c.beginPath(); c.moveTo(X, Y); c.lineTo(TX, TY); c.stroke();
+      c.fillStyle = '#ffb347'; c.beginPath(); c.arc(X, Y, 4.5, 0, 7); c.fill();
+    }
+    if (world.cur === set) { const dot = (v, col) => { c.fillStyle = col; c.strokeStyle = '#000'; c.beginPath(); c.arc(px(v[0]), py(v[yi]), 5, 0, 7); c.fill(); c.stroke(); }; dot([S.root.x, S.root.y, S.root.z], '#ff6a50'); if (S.lure.y < 40) dot([S.lure.x, S.lure.y, S.lure.z], '#d8ff5a'); }
+    // draggable camera keys of every edited shot in this set
+    if (focus) {
+      SHOTS.forEach((sh, i) => {
+        const ov = gv.ov[sh.t0]; if (!ov || !gvInRange(set, sh.t0 + 0.01)) return; const on = i === selShot, a = on ? 1 : 0.45;
+        const pts = ov.keys.map((k) => { const w = keyWorld(i, k); return { k, X: px(w.pos[ax]), Y: py(w.pos[ay]), TX: px(w.tgt[ax]), TY: py(w.tgt[ay]) }; });
+        c.globalAlpha = a; c.strokeStyle = on ? '#ffb347' : '#8aa4d6'; c.lineWidth = on ? 1.6 : 1;
+        c.beginPath(); pts.forEach((q, n) => (n ? c.lineTo(q.X, q.Y) : c.moveTo(q.X, q.Y))); c.stroke();
+        pts.forEach((q, n) => {
+          c.strokeStyle = on ? 'rgba(255,122,92,.8)' : 'rgba(255,122,92,.4)'; c.setLineDash([3, 3]); c.beginPath(); c.moveTo(q.X, q.Y); c.lineTo(q.TX, q.TY); c.stroke(); c.setLineDash([]);
+          const sel = on && n === gv.selKey;
+          c.fillStyle = sel ? '#fff4d8' : on ? '#ffb347' : '#8aa4d6'; c.strokeStyle = '#000'; c.lineWidth = 1; c.beginPath(); c.rect(q.X - 5.5, q.Y - 5.5, 11, 11); c.fill(); c.stroke();
+          c.fillStyle = sel ? '#ffd0c4' : '#ff7a5c'; c.beginPath(); c.moveTo(q.TX, q.TY - 6); c.lineTo(q.TX + 6, q.TY); c.lineTo(q.TX, q.TY + 6); c.lineTo(q.TX - 6, q.TY); c.closePath(); c.fill(); c.stroke();
+          if (on) { c.fillStyle = '#ffe9c0'; c.font = '600 10px system-ui'; c.fillText(`S${i + 1}·${n + 1}`, q.X + 8, q.Y - 7); }
+          mp.hit.unshift({ kind: 'handle', part: 'pos', x: q.X, y: q.Y, i, k: q.k, n, panel: mp.panels.length - 1 }, { kind: 'handle', part: 'tgt', x: q.TX, y: q.TY, i, k: q.k, n, panel: mp.panels.length - 1 });
+        });
+        c.globalAlpha = 1;
+      });
+    }
+    c.restore();
+    c.fillStyle = '#7f8aa0'; c.font = '12px system-ui'; c.fillText(view === 'top' ? 'top view (x→, z↓)' : 'side view (x→, height↑)', x0 + 8, y0 + 16);
+  }
+  function drawMap() {
+    const dpr = Math.min(devicePixelRatio || 1, 2), W = cv.clientWidth, H = cv.clientHeight; if (!W || !H) return;
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    mapCtx.setTransform(dpr, 0, 0, dpr, 0, 0); mapCtx.clearRect(0, 0, W, H); mp.hit = []; mp.panels = [];
+    const c = mapCtx, padX = 24;
+    if (mp.set === 'all') {
+      const wide = W > 760, colW = wide ? (W - padX * 4) / 3 : W - padX * 2, rowH = wide ? (H - 90) / 2 : (H - 60) / 6 - 14;
+      MAP_SETS.forEach((set, ci) => {
+        const x0 = padX + (wide ? ci * (colW + padX) : 0);
+        ['top', 'side'].forEach((view, ri) => {
+          const y0 = wide ? 48 + ri * (rowH + 14) : 40 + (ci * 2 + ri) * (rowH + 22);
+          if (ri === 0) { c.fillStyle = '#d8d0c0'; c.font = '600 15px system-ui'; c.fillText(GV_SET_NAMES[set], x0 + 4, y0 - 20); c.fillStyle = '#7f8aa0'; c.font = '12px system-ui'; c.fillText(`${gvFmt(GV_RANGES[set][0][0])}–${gvFmt(GV_RANGES[set][GV_RANGES[set].length - 1][1])} · double-click to open`, x0 + 4 + c.measureText(GV_SET_NAMES[set]).width + 12, y0 - 20); }
+          mp.views[set + ':' + view] = null; drawPanel(set, view, x0, y0, colW, rowH, false);
+        });
+      });
+    } else {
+      const wide = W > 820, topW = wide ? (W - padX * 3) * 0.62 : W - padX * 2, sideW = wide ? W - padX * 3 - topW : W - padX * 2, h = H - 40;
+      const set = mp.set;
+      drawPanel(set, 'top', padX, 20, topW, wide ? h : h * 0.58, true);
+      drawPanel(set, 'side', wide ? padX * 2 + topW : padX, wide ? 20 : 20 + h * 0.58 + 14, sideW, wide ? h : h * 0.42 - 14, true);
+    }
+    const hint = $g('gvMapHint');
+    hint.textContent = mp.set === 'all' ? 'Robot path coloured by time, Ember dashed. Click a point to jump there. Double-click a set to open it, or pick one above.'
+      : mp.tool === 'cams' ? 'Drag a square (camera) or diamond (aim) to move it. Click a blue dot to pick that shot. Wheel zooms, drag the background to pan.' : 'Click the robot\'s path to jump to that moment. Wheel zooms, drag the background to pan. Switch to Cameras to move shots.';
+    const ov = gv.ov[SHOTS[gv.sel].t0]; $g('gvMapEdit').classList.toggle('hidden', mp.set === 'all'); $g('gvMapEdit').disabled = !!ov;
+    $g('gvMapEdit').textContent = ov ? `S${gv.sel + 1} has editable cameras` : `Edit camera of S${gv.sel + 1}`;
+    $g('gvMapTool').classList.toggle('hidden', mp.set === 'all'); $g('gvMapReset').classList.toggle('hidden', mp.set === 'all');
+  }
+  const mapSoon = () => { if (!mp.raf) mp.raf = requestAnimationFrame(() => { mp.raf = 0; drawMap(); }); };
+  const mapPoint = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const panelAt = (x, y) => mp.panels.findIndex((q) => x >= q.x0 && x <= q.x0 + q.w && y >= q.y0 && y <= q.y0 + q.h);
+  const nearest = (x, y, kinds, r = 12) => { let best = null, bd = r * r; for (const h of mp.hit) { if (!kinds.includes(h.kind)) continue; const d = (h.x - x) ** 2 + (h.y - y) ** 2; if (d < bd) { bd = d; best = h; } } return best; };
+  cv.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return; const [x, y] = mapPoint(e), pi = panelAt(x, y); mp.drag = { x0: x, y0: y, moved: false, pi, handle: null, pan: null };
+    if (mp.set === 'all' || pi < 0) return; cv.setPointerCapture(e.pointerId);
+    const hnd = mp.tool === 'cams' ? nearest(x, y, ['handle'], 11) : null;
+    if (hnd) { mp.drag.handle = hnd; if (gv.sel !== hnd.i) { selectShot(hnd.i, false); } gv.selKey = hnd.n; renderInspector(); mapSoon(); }
+    else { const V0 = mp.panels[pi].V; mp.drag.pan = { cx: V0.cx, cy: V0.cy }; }
   });
-  const openMap = () => { mapEl.classList.remove('hidden'); drawMap(); };
+  cv.addEventListener('pointermove', (e) => {
+    const d = mp.drag; if (!d || d.pi < 0 || mp.set === 'all') { const [x, y] = mapPoint(e); cv.style.cursor = mp.set !== 'all' && mp.tool === 'cams' && nearest(x, y, ['handle'], 11) ? 'grab' : mp.set === 'all' ? 'crosshair' : 'default'; return; }
+    const [x, y] = mapPoint(e); if (Math.hypot(x - d.x0, y - d.y0) > 3) d.moved = true; if (!d.moved) return;
+    const q = mp.panels[d.pi], [ax, ay] = mapAxes[q.view], sgn = q.view === 'top' ? 1 : -1;
+    if (d.handle) {
+      const h = d.handle, ov = gv.ov[SHOTS[h.i].t0], k = ov && ov.keys[h.n]; if (!k) return;
+      const w = keyWorld(h.i, k), vec = h.part === 'pos' ? w.pos : w.tgt;
+      vec[ax] = q.V.cx + (x - (q.x0 + q.w / 2)) / q.V.s; vec[ay] = q.V.cy + sgn * (y - (q.y0 + q.h / 2)) / q.V.s;
+      if (h.part === 'pos') setKeyWorld(h.i, k, vec, null); else setKeyWorld(h.i, k, null, vec);
+      k.pos = k.pos.map(round3); k.target = k.target.map(round3); applyOv(h.i); saveEdits(); cv.style.cursor = 'grabbing';
+    } else if (d.pan) {
+      mp.views[q.set + ':' + q.view] = { s: q.V.s, cx: d.pan.cx - (x - d.x0) / q.V.s, cy: d.pan.cy - sgn * (y - d.y0) / q.V.s }; cv.style.cursor = 'move';
+    }
+    mapSoon();
+  });
+  const mapUp = (e) => {
+    const d = mp.drag; mp.drag = null; if (!d) return; const [x, y] = mapPoint(e);
+    if (d.handle && d.moved) { resampleShot(d.handle.i); renderInspector(); renderExport(); rebuildEdit(); mapSoon(); return; }
+    if (d.moved) return;
+    if (mp.set === 'cams-none') return;
+    const pick = mp.tool === 'cams' && mp.set !== 'all' ? nearest(x, y, ['shot'], 12) : null;
+    if (pick) { gv.pinned = false; gv.editOn = false; selectShot(pick.shot, true); mapSoon(); return; }
+    const t = nearest(x, y, ['time'], 18);
+    if (t) { gv.pinned = false; seekTo(t.t); setPlaying(false); if (mp.set === 'all') { clearTimeout(mp.closeT); mp.closeT = setTimeout(() => mapEl.classList.add('hidden'), 280); } else mapSoon(); }
+  };
+  cv.addEventListener('pointerup', mapUp); cv.addEventListener('pointercancel', () => { mp.drag = null; });
+  cv.addEventListener('wheel', (e) => {
+    if (mp.set === 'all') return; const [x, y] = mapPoint(e), pi = panelAt(x, y); if (pi < 0) return; e.preventDefault();
+    const q = mp.panels[pi], [, ay] = mapAxes[q.view], sgn = q.view === 'top' ? 1 : -1, k = Math.pow(1.0018, -e.deltaY), s2 = clamp(q.V.s * k, q.V.fit.s * 0.4, q.V.fit.s * 40);
+    const wx = q.V.cx + (x - (q.x0 + q.w / 2)) / q.V.s, wy = q.V.cy + sgn * (y - (q.y0 + q.h / 2)) / q.V.s;
+    mp.views[q.set + ':' + q.view] = { s: s2, cx: wx - (x - (q.x0 + q.w / 2)) / s2, cy: wy - sgn * (y - (q.y0 + q.h / 2)) / s2 }; mapSoon();
+  }, { passive: false });
+  cv.addEventListener('dblclick', (e) => {
+    clearTimeout(mp.closeT); const [x, y] = mapPoint(e), pi = panelAt(x, y); if (pi < 0) return; const q = mp.panels[pi];
+    if (mp.set === 'all') { setMapSet(q.set); return; } mp.views[q.set + ':' + q.view] = null; mapSoon();
+  });
+  function setMapSet(set) {
+    mp.set = set; document.querySelectorAll('#gvMapSets button').forEach((b) => b.classList.toggle('on', b.dataset.ms === set));
+    if (set !== 'all' && mp.tool === 'seek') { /* keep the user's tool */ } mapSoon();
+  }
+  $g('gvMapSets').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setMapSet(b.dataset.ms); });
+  $g('gvMapTool').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; mp.tool = b.dataset.mt; document.querySelectorAll('#gvMapTool button').forEach((x) => x.classList.toggle('on', x === b)); mapSoon(); });
+  $g('gvMapEdit').onclick = () => { enterEdit(gv.sel); rebuildEdit(); renderShotRows(); mapSoon(); };
+  $g('gvMapReset').onclick = () => { for (const k of Object.keys(mp.views)) mp.views[k] = null; mapSoon(); };
+  const openMap = () => { mapEl.classList.remove('hidden'); const s = SHOTS[gv.sel]; if (mp.set === 'all' && false) setMapSet(setAt(s.t0)); drawMap(); };
+  gv.map = mp; gv.setMapSet = setMapSet;
   $g('gvMapBtn').onclick = () => (mapEl.classList.contains('hidden') ? openMap() : mapEl.classList.add('hidden'));
   $g('gvMapClose').onclick = () => mapEl.classList.add('hidden');
-  setInterval(() => { if (!mapEl.classList.contains('hidden')) drawMap(); }, 500);
+  setInterval(() => { if (!mapEl.classList.contains('hidden') && !mp.drag) drawMap(); }, 500);
 
   // The desk owns the keyboard: the film's own shortcuts (camera modes, notes) must not fire here.
   addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); e.stopImmediatePropagation(); saveProject(false); return; }
     if (!$g('gvDlg').classList.contains('hidden')) return;
     const tag = e.target.tagName; if (tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') return; if (tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+      const ck = e.key.toLowerCase(); let hit = true;
+      if (ck === 'z') histGo(e.shiftKey ? 1 : -1); else if (ck === 'y') histGo(1);
+      else if (ck === 'c') (e.shiftKey ? copyGrade() : copyCam()); else if (ck === 'v') (e.shiftKey ? pasteGrade(false) : pasteCam()); else hit = false;
+      if (hit) { e.preventDefault(); e.stopImmediatePropagation(); } return;
+    }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase(); let used = true;
     if (e.code === 'Space') togglePlay();
@@ -870,12 +1016,169 @@ function godViewInstall(film) {
     else if (k === 't') { state.follow = !state.follow; syncChecks(); } else if (k === 'c') { state.clipOn = !state.clipOn; syncChecks(); }
     else if (k === 'e') { if (gv.editOn) exitEdit(); else enterEdit(gv.sel); rebuildEdit(); }
     else if (k === 'k') { addKeyHere(); rebuildEdit(); } else if (k === 'delete' || k === 'backspace') { deleteKey(); rebuildEdit(); }
-    else if (k === '?' || k === '/') $g('gvHelp').classList.toggle('hidden');
+    else if (k === '?') $g('gvHelp').classList.toggle('hidden');
+    else if (k === '/') { $g('gvLTabs').querySelector('button').click(); $g('gv').classList.add('openL'); setTimeout(() => $g('gvShotQ').focus(), 0); }
     else if (k === '=' || k === '+') gv.tl?.zoomBy(1.4); else if (k === '-') gv.tl?.zoomBy(1 / 1.4);
     else if (k === 'home') seekTo(0); else if (k === 'end') seekTo(FILM - 0.05);
     else used = false;
     if (used) { e.preventDefault(); e.stopImmediatePropagation(); } else e.stopImmediatePropagation();
   }, true);
+
+
+  /* ---------- editor tools: toast, layout, LUTs, looks, undo/redo, copy and paste, filter, stills, drop ---------- */
+  let toastT = 0;
+  function gvToast(text, err = false) { const el = $g('gvToast'); el.textContent = text; el.classList.toggle('err', err); el.classList.remove('hidden'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.add('hidden'), err ? 5200 : 2400); }
+
+  // draggable panel edges, remembered between visits
+  const LAY_KEY = 'clockwork.sculptor.layout.v1'; let lay = {};
+  try { lay = JSON.parse(localStorage.getItem(LAY_KEY) || '{}') || {}; } catch (e) { lay = {}; }
+  const saveLay = () => { try { localStorage.setItem(LAY_KEY, JSON.stringify(lay)); } catch (e) { /* private window */ } };
+  function applyLay() {
+    const g = $g('gv');
+    if (lay.lw) g.style.setProperty('--gv-lw', lay.lw + 'px'); if (lay.rw) g.style.setProperty('--gv-rw', lay.rw + 'px');
+    if (lay.monw) g.style.setProperty('--gv-monw', lay.monw + '%'); if (lay.tlh) g.style.setProperty('--gv-tlh', lay.tlh + 'px');
+    $g('gvMonCard').classList.toggle('folded', !!lay.fold);
+  }
+  function gripDrag(el, start, move) {
+    let on = false, x0 = 0, y0 = 0, st0;
+    el.addEventListener('pointerdown', (e) => { on = true; x0 = e.clientX; y0 = e.clientY; st0 = start(); el.classList.add('on'); el.setPointerCapture(e.pointerId); e.preventDefault(); });
+    el.addEventListener('pointermove', (e) => { if (on) { move(e.clientX - x0, e.clientY - y0, st0); applyLay(); gv.dirty = true; pv.dirty = true; fitStage(); } });
+    const end = () => { if (!on) return; on = false; el.classList.remove('on'); saveLay(); };
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    el.addEventListener('dblclick', () => { move(0, 0, null, true); applyLay(); saveLay(); fitStage(); });
+  }
+  gripDrag($g('gvLGrip'), () => $g('gvLeft').getBoundingClientRect().width, (dx, dy, w0, reset) => { if (reset) { delete lay.lw; $g('gv').style.removeProperty('--gv-lw'); } else lay.lw = clamp(Math.round(w0 + dx), 200, 480); });
+  gripDrag($g('gvRGrip'), () => $g('gvRight').getBoundingClientRect().width, (dx, dy, w0, reset) => { if (reset) { delete lay.rw; $g('gv').style.removeProperty('--gv-rw'); } else lay.rw = clamp(Math.round(w0 - dx), 280, 640); });
+  gripDrag($g('gvMonGrip'), () => ({ w: document.querySelector('#gvMonCard .monwrap').getBoundingClientRect().width, c: $g('gvMonCard').getBoundingClientRect().width }), (dx, dy, s0, reset) => { if (reset) { delete lay.monw; $g('gv').style.removeProperty('--gv-monw'); } else { lay.monw = clamp(Math.round(((s0.w + dy * 16 / 9) / s0.c) * 100), 30, 100); lay.fold = false; } });
+  $g('gvMonFold').onclick = () => { lay.fold = !lay.fold; applyLay(); saveLay(); fitStage(); };
+  applyLay();
+
+  // colour LUTs (.cube)
+  function parseCube(text, fname) {
+    let name = fname.replace(/\.[^.]+$/, ''), n3 = 0, n1 = 0; const v = [];
+    for (const raw of text.split(/\r?\n/)) {
+      const l = raw.trim(); if (!l || l[0] === '#') continue;
+      if (/^TITLE/i.test(l)) { const m = l.match(/"(.*)"/); if (m && m[1]) name = m[1]; continue; }
+      if (/^LUT_3D_SIZE/i.test(l)) { n3 = parseInt(l.split(/\s+/)[1], 10); continue; }
+      if (/^LUT_1D_SIZE/i.test(l)) { n1 = parseInt(l.split(/\s+/)[1], 10); continue; }
+      if (/^[A-Za-z_]/.test(l)) continue;
+      const q = l.split(/\s+/); if (q.length >= 3) v.push(+q[0], +q[1], +q[2]);
+    }
+    if (v.some((x) => Number.isNaN(x))) throw new Error('the file has values that are not numbers');
+    const N = 33, out = new Uint8Array(N * N * N * 3), b8 = (x) => Math.round(clamp(x, 0, 1) * 255);
+    if (n3 >= 2) {
+      if (v.length !== n3 * n3 * n3 * 3) throw new Error(`expected ${n3 * n3 * n3} colour rows for a ${n3}-point LUT, found ${v.length / 3}`);
+      const n = Math.min(n3, N), at = (r, g, b, c) => v[((b * n3 + g) * n3 + r) * 3 + c];
+      const f = (i) => (n === n3 ? i : (i / (n - 1)) * (n3 - 1));
+      for (let b = 0; b < n; b++) for (let g = 0; g < n; g++) for (let r = 0; r < n; r++) {
+        const fr = f(r), fg = f(g), fb = f(b), r0 = Math.floor(fr), g0 = Math.floor(fg), b0 = Math.floor(fb), r1 = Math.min(r0 + 1, n3 - 1), g1 = Math.min(g0 + 1, n3 - 1), b1 = Math.min(b0 + 1, n3 - 1), tr = fr - r0, tg = fg - g0, tb = fb - b0;
+        for (let c = 0; c < 3; c++) {
+          const c00 = at(r0, g0, b0, c) * (1 - tr) + at(r1, g0, b0, c) * tr, c10 = at(r0, g1, b0, c) * (1 - tr) + at(r1, g1, b0, c) * tr;
+          const c01 = at(r0, g0, b1, c) * (1 - tr) + at(r1, g0, b1, c) * tr, c11 = at(r0, g1, b1, c) * (1 - tr) + at(r1, g1, b1, c) * tr;
+          out[((b * n + g) * n + r) * 3 + c] = b8((c00 * (1 - tg) + c10 * tg) * (1 - tb) + (c01 * (1 - tg) + c11 * tg) * tb);
+        }
+      }
+      return { name, n, data: bytesB64(out.subarray(0, n * n * n * 3)) };
+    }
+    if (n1 >= 2) {
+      if (v.length !== n1 * 3) throw new Error(`expected ${n1} rows for a ${n1}-point 1D LUT, found ${v.length / 3}`);
+      const curve = (x, c) => { const p = x * (n1 - 1), i = Math.min(Math.floor(p), n1 - 2), t = p - i; return v[i * 3 + c] * (1 - t) + v[(i + 1) * 3 + c] * t; };
+      for (let b = 0; b < N; b++) for (let g = 0; g < N; g++) for (let r = 0; r < N; r++) { const o = ((b * N + g) * N + r) * 3; out[o] = b8(curve(r / (N - 1), 0)); out[o + 1] = b8(curve(g / (N - 1), 1)); out[o + 2] = b8(curve(b / (N - 1), 2)); }
+      return { name, n: N, data: bytesB64(out) };
+    }
+    throw new Error('this does not look like a .cube LUT (no LUT_3D_SIZE or LUT_1D_SIZE)');
+  }
+  function bytesB64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s); }
+  async function importLut(file) {
+    try {
+      const lut = parseCube(await file.text(), file.name);
+      G.vals.lut = lut; if (G.vals.lutAmount === undefined) G.vals.lutAmount = 1;
+      gradeChanged(); renderGrade(); gvToast(`LUT “${lut.name}” imported (${lut.n}³). Adjust its strength under Colour LUT.`);
+      document.querySelector('[data-itab=grade]').click();
+    } catch (err) { gvToast('Could not read that LUT: ' + err.message, true); }
+  }
+  $g('gvLutIn').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) importLut(f); });
+
+  // your own looks, shared by every project in this browser
+  const LOOKS_KEY = 'clockwork.looks.v1';
+  function readLooks() { try { return JSON.parse(localStorage.getItem(LOOKS_KEY) || '{}') || {}; } catch (e) { return {}; } }
+  function writeLooks(l) { try { localStorage.setItem(LOOKS_KEY, JSON.stringify(l)); return true; } catch (e) { gvToast('Could not store the look (browser storage is full or blocked)', true); return false; } }
+  async function saveLook() {
+    const name = await gvAsk({ title: 'Save this grade as a look', text: 'It joins “My looks” for every project in this browser. Shot grades are not included.', value: 'My look', ok: 'Save look' });
+    if (name === null || !name.trim()) return;
+    const v = clone(G.vals); delete v.shots; const l = readLooks(); l[name.trim()] = v; if (writeLooks(l)) { renderGrade(); gvToast(`Saved look “${name.trim()}”`); }
+  }
+
+  // undo and redo over cameras, grade and notes
+  hist = { stack: [], at: -1, busy: false };
+  function histPush() {
+    if (hist.busy) return; const j = JSON.stringify(snapshot());
+    if (hist.stack[hist.at] === j) return;
+    hist.stack.length = hist.at + 1; hist.stack.push(j); if (hist.stack.length > 60) hist.stack.shift(); hist.at = hist.stack.length - 1; histButtons();
+  }
+  function histButtons() { $g('gvUndo').disabled = hist.at <= 0; $g('gvRedo').disabled = hist.at >= hist.stack.length - 1; }
+  function refreshAll() { renderShotRows(); renderInspector(); renderGrade(); renderExport(); rebuildEdit(); renderProjectBar(); gv.dirty = true; pv.dirty = true; }
+  async function histGo(d) {
+    if (ptimer) persistNow(); // a change still waiting to be recorded counts as the latest step
+    const n = hist.at + d; if (hist.hold || n < 0 || n >= hist.stack.length) return;
+    hist.busy = true; hist.hold = true;
+    try {
+      const before = clone(gv.ov), w = JSON.parse(hist.stack[n]), keep = { editOn: gv.editOn, pinned: gv.pinned, selKey: gv.selKey }, scope = G.scope;
+      hist.at = n; applyWork(w, PFROM); Object.assign(gv, keep); G.scope = scope;
+      persistNow();
+      const changed = new Set([...Object.keys(before), ...Object.keys(gv.ov)].filter((k) => JSON.stringify(before[k]) !== JSON.stringify(gv.ov[k])));
+      for (const t0 of changed) { const i = SHOTS.findIndex((x) => x.t0 === +t0); if (i >= 0) resampleShot(i); }
+      const ov = gv.ov[SHOTS[gv.sel].t0]; gv.selKey = clamp(gv.selKey, 0, ov ? ov.keys.length - 1 : 0); if (!ov) gv.editOn = false;
+      refreshAll(); histButtons();
+    } finally { hist.busy = false; hist.hold = false; }
+  }
+  $g('gvUndo').onclick = () => histGo(-1); $g('gvRedo').onclick = () => histGo(1);
+
+  // copy and paste cameras and grades between shots
+  function copyCam() { const ov = gv.ov[SHOTS[gv.sel].t0]; if (!ov) return gvToast('This shot has no edited camera yet. Press Edit camera first.', true); gv.clip.cam = clone(ov); renderInspector(); gvToast(`Copied the camera of S${gv.sel + 1}`); }
+  function pasteCam() {
+    if (!gv.clip.cam) return gvToast('Copy a shot camera first (Ctrl+C)', true);
+    const i = gv.sel, t0 = SHOTS[i].t0; gv.ov[t0] = clone(gv.clip.cam); applyOv(i); saveEdits(); resampleShot(i); renderShotRows(); renderInspector(); renderExport(); rebuildEdit(); gvToast(`Pasted the camera into S${i + 1}`);
+  }
+  function copyGrade() { const o = shotGrade(false); if (!o || !Object.keys(o).length) { gv.clip.grade = null; return gvToast('This shot has no grade of its own to copy', true); } gv.clip.grade = clone(o); renderGrade(); gvToast(`Copied the grade of S${gv.sel + 1}`); }
+  function pasteGrade(chapter) {
+    if (!gv.clip.grade) return gvToast('Copy a shot grade first (Ctrl+Shift+C)', true);
+    const targets = chapter ? SHOTS.map((x, i) => i).filter((i) => chapterAt(SHOTS[i].t0 + 0.01) === chapterAt(SHOTS[gv.sel].t0 + 0.01)) : [gv.sel];
+    if (!G.vals.shots) G.vals.shots = {}; targets.forEach((i) => { G.vals.shots[SHOTS[i].t0] = clone(gv.clip.grade); });
+    gradeChanged(); renderGrade(); renderShotRows(); gvToast(chapter ? `Pasted into ${targets.length} shots of this chapter` : `Pasted the grade into S${gv.sel + 1}`);
+  }
+
+  // find a shot
+  let shotFilter = 'all';
+  function applyShotFilter() {
+    const q = ($g('gvShotQ')?.value || '').trim().toLowerCase(), box = $g('gvLShots'); if (!box) return; let head = null, headShown = false;
+    box.querySelectorAll('.chead, .srow').forEach((el) => {
+      if (el.classList.contains('chead')) { if (head) head.classList.toggle('nomatch', !headShown); head = el; headShown = false; return; }
+      const i = +el.dataset.shot, t0 = SHOTS[i].t0;
+      const okChip = shotFilter === 'all' || (shotFilter === 'cam' && gv.ov[t0]) || (shotFilter === 'grade' && G.vals.shots && G.vals.shots[t0]) || (shotFilter === 'note' && gv.notes[t0]);
+      const ok = okChip && (!q || el.textContent.toLowerCase().includes(q) || ('s' + (i + 1)) === q);
+      el.classList.toggle('nomatch', !ok); if (ok) headShown = true;
+    });
+    if (head) head.classList.toggle('nomatch', !headShown);
+  }
+  $g('gvShotQ').addEventListener('input', applyShotFilter);
+  $g('gvShotQ').addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Escape') { e.target.value = ''; e.target.blur(); applyShotFilter(); } else if (e.key === 'Enter') { const r = $g('gvLShots').querySelector('.srow:not(.nomatch)'); if (r) { gv.pinned = false; gv.editOn = false; selectShot(+r.dataset.shot, true); } } });
+  $g('gvShotChips').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; shotFilter = b.dataset.f; $g('gvShotChips').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); applyShotFilter(); });
+
+  // save the monitor frame
+  $g('gvStill').onclick = () => {
+    try {
+      const a = document.createElement('a'); a.download = `clockwork-S${gv.sel + 1}-${Math.floor(st.T / 60)}m${String(Math.floor(st.T % 60)).padStart(2, '0')}s.png`; a.href = $g('gvMon').toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove(); gvToast('Saved the monitor frame');
+    } catch (e) { gvToast('Could not save the frame', true); }
+  };
+
+  // drop a .cube or a project file anywhere
+  { let depth = 0; const drop = $g('gvDrop'), isFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+    addEventListener('dragenter', (e) => { if (isFiles(e)) { depth++; drop.classList.remove('hidden'); } });
+    addEventListener('dragleave', (e) => { if (isFiles(e) && --depth <= 0) { depth = 0; drop.classList.add('hidden'); } });
+    addEventListener('dragover', (e) => { if (isFiles(e)) e.preventDefault(); });
+    addEventListener('drop', async (e) => { if (!isFiles(e)) return; e.preventDefault(); depth = 0; drop.classList.add('hidden');
+      for (const f of e.dataTransfer.files) { if (/\.cube$/i.test(f.name)) await importLut(f); else if (/\.json$/i.test(f.name)) await importFile(f); else gvToast(`Not sure what to do with ${f.name}`, true); } }); }
 
   /* ---------- project actions, menu and dialog ---------- */
   function gvAsk({ title, text = '', value = null, ok = 'OK', danger = false }) {
@@ -893,6 +1196,7 @@ function godViewInstall(film) {
   function applyWork(w, from) {
     for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); }
     for (const [t0, ov] of Object.entries(clone(w.overrides || {}))) if (applyShotOverride(+t0, ov)) gv.ov[t0] = ov;
+    gv.notes = clone(w.notes || {});
     const gs = w.grade; G.bypass = false;
     if (gs && gs.vals) { Object.assign(G, { base: gs.base || G_BASE0, applyGod: !!gs.applyGod, touched: gs.touched !== false }); G.vals = legacyVals(gs); }
     else { G.base = G_BASE0; G.vals = gradeDefaults(); G.applyGod = false; G.touched = false; }
@@ -934,7 +1238,7 @@ function godViewInstall(film) {
       const d = JSON.parse(await file.text()); if (!d.overrides) throw new Error('no cameras in this file');
       const grade = d.grade ? (d.grade.vals ? d.grade : { base: G_BASE0, vals: d.grade, touched: true }) : null;
       const id = gvId(), name = (d.name || file.name.replace(/\.json$/i, '')).slice(0, 60) || nextName();
-      PS.projects[id] = { id, name, created: Date.now(), updated: Date.now(), overrides: d.overrides, grade };
+      PS.projects[id] = { id, name, created: Date.now(), updated: Date.now(), overrides: d.overrides, grade, notes: d.notes || {} };
       await loadWork(PS.projects[id], id);
     } catch (err) { await gvAsk({ title: 'Could not import', text: String(err.message || err), ok: 'OK' }); }
   }
@@ -992,8 +1296,9 @@ function godViewInstall(film) {
   $g('gvBoot').classList.add('hidden');
   fitStage();
   Object.assign(gv, { setView, setSet, openMap, frameSet, frameShot, startCapture, shotOfSet, keyWorld, rebuildEdit, renderShotRows, state, layers, sm, bounds, cap });
+  gv.history = { go: histGo, state: () => ({ at: hist.at, n: hist.stack.length }) }; gv.parseCube = parseCube; gv.importLut = importLut; gv.toast = gvToast; gv.copyCam = copyCam; gv.pasteCam = pasteCam;
   gv.projects = { save: saveProject, open: openProject, create: newProject, state: projState, store: () => PS, from: () => PFROM, persist: persistNow, bar: renderProjectBar };
-  renderProjectBar(); persistNow();
+  renderProjectBar(); persistNow(); histPush(); histButtons();
   gv.dbg = { proxyPos, proxyTgt, camera, renderer, THREE };
   window.__godview = gv;
 }
