@@ -126,3 +126,18 @@ The rooftop town now has a plan instead of a uniform grid of houses:
 - **Paused frames.** When the film is paused and nothing has changed, the frame is not re-rendered (it refreshes about four times a second). Seeking, dragging, grading and playing redraw at once. `node tools/perfidle.cjs` checks this.
 - **Sculptor.** It also skips redundant redraws while you are not touching anything, and the preview monitor is on `Auto`: full rate, dropping to every 2nd or 4th frame only when the editor falls below about 50 fps and recovering when it is fast again. Pick a fixed rate in the monitor menu to override.
 - `node tools/perfprobe.cjs` prints per-stage CPU time, draw calls and program counts at sample moments. The headless browser uses software GL, so only those counts, not frame rates, are comparable.
+
+## Grading and motion controls
+
+The Sculptor's Grade tab has 25 sliders in four groups, plus three tint pickers, all baked into the film on export:
+
+- **Light:** exposure, bloom, gamma, contrast and its pivot, shadows, highlights, black lift, matte fade.
+- **Colour:** saturation, vibrance, warm highlights, temperature, tint, hue shift.
+- **Texture:** grain and grain size, sharpen, halation, light streaks, colour fringe.
+- **Frame:** vignette strength, softness and depth, letterbox bars.
+
+Switch the scope at the top of the tab from **Whole film** to **S# only** to grade a single shot. A shot's own values replace the film grade for that shot only, rows that differ are highlighted, and each has an undo arrow. Shots with their own grade show a ◐ in the shot list. In the export, a grade is a plain object of these values with an optional `shots` map keyed by the shot's start time, so older exports still load and neutral values change nothing (checked pixel for pixel against the previous film).
+
+Edited camera shots also get a **Motion** setting: smooth (default), linear, ease in, ease out or slow-fast-slow. With three or more keys, anything other than smooth runs straight segments between keys with that easing.
+
+`npm run test:grade` checks the sliders, per-shot scope, undo and reset, the Motion setting, and that a saved project plays its shot grade in the film.

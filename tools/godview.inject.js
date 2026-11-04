@@ -195,22 +195,22 @@ function godViewInstall(film) {
   /* colour grade: presets from the film plus free sliders, applied to the monitor (and optionally the god view) */
   const gradeNames = {}; document.querySelectorAll('#selGrade option').forEach((o) => { gradeNames[o.value] = o.textContent; });
   if (!gradeNames.default) gradeNames.default = 'Original color grade';
-  const cloneGrade = (p) => ({ sh: [...p.sh], hi: [...p.hi], mid: [...p.mid], sat: p.sat, contrast: p.contrast, warm: p.warm, grain: p.grain, lift: p.lift, vig: p.vig });
-  const G = gv.grade = { base: GRADE_PRESETS.directorgrade ? 'directorgrade' : 'default', vals: null, exposure: 1, bloom: 1, applyGod: false, bypass: false, touched: false };
+  const cloneGrade = (p) => JSON.parse(JSON.stringify(p));
+  const G = gv.grade = { base: GRADE_PRESETS.directorgrade ? 'directorgrade' : 'default', vals: null, scope: 'film', applyGod: false, bypass: false, touched: false };
   G.vals = cloneGrade(GRADE_PRESETS[G.base]);
   GRADE_PRESETS.gvcustom = G.vals;
   const gradeDefaults = () => ({ ...cloneGrade(GRADE_PRESETS[G.base]) });
   const lookGod = () => {
     const ap = G.applyGod && !G.bypass;
     CH.fade.sample = () => 0; CH.vig.sample = () => 0.25;
-    CH.exposure.sample = (t) => Math.max(0.85, real.exposure(t)) * state.exposure * (ap ? G.exposure : 1);
-    CH.bloom.sample = (t) => real.bloom(t) * (ap ? G.bloom : 1);
+    CH.exposure.sample = (t) => Math.max(0.85, real.exposure(t)) * state.exposure;
+    CH.bloom.sample = (t) => real.bloom(t);
     post.setPreset(ap ? 'gvcustom' : 'default');
   };
   const lookMon = () => {
     CH.fade.sample = real.fade; CH.vig.sample = real.vig;
-    CH.exposure.sample = (t) => real.exposure(t) * (G.bypass ? 1 : G.exposure);
-    CH.bloom.sample = (t) => real.bloom(t) * (G.bypass ? 1 : G.bloom);
+    CH.exposure.sample = real.exposure;
+    CH.bloom.sample = real.bloom;
     post.setPreset(G.bypass ? 'default' : 'gvcustom');
   };
   lookGod();
@@ -271,7 +271,10 @@ function godViewInstall(film) {
   let storageOk = true, ptimer = 0;
   const readStore = () => { try { const x = JSON.parse(localStorage.getItem(PKEY) || 'null'); return x && x.projects ? x : null; } catch (e) { return null; } };
   const writeStore = () => { try { localStorage.setItem(PKEY, JSON.stringify(PS)); storageOk = true; } catch (e) { storageOk = false; } return storageOk; };
-  const gradeState = () => ({ base: G.base, vals: G.vals, exposure: G.exposure, bloom: G.bloom, applyGod: G.applyGod, touched: G.touched });
+  const gradeState = () => ({ base: G.base, vals: G.vals, applyGod: G.applyGod, touched: G.touched });
+  /* older saves kept exposure and bloom beside the values; fold them in */
+  const legacyVals = (gs) => { const v = clone(gs.vals); if (gs.exposure != null && gs.exposure !== 1 && v.exposure == null) v.exposure = gs.exposure; if (gs.bloom != null && gs.bloom !== 1 && v.bloom == null) v.bloom = gs.bloom; return v; };
+  const setVals = (v) => { G.vals = v; GRADE_PRESETS.gvcustom = v; };
   const snapshot = () => ({ overrides: clone(gv.ov), grade: G.touched ? clone(gradeState()) : null });
   const baseline = () => ({ overrides: clone(SHOT_OVERRIDES), grade: null });
   const sameWork = (a, b) => JSON.stringify([a.overrides || {}, a.grade ? a.grade.vals : null]) === JSON.stringify([b.overrides || {}, b.grade ? b.grade.vals : null]);
@@ -510,6 +513,7 @@ function godViewInstall(film) {
     if (!ov && gv.editOn) { gv.editOn = false; gv.pinned = false; }
     if (seek) { seekTo(SHOTS[gv.sel].t0 + 0.05); setPlaying(false); }
     buildSelPath(); renderInspector(); markShotRows(); rebuildEdit(); gv.dirty = true; pv.dirty = true;
+    if (G.scope === 'shot' && gv.renderGrade) gv.renderGrade();
   }
   gv.selectShot = selectShot; gv.shotOfSet = shotOfSet;
   const stepShot = (d) => { const i = clamp(director.shotAt(st.T) + d, 0, SHOTS.length - 1); gv.pinned = false; gv.editOn = false; selectShot(i, true); };
@@ -539,7 +543,7 @@ function godViewInstall(film) {
     SHOTS.forEach((s, i) => {
       const ci = chapterAt(s.t0 + 0.01); if (ci !== lastChap) { lastChap = ci; html += `<div class="chead" style="--cc:${GV_CHAP_COL[ci]}">Chapter ${CHAPTERS[ci].num} · ${CHAPTERS[ci].name}</div>`; }
       const th = gv.thumbs[i]; if (th && !thumbURL[i]) thumbURL[i] = th.toDataURL('image/jpeg', 0.72);
-      html += `<div class="srow" data-shot="${i}"><div class="th" ${thumbURL[i] ? `style="background-image:url(${thumbURL[i]})"` : ''}>${thumbURL[i] ? '' : 'S' + (i + 1)}</div><div class="tx"><div class="nm">S${i + 1} · ${gvEsc(gvShotTitle(s.t0, i))}</div><div class="sb">${gvFmt(s.t0)} · ${(s.t1 - s.t0).toFixed(1)} s · ${GV_SET_NAMES[setAt(s.t0)]}</div></div>${gv.ov[s.t0] ? '<span class="ed" title="Camera edited">✎</span>' : ''}</div>`;
+      html += `<div class="srow" data-shot="${i}"><div class="th" ${thumbURL[i] ? `style="background-image:url(${thumbURL[i]})"` : ''}>${thumbURL[i] ? '' : 'S' + (i + 1)}</div><div class="tx"><div class="nm">S${i + 1} · ${gvEsc(gvShotTitle(s.t0, i))}</div><div class="sb">${gvFmt(s.t0)} · ${(s.t1 - s.t0).toFixed(1)} s · ${GV_SET_NAMES[setAt(s.t0)]}</div></div>${gv.ov[s.t0] ? '<span class="ed" title="Camera edited">✎</span>' : ''}${gv.grade.vals && gv.grade.vals.shots && gv.grade.vals.shots[s.t0] ? '<span class="ed" title="Own colour grade">◐</span>' : ''}</div>`;
     });
     const top = box.scrollTop; box.innerHTML = html; box.scrollTop = top; lastShotRow = -1;
   }
@@ -580,6 +584,7 @@ function godViewInstall(film) {
     } else {
       const k = ov.keys[gv.selKey] || ov.keys[0], pf = ov.rel ? 'Offset from robot' : 'World position';
       h += `<label class="chk"><input type="checkbox" id="iRel" ${ov.rel ? 'checked' : ''}> Follow the robot (keys are offsets from it)</label>`;
+      h += `<div class="rg mo"><label for="iEase">Motion</label><select class="sel" id="iEase">${[['smooth', 'Smooth (default)'], ['linear', 'Linear, constant speed'], ['in', 'Ease in (starts slow)'], ['out', 'Ease out (ends slow)'], ['slow', 'Slow, fast, slow']].map(([v, l]) => `<option value="${v}" ${(ov.ease || 'smooth') === v ? 'selected' : ''}>${l}</option>`).join('')}</select><span></span></div>`;
       h += `<div class="sect">Keyframes <span class="hint">${ov.keys.length} · K adds one at the playhead</span></div><div class="keys">${ov.keys.map((kk, n) => `<button data-key="${n}" class="${n === gv.selKey ? 'on' : ''}">${n + 1} · ${Math.round(kk.u * 100)}%</button>`).join('')}</div>`;
       h += `<div class="btns"><button class="btn sm" id="iAddKey">+ Key at playhead</button><button class="btn sm warn" id="iDelKey" ${ov.keys.length <= 1 ? 'disabled' : ''}>Delete key</button><button class="btn sm" id="iGoKey">Go to key</button></div>`;
       h += `<div class="sect">${pf}</div><div class="xyz"><label>Camera</label>${['px', 'py', 'pz'].map((f, n) => `<input class="num" data-f="${f}" type="number" step="0.05" value="${num(k.pos[n])}">`).join('')}</div>`;
@@ -623,6 +628,7 @@ function godViewInstall(film) {
   insp.addEventListener('input', (e) => {
     const el = e.target, f = el.dataset.f, i = gv.sel, ov = gv.ov[SHOTS[i].t0], k = ov?.keys[gv.selKey];
     if (el.id === 'iRel') return toggleRel(el.checked), rebuildEdit();
+    if (el.id === 'iEase') { if (ov) { if (el.value === 'smooth') delete ov.ease; else ov.ease = el.value; applyOv(i); saveEdits(); resampleShot(i); renderExport(); } return; }
     if (!f || !k) return;
     const v = parseFloat(el.value); if (Number.isNaN(v)) return;
     if (f === 'px') k.pos[0] = v; else if (f === 'py') k.pos[1] = v; else if (f === 'pz') k.pos[2] = v;
@@ -636,33 +642,66 @@ function godViewInstall(film) {
   insp.addEventListener('change', (e) => { if (e.target.dataset.f) { resampleShot(gv.sel); renderInspector(); } });
 
   /* inspector: colour grade tab */
-  const GRADE_SLIDERS = [['contrast', 'Contrast', 0.5, 1.8, 0.01], ['sat', 'Saturation', 0, 2, 0.01], ['warm', 'Warmth', 0, 2, 0.01], ['grain', 'Grain', 0, 2.5, 0.01], ['vig', 'Vignette', 0, 2, 0.01], ['lift', 'Black lift', 0, 0.05, 0.001]];
+  const GRADE_GROUPS = [
+    ['Light', [['exposure', 'Exposure', 0.3, 3, 0.01, 1], ['bloom', 'Bloom', 0, 3, 0.01, 1], ['gamma', 'Gamma', 0.5, 2, 0.01, 1], ['contrast', 'Contrast', 0.3, 2.2, 0.01, 1], ['pivot', 'Contrast pivot', 0.05, 0.6, 0.01, 0.18], ['shadows', 'Shadows', -0.6, 0.6, 0.01, 0], ['highlights', 'Highlights', -0.6, 0.6, 0.01, 0], ['lift', 'Black lift', 0, 0.08, 0.001, 0.004], ['matte', 'Matte fade', 0, 0.4, 0.005, 0]]],
+    ['Colour', [['sat', 'Saturation', 0, 2.5, 0.01, 1], ['vibrance', 'Vibrance', -1, 1, 0.01, 0], ['warm', 'Warm highlights', 0, 2, 0.01, 1], ['temp', 'Temperature', -1, 1, 0.01, 0], ['tint', 'Tint', -1, 1, 0.01, 0], ['hue', 'Hue shift', -180, 180, 1, 0]]],
+    ['Texture', [['grain', 'Grain', 0, 3, 0.01, 1], ['grainSize', 'Grain size', 0.5, 4, 0.05, 1], ['sharpen', 'Sharpen', 0, 1.5, 0.01, 0], ['halation', 'Halation', 0, 1.5, 0.01, 0], ['streak', 'Light streaks', 0, 1.5, 0.01, 0], ['aberr', 'Colour fringe', 0, 6, 0.05, 1]]],
+    ['Frame', [['vig', 'Vignette', 0, 2.2, 0.01, 1], ['vigSoft', 'Vignette softness', 0.3, 2, 0.01, 1], ['vigAmt', 'Vignette depth', 0, 0.9, 0.01, 0.28], ['letterbox', 'Letterbox bars', 0, 0.2, 0.002, 0]]],
+  ];
+  const GRADE_DEFS = {}; GRADE_GROUPS.forEach(([, rows]) => rows.forEach((r) => { GRADE_DEFS[r[0]] = r; }));
+  const gdec = (k) => (GRADE_DEFS[k][4] < 0.01 ? 3 : GRADE_DEFS[k][4] < 1 ? 2 : 0);
   const tintHex = (v) => '#' + v.map((c) => Math.round(clamp(c - 0.5, 0, 1) * 255).toString(16).padStart(2, '0')).join('');
   const hexTint = (h) => [1, 3, 5].map((n) => 0.5 + parseInt(h.slice(n, n + 2), 16) / 255);
+  const shotKey = () => String(SHOTS[gv.sel].t0);
+  const shotGrade = (make) => { if (!G.vals.shots) { if (!make) return null; G.vals.shots = {}; } const k = shotKey(); if (!G.vals.shots[k] && make) G.vals.shots[k] = {}; return G.vals.shots[k] || null; };
+  const gVal = (k) => { const o = G.scope === 'shot' ? shotGrade(false) : null; if (o && o[k] !== undefined) return o[k]; return G.vals[k] ?? GRADE_NEUTRAL[k] ?? (GRADE_PRESETS.default[k]); };
+  const gIsOv = (k) => { const o = G.scope === 'shot' ? shotGrade(false) : null; return !!(o && o[k] !== undefined); };
+  function gSet(k, v) { if (G.scope === 'shot') shotGrade(true)[k] = v; else G.vals[k] = v; }
+  const shotsGraded = () => Object.keys(G.vals.shots || {}).filter((k) => Object.keys(G.vals.shots[k]).length);
   function renderGrade() {
-    const names = Object.entries(gradeNames).filter(([k]) => k !== 'gvcustom');
-    let h = `<div class="note">Applies to the director's-cut monitor and the thumbnails, on top of the film's own chapter colour script. Look, tone and colour are baked into the film on export; exposure and bloom are for previewing only. ${G.touched ? '<b>Edited.</b>' : ''}</div>`;
-    h += `<div class="sect">Look</div><select class="sel" id="gBase">${names.map(([k, v]) => `<option value="${k}" ${k === G.base ? 'selected' : ''}>${gvEsc(v)}</option>`).join('')}</select>`;
-    h += `<label class="chk"><input type="checkbox" id="gBypass" ${G.bypass ? 'checked' : ''}> Bypass grade (compare with the original)</label><label class="chk"><input type="checkbox" id="gGod" ${G.applyGod ? 'checked' : ''}> Also apply to the god view</label>`;
-    h += `<div class="sect">Exposure and light</div><div class="rg"><label>Exposure</label><input type="range" data-g="exposure" min="0.4" max="2.5" step="0.01" value="${G.exposure}"><output>${G.exposure.toFixed(2)}</output></div><div class="rg"><label>Bloom</label><input type="range" data-g="bloom" min="0" max="3" step="0.01" value="${G.bloom}"><output>${G.bloom.toFixed(2)}</output></div>`;
-    h += `<div class="sect">Tone</div>` + GRADE_SLIDERS.map(([k, l, a, b, s]) => `<div class="rg"><label>${l}</label><input type="range" data-gv="${k}" min="${a}" max="${b}" step="${s}" value="${G.vals[k]}"><output>${G.vals[k].toFixed(k === 'lift' ? 3 : 2)}</output></div>`).join('');
-    h += `<div class="sect">Colour</div>` + [['sh', 'Shadows'], ['mid', 'Midtones'], ['hi', 'Highlights']].map(([k, l]) => `<div class="tint"><label>${l}</label><input type="color" data-gt="${k}" value="${tintHex(G.vals[k])}"></div>`).join('');
-    h += `<div class="btns"><button class="btn" id="gReset">Reset to ${gvEsc(gradeNames[G.base] || G.base)}</button></div>`;
-    $g('gvIGrade').innerHTML = h;
+    const names = Object.entries(gradeNames).filter(([k]) => k !== 'gvcustom'), sc = G.scope === 'shot', i = gv.sel;
+    let h = `<div class="note">Applies to the director's-cut monitor and the thumbnails, on top of the film's own chapter colour script. Everything here is baked into the film on export. ${G.touched ? '<b>Edited.</b>' : ''}</div>`;
+    h += `<div class="seg" id="gScope"><button data-scope="film" class="${sc ? '' : 'on'}">Whole film</button><button data-scope="shot" class="${sc ? 'on' : ''}">S${i + 1} only${shotGrade(false) && Object.keys(shotGrade(false)).length ? ' ●' : ''}</button></div>`;
+    h += sc ? `<div class="note edit">Changes you make now only affect shot S${i + 1}. A highlighted row differs from the film grade; its ↺ puts it back. ${shotsGraded().length ? `${shotsGraded().length} shot${shotsGraded().length === 1 ? '' : 's'} have their own grade.` : ''}</div>` : '';
+    if (!sc) {
+      h += `<div class="sect">Look</div><select class="sel" id="gBase">${names.map(([k, v]) => `<option value="${k}" ${k === G.base ? 'selected' : ''}>${gvEsc(v)}</option>`).join('')}</select>`;
+      h += `<label class="chk"><input type="checkbox" id="gBypass" ${G.bypass ? 'checked' : ''}> Bypass grade (compare with the original)</label><label class="chk"><input type="checkbox" id="gGod" ${G.applyGod ? 'checked' : ''}> Also apply to the god view</label>`;
+    }
+    h += GRADE_GROUPS.map(([title, rows]) => `<div class="sect">${title}</div>` + rows.map(([k, l, a, b, st]) => {
+      const v = gVal(k), d = gdec(k), ov = gIsOv(k);
+      return `<div class="rg ${ov ? 'ov' : ''}"><label title="${k}">${l}</label><input type="range" data-gv="${k}" min="${a}" max="${b}" step="${st}" value="${v}"><output>${(+v).toFixed(d)}</output>${sc ? `<button class="gundo" data-undo="${k}" title="Use the film value" ${ov ? '' : 'disabled'}>↺</button>` : ''}</div>`;
+    }).join('')).join('');
+    h += `<div class="sect">Tint</div>` + [['sh', 'Shadows'], ['mid', 'Midtones'], ['hi', 'Highlights']].map(([k, l]) => { const o = sc ? shotGrade(false) : null, ov = !!(o && o[k]); return `<div class="tint ${ov ? 'ov' : ''}"><label>${l}</label><div class="cols"><input type="color" data-gt="${k}" value="${tintHex(ov ? o[k] : G.vals[k])}">${sc ? `<button class="gundo" data-undo="${k}" title="Use the film value" ${ov ? '' : 'disabled'}>↺</button>` : ''}</div></div>`; }).join('');
+    h += `<div class="btns">${sc ? `<button class="btn" id="gShotReset" ${shotGrade(false) && Object.keys(shotGrade(false)).length ? '' : 'disabled'}>Reset S${i + 1}'s grade</button>` : `<button class="btn" id="gReset">Reset to ${gvEsc(gradeNames[G.base] || G.base)}</button>`}${shotsGraded().length ? '<button class="btn warn" id="gShotsClear">Clear all shot grades</button>' : ''}</div>`;
+    const box = $g('gvIGrade'), top = box.scrollTop; box.innerHTML = h; box.scrollTop = top;
   }
+  gv.renderGrade = renderGrade;
   const gradeBox = $g('gvIGrade');
+  const gradeChanged = () => { G.touched = true; pv.dirty = true; saveGrade(); renderExport(); };
   gradeBox.addEventListener('input', (e) => {
-    const el = e.target; let done = true;
-    if (el.dataset.g) { G[el.dataset.g] = parseFloat(el.value); el.nextElementSibling.textContent = G[el.dataset.g].toFixed(2); }
-    else if (el.dataset.gv) { G.vals[el.dataset.gv] = parseFloat(el.value); el.nextElementSibling.textContent = G.vals[el.dataset.gv].toFixed(el.dataset.gv === 'lift' ? 3 : 2); }
-    else if (el.dataset.gt) G.vals[el.dataset.gt] = hexTint(el.value);
-    else if (el.id === 'gBypass') G.bypass = el.checked; else if (el.id === 'gGod') G.applyGod = el.checked; else done = false;
-    if (done) { if (el.id !== 'gBypass' && el.id !== 'gGod') G.touched = true; pv.dirty = true; saveGrade(); renderExport(); }
+    const el = e.target;
+    if (el.dataset.gv) {
+      const k = el.dataset.gv, v = parseFloat(el.value); gSet(k, v); el.nextElementSibling.textContent = v.toFixed(gdec(k));
+      const row = el.closest('.rg'); if (G.scope === 'shot' && row) { row.classList.add('ov'); const u = row.querySelector('.gundo'); if (u) u.disabled = false; }
+      gradeChanged();
+    } else if (el.dataset.gt) {
+      const k = el.dataset.gt, v = hexTint(el.value); gSet(k, v);
+      const row = el.closest('.tint'); if (G.scope === 'shot' && row) { row.classList.add('ov'); const u = row.querySelector('.gundo'); if (u) u.disabled = false; }
+      gradeChanged();
+    } else if (el.id === 'gBypass') { G.bypass = el.checked; pv.dirty = true; saveGrade(); renderExport(); }
+    else if (el.id === 'gGod') { G.applyGod = el.checked; pv.dirty = true; saveGrade(); renderExport(); }
   });
   gradeBox.addEventListener('change', (e) => {
-    if (e.target.id === 'gBase') { G.base = e.target.value; G.vals = gradeDefaults(); GRADE_PRESETS.gvcustom = G.vals; G.exposure = 1; G.bloom = 1; G.touched = G.base !== 'default'; pv.dirty = true; saveGrade(); renderGrade(); renderExport(); }
+    if (e.target.id === 'gBase') { const shots = G.vals.shots; G.base = e.target.value; setVals(gradeDefaults()); if (shots) G.vals.shots = shots; G.touched = G.base !== 'default' || !!shots; pv.dirty = true; saveGrade(); renderGrade(); renderExport(); }
   });
-  gradeBox.addEventListener('click', (e) => { if (e.target.id === 'gReset') { G.vals = gradeDefaults(); GRADE_PRESETS.gvcustom = G.vals; G.exposure = 1; G.bloom = 1; G.touched = false; pv.dirty = true; saveGrade(); renderGrade(); renderExport(); } });
+  gradeBox.addEventListener('click', (e) => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.scope) { G.scope = t.dataset.scope; renderGrade(); return; }
+    if (t.dataset.undo) { const o = shotGrade(false); if (o) { delete o[t.dataset.undo]; if (!Object.keys(o).length) delete G.vals.shots[shotKey()]; } gradeChanged(); renderGrade(); renderShotRows(); return; }
+    if (t.id === 'gShotReset') { if (G.vals.shots) delete G.vals.shots[shotKey()]; gradeChanged(); renderGrade(); renderShotRows(); }
+    else if (t.id === 'gShotsClear') { delete G.vals.shots; gradeChanged(); renderGrade(); renderShotRows(); }
+    else if (t.id === 'gReset') { setVals(gradeDefaults()); G.touched = false; pv.dirty = true; saveGrade(); renderGrade(); renderExport(); }
+  });
 
   /* inspector: export tab */
   const editsJSON = () => JSON.stringify({ version: 1, name: curProject()?.name, overrides: gv.ov, ...(G.touched ? { grade: G.vals } : {}) }, null, 1);
@@ -687,7 +726,7 @@ function godViewInstall(film) {
         const d = JSON.parse($g('xText').value); if (!d.overrides) throw new Error('no overrides in this JSON');
         for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); }
         for (const [t0, ov] of Object.entries(d.overrides)) { gv.ov[t0] = ov; applyShotOverride(+t0, ov); }
-        if (d.grade) { G.vals = d.grade; GRADE_PRESETS.gvcustom = G.vals; G.touched = true; renderGrade(); }
+        if (d.grade) { setVals(d.grade); G.touched = true; renderGrade(); }
         saveEdits(); saveGrade(); await resampleAll(); msg(`Imported ${Object.keys(gv.ov).length} shot edit(s).`);
       } catch (err) { msg('Could not import: ' + err.message); }
     } else if (t.id === 'xClear') { for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); } saveEdits(); gv.editOn = false; gv.pinned = false; await resampleAll(); msg('Cleared.'); }
@@ -855,9 +894,9 @@ function godViewInstall(film) {
     for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); }
     for (const [t0, ov] of Object.entries(clone(w.overrides || {}))) if (applyShotOverride(+t0, ov)) gv.ov[t0] = ov;
     const gs = w.grade; G.bypass = false;
-    if (gs && gs.vals) { Object.assign(G, { base: gs.base || G_BASE0, exposure: gs.exposure ?? 1, bloom: gs.bloom ?? 1, applyGod: !!gs.applyGod, touched: gs.touched !== false }); G.vals = clone(gs.vals); }
-    else { G.base = G_BASE0; G.vals = gradeDefaults(); G.exposure = 1; G.bloom = 1; G.applyGod = false; G.touched = false; }
-    GRADE_PRESETS.gvcustom = G.vals; pv.dirty = true; PFROM = from; gv.editOn = false; gv.pinned = false; gv.selKey = 0;
+    if (gs && gs.vals) { Object.assign(G, { base: gs.base || G_BASE0, applyGod: !!gs.applyGod, touched: gs.touched !== false }); G.vals = legacyVals(gs); }
+    else { G.base = G_BASE0; G.vals = gradeDefaults(); G.applyGod = false; G.touched = false; }
+    G.scope = 'film'; GRADE_PRESETS.gvcustom = G.vals; pv.dirty = true; PFROM = from; gv.editOn = false; gv.pinned = false; gv.selKey = 0;
   }
   async function loadWork(w, from) { applyWork(w, from); persistNow(); await resampleAll(); renderGrade(); renderProjectMenu(); }
   const ago = (t) => { const d = (Date.now() - t) / 1000; return d < 60 ? 'just now' : d < 3600 ? `${Math.floor(d / 60)} min ago` : d < 86400 ? `${Math.floor(d / 3600)} h ago` : new Date(t).toLocaleDateString(); };
@@ -893,7 +932,7 @@ function godViewInstall(film) {
   async function importFile(file) {
     try {
       const d = JSON.parse(await file.text()); if (!d.overrides) throw new Error('no cameras in this file');
-      const grade = d.grade ? (d.grade.vals ? d.grade : { base: G_BASE0, vals: d.grade, exposure: 1, bloom: 1, touched: true }) : null;
+      const grade = d.grade ? (d.grade.vals ? d.grade : { base: G_BASE0, vals: d.grade, touched: true }) : null;
       const id = gvId(), name = (d.name || file.name.replace(/\.json$/i, '')).slice(0, 60) || nextName();
       PS.projects[id] = { id, name, created: Date.now(), updated: Date.now(), overrides: d.overrides, grade };
       await loadWork(PS.projects[id], id);

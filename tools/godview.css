@@ -217,3 +217,16 @@ textarea.num{height:120px;resize:vertical}
 #gvSaveBtn{background:var(--gv-gold);border-color:var(--gv-gold);color:#1a1408;font-weight:600}
 #gvSaveBtn:disabled,#gvPlayFilm:disabled{opacity:.45;cursor:default}
 @media (max-width:900px){#gvSaveBtn{padding:5px 8px}}
+
+/* grade tab: scope switch, per-shot overrides, wider labels */
+#gvIGrade .rg{grid-template-columns:104px 1fr 44px auto}
+#gvIGrade .rg label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#gvIGrade .tint{grid-template-columns:104px 1fr}
+.seg{display:flex;gap:2px;padding:2px;margin:6px 0;border:1px solid var(--gv-line2);border-radius:8px;background:var(--gv-bg)}
+.seg button{flex:1;padding:6px 8px;border:0;border-radius:6px;background:transparent;color:var(--gv-dim);font:inherit;font-size:12px;cursor:pointer}
+.seg button.on{background:var(--gv-gold);color:#1a1408;font-weight:650}
+.rg.ov label,.tint.ov label{color:var(--gv-edit)}
+.gundo{border:1px solid var(--gv-line2);background:transparent;color:var(--gv-dim);border-radius:5px;width:22px;height:22px;line-height:1;cursor:pointer;font-size:12px;padding:0}
+.gundo:disabled{opacity:.25;cursor:default}
+.rg.mo{grid-template-columns:104px 1fr}
+.rg.mo select{width:100%}
