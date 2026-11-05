@@ -59,9 +59,10 @@ const probe = (T, desk) => desk
   // camera motion
   await desk.click('[data-itab=shot]'); await desk.click('#iEdit'); await desk.waitForTimeout(800);
   const hasSel = await desk.$('#iEase'); ok('edited shots have a Motion setting', !!hasSel);
+  const lin0 = await desk.evaluate(() => Object.values(window.__godview.ov).filter((o) => o.ease === 'linear').length); // the baked cut already has some
   await desk.selectOption('#iEase', 'linear'); await desk.waitForTimeout(500);
   const ease = await desk.evaluate(() => Object.values(window.__godview.ov).filter((o) => o.ease === 'linear').length);
-  ok('motion setting is stored on that one shot', ease === 1, String(ease));
+  ok('motion setting is stored on that one shot', ease === lin0 + 1, `${lin0} -> ${ease}`);
   // save as a project and play it in the film
   await desk.click('#gvSaveBtn'); await desk.waitForSelector('#gvDlg:not(.hidden)'); await desk.fill('#gvDlgInput', 'Grade test'); await desk.click('#gvDlgYes'); await desk.waitForTimeout(700);
   const id = await desk.evaluate(() => window.__godview.projects.from());

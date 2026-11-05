@@ -342,3 +342,37 @@ kbd{font:600 11px var(--gv-mono);padding:1px 6px;border:1px solid var(--gv-line2
 #gvTop .tbtn,#gvTop .grp button{font-size:13px}
 .hud.br{right:10px;bottom:10px}
 #gvEditBadge{bottom:52px}
+
+.xgrid .pair{display:flex;align-items:center;gap:8px;min-width:0}
+.xgrid .pair span{color:var(--gv-faint);font-size:12px;white-space:nowrap}
+.xgrid .pair .num{flex:0 0 96px}.xgrid .pair.xpQ input[type=range]{flex:1}
+.xgrid .pair.xpH .num,.xgrid .pair.xpM .num{flex:0 0 96px}
+#xpRowH.hidden,#xpRowH2.hidden,#xpRowQ.hidden,#xpRowMbps.hidden{display:none!important}
+#gvXp .dlg.wide{width:min(580px,calc(100vw - 32px))}
+#xpSummary .dim{color:var(--gv-faint)}#xpSummary .bad{color:#ff9a8a}
+#xpName{width:100%;font:13px var(--gv-font)}
+
+/* --- fuller control: multi-select, batch bar, lens chips, typed values, scopes, markers --- */
+.srow.multi{background:rgba(108,196,255,.12);border-color:var(--gv-cyan)}
+#gvBatch{margin:6px 8px;padding:8px;border:1px solid var(--gv-line2);border-radius:9px;background:var(--gv-panel2);display:grid;gap:6px}
+#gvBatch .bh{display:flex;align-items:center;justify-content:space-between;font-size:12px}
+#gvBatch .bb{display:flex;flex-wrap:wrap;gap:5px}
+#gvBatch .bn{font-size:11px;color:var(--gv-dim);line-height:1.4}
+.lenses{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}
+.chipbtn{background:var(--gv-panel2);border:1px solid var(--gv-line2);color:var(--gv-text);border-radius:999px;padding:2px 9px;font:11px var(--gv-mono);cursor:pointer}
+.chipbtn:hover{border-color:var(--gv-cyan)}
+.chipbtn.on{background:var(--gv-cyan);color:#06121c;border-color:var(--gv-cyan)}
+.outedit{width:64px;background:var(--gv-bg);color:var(--gv-text);border:1px solid var(--gv-cyan);border-radius:5px;padding:1px 4px;font:11px var(--gv-mono);text-align:right}
+.sel.sm{padding:3px 6px;font-size:12px;width:auto}
+.mrow{display:flex;gap:6px;align-items:center;padding:3px 8px}
+.mrow .mt{background:transparent;border:1px solid #6b5a2a;color:#ffc850;border-radius:6px;padding:2px 7px;font:11px var(--gv-mono);cursor:pointer}
+.mrow .mt:hover{background:rgba(255,200,80,.12)}
+.mrow .mtx{flex:1;min-width:0;background:var(--gv-bg);color:var(--gv-text);border:1px solid var(--gv-line);border-radius:6px;padding:4px 7px;font:12px var(--gv-ui, inherit)}
+.mrow .mtx:focus{border-color:var(--gv-cyan);outline:none}
+.mrow [data-del]{background:transparent;border:0;color:var(--gv-dim);cursor:pointer;font-size:15px}
+.mrow [data-del]:hover{color:#ff7a6e}
+.scopebar{display:flex;gap:4px;padding:6px 8px 0}
+.scopebar button{flex:1;background:var(--gv-panel2);border:1px solid var(--gv-line);color:var(--gv-dim);border-radius:6px;padding:3px 0;font-size:11px;cursor:pointer}
+.scopebar button.on{color:var(--gv-text);border-color:var(--gv-cyan)}
+#gvScope{display:block;width:calc(100% - 16px);margin:6px 8px 8px;aspect-ratio:3/1;border-radius:6px;border:1px solid var(--gv-line);background:#05070a}
+#gvScope.hidden,.scopebar.hidden,#gvBatch.hidden{display:none}

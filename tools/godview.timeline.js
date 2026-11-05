@@ -174,6 +174,12 @@ function gvTimeline(gv) {
       ctx.save(); ctx.beginPath(); ctx.rect(HW, OV_H, W - HW, H - OV_H); ctx.clip(); ctx.strokeStyle = COL.cyan; ctx.fillStyle = COL.cyan; ctx.lineWidth = 1.5;
       const flag = (x, label, dir) => { ctx.beginPath(); ctx.moveTo(x, OV_H); ctx.lineTo(x, H); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, OV_H); ctx.lineTo(x + dir * 14, OV_H); ctx.lineTo(x + dir * 14, OV_H + 14); ctx.lineTo(x, OV_H + 14); ctx.fill(); text(label, x + dir * 7, OV_H + 7.5, '#06121c', '700 10px system-ui', 'center'); };
       if (rg.a != null) flag(tx(rg.a), 'I', 1); if (rg.b != null) flag(tx(rg.b), 'O', -1); ctx.restore(); } }
+    // director's markers: gold flags on the ruler with their notes
+    if (gv.markers && gv.markers.length) { ctx.save(); ctx.beginPath(); ctx.rect(HW, OV_H, W - HW, H - OV_H); ctx.clip();
+      for (const m of gv.markers) { const x = tx(m.t); if (x < HW - 80 || x > W) continue; ctx.strokeStyle = 'rgba(255,200,80,.55)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(Math.round(x) + 0.5, OV_H + RULER_H - 2); ctx.lineTo(Math.round(x) + 0.5, H); ctx.stroke();
+        ctx.fillStyle = '#ffc850'; ctx.beginPath(); ctx.moveTo(x - 5, OV_H + 1); ctx.lineTo(x + 5, OV_H + 1); ctx.lineTo(x + 5, OV_H + 9); ctx.lineTo(x, OV_H + 15); ctx.lineTo(x - 5, OV_H + 9); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore(); }
     // playhead
     const px = tx(T); if (px >= HW - 1 && px <= W) { ctx.strokeStyle = COL.head; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(px, OV_H); ctx.lineTo(px, H); ctx.stroke(); ctx.fillStyle = COL.head; ctx.beginPath(); ctx.moveTo(px - 6, OV_H); ctx.lineTo(px + 6, OV_H); ctx.lineTo(px, OV_H + 9); ctx.fill(); }
   }

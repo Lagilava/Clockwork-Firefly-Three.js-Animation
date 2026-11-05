@@ -32,9 +32,11 @@
   </header>
 
   <aside id="gvLeft">
-    <div class="tabs" id="gvLTabs"><button data-ltab="shots" class="on">Shots</button><button data-ltab="beats">Beats</button><button data-ltab="view">View</button></div>
+    <div class="tabs" id="gvLTabs"><button data-ltab="shots" class="on">Shots</button><button data-ltab="beats">Beats</button><button data-ltab="markers">Markers</button><button data-ltab="view">View</button></div>
     <div id="gvLFilter"><input type="search" id="gvShotQ" placeholder="Find a shot…" autocomplete="off" spellcheck="false"><div class="chips" id="gvShotChips"><button data-f="all" class="on">All</button><button data-f="cam">Camera</button><button data-f="grade">Graded</button><button data-f="note">Notes</button></div></div>
+    <div id="gvBatch" class="hidden"></div>
     <div class="lbody" id="gvLShots"></div>
+    <div class="lbody hidden" id="gvLMarkers"></div>
     <div class="lbody hidden" id="gvLBeats"></div>
     <div id="gvBeatNote" class="hidden"></div>
     <div class="lbody hidden" id="gvLView">
@@ -85,7 +87,7 @@
 
   <aside id="gvRight">
     <section class="gcard" id="gvMonCard">
-      <div class="gcardhead"><b>Director's cut</b><span class="sub" id="gvMonShot"></span><span class="gsp"></span><button class="tbtn sm" id="gvGuideBtn" title="Frame guides: crop shapes, thirds, safe areas">Guides ▾</button><button class="tbtn sm" id="gvStill" title="Save the current monitor frame as a PNG">Save still</button><button class="tbtn iconbtn sm" id="gvMonFold" title="Collapse the monitor"><svg class="ic ln" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button></div>
+      <div class="gcardhead"><b>Director's cut</b><span class="sub" id="gvMonShot"></span><span class="gsp"></span><button class="tbtn sm" id="gvScopeBtn" title="Histogram, waveform, RGB parade and vectorscope of the monitor" aria-expanded="false">Scopes ▸</button><button class="tbtn sm" id="gvGuideBtn" title="Frame guides: crop shapes, thirds, safe areas">Guides ▾</button><button class="tbtn sm" id="gvStill" title="Save the current monitor frame as a PNG">Save still</button><button class="tbtn iconbtn sm" id="gvMonFold" title="Collapse the monitor"><svg class="ic ln" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button></div>
       <div class="monwrap">
         <canvas id="gvMon" width="800" height="450"></canvas>
         <div id="gvGuides"></div>
@@ -98,6 +100,8 @@
         <button class="tbtn iconbtn" id="gvMonNext" title="Next shot"><svg class="ic" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5l11 7L4 19z"/></svg></button>
         <span class="sp"></span><span class="lens" id="gvMonPose"></span>
       </div>
+      <div class="scopebar hidden" id="gvScopeMode"><button data-sc="hist" class="on">Histogram</button><button data-sc="wave">Waveform</button><button data-sc="parade">Parade</button><button data-sc="vec">Vectorscope</button></div>
+      <canvas id="gvScope" class="hidden" width="360" height="120"></canvas>
     </section>
     <div class="rgrip" id="gvMonGrip" title="Drag to resize the monitor"></div>
     <section class="gcard gsp">
@@ -140,19 +144,24 @@
 <div id="gvPop" class="hidden"></div>
 <div id="gvWelcome" class="hidden"><b>Welcome to the Sculptor</b><span>Pick a shot on the left, press <kbd>E</kbd> to edit its camera, and try the Grade tab for colour. Everything autosaves.</span><button class="btn pri sm" id="gvWelcomeGo">Quick start</button><button class="iconbtn sm" id="gvWelcomeX" title="Dismiss" aria-label="Dismiss">✕</button></div>
 <div id="gvXp" class="hidden"><div class="dlg wide">
-  <h3>Export a clip or stills</h3>
-  <p>Frames are rendered one by one at full quality, so the result is smooth even if this computer is slow. Keep this tab in front while it runs.</p>
+  <h3>Export</h3>
+  <p>Frames are rendered one by one at full quality, so the result is exact even if this computer is slow. Any range, size, frame rate and length. Keep this tab in front while it runs.</p>
   <div class="xgrid">
-    <label for="xpRange">Range</label><select id="xpRange" class="sel"><option value="shot">Selected shot</option><option value="range">In to Out</option><option value="film">Whole film</option></select>
-    <label for="xpFmt">Format</label><select id="xpFmt" class="sel"><option value="webm">Video clip (.webm)</option><option value="png">Still frames, PNG (.zip)</option><option value="jpg">Still frames, JPEG (.zip, smaller)</option></select>
-    <label for="xpSize">Size</label><select id="xpSize" class="sel"><option value="draft">Draft · 640 × 360 (fast)</option><option value="hd" selected>HD · 1280 × 720</option><option value="fhd">Full HD · 1920 × 1080</option></select>
+    <label for="xpRange">Range</label><select id="xpRange" class="sel"><option value="shot">Selected shot</option><option value="range">In to Out</option><option value="film">Whole film</option><option value="custom">Custom times</option></select>
+    <label>From, to</label><div class="pair"><input id="xpFrom" class="num" type="number" min="0" step="0.01" aria-label="From (seconds)"><span>to</span><input id="xpTo" class="num" type="number" min="0" step="0.01" aria-label="To (seconds)"><span>seconds</span></div>
+    <label for="xpFmt">Format</label><select id="xpFmt" class="sel"><option value="vp8">Video · WebM (VP8, plays everywhere)</option><option value="vp9">Video · WebM (VP9, smaller files)</option><option value="png">Frames · PNG (lossless)</option><option value="jpg">Frames · JPEG</option><option value="webp">Frames · WebP</option></select>
+    <label for="xpSize">Size</label><select id="xpSize" class="sel"><option value="360">360p · 640 × 360 (fast draft)</option><option value="540">540p · 960 × 540</option><option value="720" selected>720p · 1280 × 720</option><option value="1080">1080p · 1920 × 1080</option><option value="1440">1440p · 2560 × 1440</option><option value="2160">4K · 3840 × 2160</option><option value="custom">Custom height…</option></select>
+    <label id="xpRowH" for="xpH" class="hidden">Frame height</label><div id="xpRowH2" class="pair xpH"><input id="xpH" class="num" type="number" min="64" max="16384" step="2" value="1920"><span>pixels (the 16:9 frame; a shape crops it)</span></div>
     <label for="xpAspect">Shape</label><select id="xpAspect" class="sel"><option value="off">Full frame (16:9)</option><option value="16:9">16:9 · film, YouTube</option><option value="2.39:1">2.39:1 · cinemascope</option><option value="4:5">4:5 · feed post</option><option value="1:1">1:1 · square</option><option value="9:16">9:16 · vertical, reels</option></select>
-    <label for="xpFps">Frame rate</label><select id="xpFps" class="sel"><option value="12">12 fps</option><option value="24" selected>24 fps</option><option value="30">30 fps</option><option value="60">60 fps</option></select>
+    <label for="xpFps">Frame rate</label><div class="pair"><input id="xpFps" class="num" type="number" min="1" max="240" step="1" value="24" list="xpFpsList"><span>frames per second</span><datalist id="xpFpsList"><option value="12"><option value="24"><option value="25"><option value="30"><option value="48"><option value="50"><option value="60"><option value="120"></datalist></div>
+    <label id="xpRowMbps" for="xpMbps">Bitrate</label><div class="pair xpM"><input id="xpMbps" class="num" type="number" min="0.1" step="0.5" placeholder="auto"><span>Mbps · empty picks a good value</span></div>
+    <label id="xpRowQ" for="xpQ">Quality</label><div class="pair xpQ"><input id="xpQ" type="range" min="10" max="100" value="92"><span id="xpQV">92</span></div>
+    <label for="xpName">File name</label><input id="xpName" class="num" type="text" placeholder="clockwork-… (automatic)" autocomplete="off" spellcheck="false">
   </div>
   <div class="note" id="xpSummary"></div>
-  <div class="note edit hidden" id="xpWarn">This browser has no video encoder (WebCodecs). Pick a still sequence, or open the Sculptor in a recent Chrome or Edge.</div>
+  <div class="note edit hidden" id="xpWarn">This browser has no video encoder (WebCodecs). Pick a frame format, or open the Sculptor in a recent Chrome or Edge.</div>
   <div id="xpProg" class="hidden"><div class="bar"><i></i></div><div class="sub" id="xpProgText"></div></div>
-  <div class="btns r"><button type="button" class="btn" id="xpCancel">Close</button><button type="button" class="btn pri" id="xpGo">Start export</button></div>
+  <div class="btns r"><button type="button" class="btn" id="xpCancel">Close</button><button type="button" class="btn hidden" id="xpPause">Pause</button><button type="button" class="btn warn hidden" id="xpStop" title="Stop now and keep everything rendered so far">Stop and save</button><button type="button" class="btn pri" id="xpGo">Start export</button></div>
 </div></div>
 <div id="gvToast" class="hidden" role="status"></div>
 <div id="gvDrop" class="hidden"><div>Drop a <b>.cube</b> LUT or a <b>.json</b> project to import it</div></div>
@@ -204,6 +213,9 @@
       <tr><td>Ctrl S</td><td>Save the project</td></tr>
       <tr><td>\</td><td>Flip between version A and B</td></tr>
       <tr><td>/</td><td>Find a shot</td></tr>
+      <tr><td>Ctrl/Shift + click</td><td>Select several shots, then grade or paste to all of them</td></tr>
+      <tr><td>B / [ / ]</td><td>Add a marker, jump to the previous or next marker</td></tr>
+      <tr><td>Double-click a slider name</td><td>Reset it; click a value to type any number</td></tr>
     </table></div>
     <div><h4>Timeline and panels</h4><table>
       <tr><td>+ / −</td><td>Zoom the timeline (or use the wheel)</td></tr>

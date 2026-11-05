@@ -106,7 +106,8 @@ const ok = (name, cond, extra = '') => { console.log((cond ? 'PASS ' : 'FAIL ') 
   // ----- export -----
   await p.evaluate(() => window.__godview.selectShot(30, true)); await p.waitForTimeout(300);
   await p.click('#gvExportBtn', { force: true });
-  await p.selectOption('#xpFmt', 'png'); await p.selectOption('#xpSize', 'draft'); await p.selectOption('#xpFps', '12'); await p.selectOption('#xpAspect', '9:16');
+  await p.evaluate(() => { const f = window.__godview.exporter.FS; f.dir = false; f.file = false; });
+  await p.selectOption('#xpFmt', 'png'); await p.selectOption('#xpSize', '360'); await p.fill('#xpFps', '12'); await p.selectOption('#xpAspect', '9:16');
   const o = await p.evaluate(() => window.__godview.exporter.opts());
   ok('the export summary follows the choices', o.cw === 202 || o.cw === 204 ? o.ch === 360 : false, JSON.stringify({ cw: o.cw, ch: o.ch, frames: o.frames }));
   await p.screenshot({ path: path.join(out, 'export.png') });
@@ -127,12 +128,58 @@ const ok = (name, cond, extra = '') => { console.log((cond ? 'PASS ' : 'FAIL ') 
   ok('the desk is restored after exporting', Math.abs(after.T - T0) < 0.05 && !after.fixed && !after.on && after.w === 800 && !after.play && !after.active, JSON.stringify(after));
   // clip
   await p.click('#gvExportBtn', { force: true });
-  await p.selectOption('#xpFmt', 'webm'); await p.selectOption('#xpSize', 'draft'); await p.selectOption('#xpFps', '12'); await p.selectOption('#xpAspect', 'off'); await p.selectOption('#xpRange', 'range');
+  await p.selectOption('#xpFmt', 'vp8'); await p.selectOption('#xpSize', '360'); await p.fill('#xpFps', '12'); await p.selectOption('#xpAspect', 'off'); await p.selectOption('#xpRange', 'range');
   const dl2 = p.waitForEvent('download', { timeout: 420000 });
   await p.click('#xpGo', { force: true }); const d2 = await dl2; const wp = path.join(out, 'clip.webm'); await d2.saveAs(wp);
   const pr = cp.execSync(`ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=codec_name,width,height,nb_read_frames -show_entries format=duration -of default=nw=1 ${wp}`).toString().replace(/\n/g, ' ');
   ok('the clip is a valid VP8 webm with every frame', /codec_name=vp8/.test(pr) && /width=640/.test(pr) && /height=360/.test(pr) && /nb_read_frames=6/.test(pr), pr);
   ok('and the right duration', /duration=0\.5/.test(pr), pr);
+
+  // ----- no limits: whole film, any size, any frame rate; streamed to a chosen file or folder -----
+  await p.click('#gvExportBtn', { force: true });
+  await p.selectOption('#xpRange', 'film'); await p.selectOption('#xpSize', 'custom'); await p.fill('#xpH', '2160'); await p.fill('#xpFps', '60'); await p.selectOption('#xpFmt', 'vp9');
+  const big = await p.evaluate(() => { const o = window.__godview.exporter.opts(); return { frames: o.frames, cw: o.cw, ch: o.ch, disabled: document.getElementById('xpGo').disabled, sum: document.getElementById('xpSummary').textContent }; });
+  ok('the whole film at 4K and 60 fps is allowed', big.frames > 17000 && big.cw === 3840 && big.ch === 2160 && !big.disabled, JSON.stringify({ ...big, sum: big.sum.slice(0, 90) }));
+  ok('and no "too many frames" message is shown', !/too many|shorter range/i.test(big.sum));
+  await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+  await p.evaluate(() => {
+    const g = window.__godview; g.exporter.FS.file = true; g.exporter.FS.dir = true; window.__saved = {};
+    const mkW = (key) => { let buf = new Uint8Array(0), len = 0; const put = (pos, u8) => { if (pos + u8.length > buf.length) { const nb = new Uint8Array(Math.max(buf.length * 2, pos + u8.length)); nb.set(buf); buf = nb; } buf.set(u8, pos); len = Math.max(len, pos + u8.length); }; let pos = 0;
+      return { async write(d) { if (d && d.type === 'write') put(d.position, d.data); else { put(pos, d); pos += d.length; } }, async close() { window.__saved[key] = buf.slice(0, len); } }; };
+    window.showSaveFilePicker = async (o) => ({ name: o.suggestedName, createWritable: async () => mkW(o.suggestedName) });
+    const dirOf = (path) => ({ name: path, async getDirectoryHandle(n) { return dirOf(path + '/' + n); }, async getFileHandle(n) { return { createWritable: async () => mkW(path + '/' + n) }; } });
+    window.showDirectoryPicker = async () => dirOf('pick');
+  });
+  // a short clip streamed to a file the user picked, patched in place at the end
+  await p.click('#gvExportBtn', { force: true });
+  await p.evaluate(() => { const g = window.__godview; const s = g.spanNow(); document.getElementById('xpFrom').value = (s.a + 0.2).toFixed(2); document.getElementById('xpTo').value = (s.a + 0.7).toFixed(2); });
+  await p.selectOption('#xpSize', '360'); await p.fill('#xpFps', '12'); await p.selectOption('#xpFmt', 'vp8'); await p.selectOption('#xpAspect', 'off');
+  await p.fill('#xpName', 'streamed'); await p.click('#xpGo', { force: true });
+  await p.waitForFunction(() => window.__godview.lastExport && window.__godview.lastExport.name === 'streamed.webm', null, { timeout: 420000 });
+  const sv = await p.evaluate(() => { const u = window.__saved['streamed.webm']; return u ? { n: u.length, b: btoa(String.fromCharCode(...u.slice(0, 1 << 20))) } : null; });
+  ok('the clip is written through the picked file handle', !!sv && sv.n > 1000, sv && String(sv.n));
+  const sp2 = path.join(out, 'streamed.webm'); fs.writeFileSync(sp2, Buffer.from(await p.evaluate(() => { const u = window.__saved['streamed.webm']; let s = ''; for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode(...u.slice(i, i + 32768)); return btoa(s); }), 'base64'));
+  const pr2 = cp.execSync(`ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=codec_name,nb_read_frames -show_entries format=duration -of default=nw=1 ${sp2}`).toString().replace(/\n/g, ' ');
+  ok('and it is a complete webm', /codec_name=vp8/.test(pr2) && /nb_read_frames=6/.test(pr2) && /duration=0\.5/.test(pr2), pr2);
+  // frames written straight into a chosen folder
+  await p.click('#gvExportBtn', { force: true });
+  await p.selectOption('#xpFmt', 'png'); await p.fill('#xpName', 'seq'); await p.click('#xpGo', { force: true });
+  await p.waitForFunction(() => window.__godview.lastExport && window.__godview.lastExport.name === 'seq.frames', null, { timeout: 420000 });
+  const names = await p.evaluate(() => Object.keys(window.__saved).filter((k) => k.startsWith('pick/seq/')).sort());
+  ok('still frames go into the chosen folder, one file each', names.length === 6 && names[0] === 'pick/seq/frame_0001.png', names.join(','));
+  // stop part-way and keep what has been rendered
+  await p.click('#gvExportBtn', { force: true });
+  await p.selectOption('#xpRange', 'film'); await p.selectOption('#xpFmt', 'vp8'); await p.selectOption('#xpSize', '360'); await p.fill('#xpFps', '12'); await p.fill('#xpName', 'partial');
+  await p.click('#xpGo', { force: true });
+  await p.waitForFunction(() => /Frame ([5-9]|\d\d+) of/.test(document.getElementById('xpProgText').textContent), null, { timeout: 420000 });
+  ok('Pause and Stop appear while exporting', await p.evaluate(() => !document.getElementById('xpStop').classList.contains('hidden') && !document.getElementById('xpPause').classList.contains('hidden')));
+  await p.click('#xpStop', { force: true });
+  await p.waitForFunction(() => window.__godview.lastExport && window.__godview.lastExport.name === 'partial.webm', null, { timeout: 420000 });
+  const le = await p.evaluate(() => ({ f: window.__godview.lastExport.frames, n: (window.__saved['partial.webm'] || []).length, active: window.__godview.xp.active }));
+  ok('stopping saves the frames rendered so far', le.f >= 5 && le.f < 3000 && le.n > 1000 && !le.active, JSON.stringify(le));
+  const pp = path.join(out, 'partial.webm'); fs.writeFileSync(pp, Buffer.from(await p.evaluate(() => { const u = window.__saved['partial.webm']; let s = ''; for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode(...u.slice(i, i + 32768)); return btoa(s); }), 'base64'));
+  const pr3 = cp.execSync(`ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of default=nw=1 ${pp}`).toString().trim();
+  ok('and that file is playable with exactly those frames', pr3 === 'nb_read_frames=' + le.f, pr3 + ' vs ' + le.f);
   console.log('errors', errs.slice(0, 5));
   await b.close(); server.close();
 })();
