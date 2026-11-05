@@ -318,6 +318,67 @@ function godViewInstall(film) {
     applyOv(i); saveEdits(); resampleShot(i); renderInspector(); rebuildEdit();
   }
   function editKeys(fn, after = true) { const i = gv.sel, ov = gv.ov[SHOTS[i].t0]; if (!ov) return; fn(ov, i); applyOv(i); saveEdits(); resampleShot(i); renderInspector(); rebuildEdit(); if (after) renderExport(); }
+  // --- inspector sections fold like the panels of a grading suite; each stays open or shut between visits ---
+  const SEC_KEY = 'clockwork.sculptor.sections.v1'; let secState = {};
+  try { secState = JSON.parse(localStorage.getItem(SEC_KEY) || '{}') || {}; } catch (e) { secState = {}; }
+  const saveSec = () => { try { localStorage.setItem(SEC_KEY, JSON.stringify(secState)); } catch (e) { /* private window */ } };
+  function foldSections(box, scope, closed) {
+    let cur = null, n = 0;
+    for (const el of [...box.children]) {
+      if (el.classList.contains('sect')) {
+        const title = (el.childNodes[0] ? el.childNodes[0].textContent : '').trim(), key = scope + ':' + title, det = document.createElement('details'), sum = document.createElement('summary');
+        det.className = 'fold'; det.dataset.sec = key; det.open = key in secState ? !!secState[key] : !closed.includes(title);
+        sum.className = 'sect'; sum.innerHTML = el.innerHTML; det.appendChild(sum); box.replaceChild(det, el); cur = det; n++;
+      } else if (el.classList.contains('tail')) cur = null;
+      else if (cur) cur.appendChild(el);
+    }
+    if (n >= 3) { const bar = document.createElement('div'); bar.className = 'foldbar'; bar.innerHTML = '<button data-fold="0">Collapse all</button><button data-fold="1">Expand all</button>'; box.insertBefore(bar, box.querySelector('details.fold')); }
+  }
+  for (const id of ['gvIShot', 'gvIGrade']) {
+    const box = $g(id);
+    box.addEventListener('click', (e) => {
+      const sm = e.target.closest('summary'); if (sm && sm.parentElement.dataset.sec) { const d = sm.parentElement; setTimeout(() => { secState[d.dataset.sec] = d.open; saveSec(); }, 0); return; }
+      const fb = e.target.closest('[data-fold]'); if (fb) { const open = fb.dataset.fold === '1'; box.querySelectorAll('details.fold').forEach((d) => { d.open = open; secState[d.dataset.sec] = open; }); saveSec(); }
+    });
+  }
+  // --- per-segment speed curves (cubic-bezier, like CapCut): a key's curve shapes the move into the next key ---
+  const CURVES = [['Smooth', [0.42, 0, 0.58, 1]], ['Linear', [0, 0, 1, 1]], ['Ease in', [0.42, 0, 1, 1]], ['Ease out', [0, 0, 0.58, 1]], ['Slow-fast-slow', [0.65, 0, 0.35, 1]], ['Snap', [0.9, 0, 0.1, 1]], ['Back out', [0.34, 1.56, 0.64, 1]], ['Back in', [0.36, 0, 0.66, -0.56]]];
+  const PRESET_BZ = { smooth: [0.42, 0, 0.58, 1], linear: [0, 0, 1, 1], in: [0.42, 0, 1, 1], out: [0, 0, 0.58, 1], slow: [0.65, 0, 0.35, 1] };
+  const curveOf = (k) => k.bz || PRESET_BZ[k.ease] || PRESET_BZ.smooth;
+  const curveHTML = (k) => `<div class="curvebox"><div class="sect">Speed curve into the next key <span class="hint">drag the two handles</span></div><canvas id="kCurve" width="300" height="170"></canvas>
+    <div class="chips" id="kCurveChips">${CURVES.map(([n, b], q) => `<button data-cv="${q}" class="${k.bz && k.bz.every((v, x) => Math.abs(v - b[x]) < 1e-3) ? 'on' : ''}">${n}</button>`).join('')}</div>
+    <div class="bzin">${[0, 1, 2, 3].map((n) => `<input class="num" data-bz="${n}" type="number" step="0.01" value="${curveOf(k)[n]}" ${k.bz ? '' : 'disabled'} aria-label="Curve value ${n + 1}">`).join('')}</div></div>`;
+  function drawCurve() {
+    const cv = $g('kCurve'); if (!cv) return; const ov = gv.ov[SHOTS[gv.sel].t0], k = ov?.keys[gv.selKey]; if (!k) return;
+    const g = cv.getContext('2d'), W = cv.width, H = cv.height, P = 18, X = (x) => P + x * (W - 2 * P), Y = (y) => H - P - ((y + 0.5) / 2) * (H - 2 * P);
+    g.clearRect(0, 0, W, H); g.fillStyle = '#080b10'; g.fillRect(0, 0, W, H); g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 1;
+    for (let q = 0; q <= 4; q++) { g.beginPath(); g.moveTo(X(q / 4), Y(-0.5)); g.lineTo(X(q / 4), Y(1.5)); g.moveTo(X(0), Y(-0.5 + q / 2)); g.lineTo(X(1), Y(-0.5 + q / 2)); g.stroke(); }
+    g.strokeStyle = 'rgba(255,255,255,.22)'; g.beginPath(); g.moveTo(X(0), Y(0)); g.lineTo(X(1), Y(0)); g.moveTo(X(0), Y(1)); g.lineTo(X(1), Y(1)); g.stroke();
+    const b = curveOf(k), f = bezFn(b); g.strokeStyle = k.bz ? '#7cc4ff' : 'rgba(124,196,255,.5)'; g.lineWidth = 2.2; g.beginPath();
+    for (let q = 0; q <= 60; q++) { const x = q / 60, y = f(x); q ? g.lineTo(X(x), Y(y)) : g.moveTo(X(x), Y(y)); } g.stroke();
+    if (k.bz) { g.lineWidth = 1.2; g.strokeStyle = 'rgba(255,200,80,.7)'; g.beginPath(); g.moveTo(X(0), Y(0)); g.lineTo(X(b[0]), Y(b[1])); g.moveTo(X(1), Y(1)); g.lineTo(X(b[2]), Y(b[3])); g.stroke();
+      g.fillStyle = '#ffc850'; for (const [x, y] of [[b[0], b[1]], [b[2], b[3]]]) { g.beginPath(); g.arc(X(x), Y(y), 6, 0, 7); g.fill(); } }
+    // where the playhead is within this segment
+    const a = k, nx = ov.keys[gv.selKey + 1], T = st.T, ta = shotT(gv.sel, a.u), tb = shotT(gv.sel, nx.u);
+    if (T >= ta && T <= tb && tb > ta) { const x = (T - ta) / (tb - ta); g.fillStyle = '#ff7a9a'; g.beginPath(); g.arc(X(x), Y(f(x)), 4, 0, 7); g.fill(); }
+    g.fillStyle = 'rgba(255,255,255,.35)'; g.font = '10px ui-monospace,monospace'; g.fillText('time →', W - 52, H - 4); g.fillText('move', 4, 12);
+  }
+  gv.drawCurve = drawCurve;
+  let cvDrag = -1, cvRaf = 0;
+  const cvXY = (e) => { const cv = $g('kCurve'), r = cv.getBoundingClientRect(), P = 18, W = cv.width, H = cv.height, px = ((e.clientX - r.left) / r.width) * W, py = ((e.clientY - r.top) / r.height) * H; return [clamp((px - P) / (W - 2 * P), 0, 1), clamp(((H - P - py) / (H - 2 * P)) * 2 - 0.5, -0.5, 1.5)]; };
+  function cvApply() { cvRaf = 0; const i = gv.sel; applyOv(i); resampleShot(i); drawCurve(); }
+  $g('gvIShot').addEventListener('pointerdown', (e) => {
+    if (e.target.id !== 'kCurve') return; const ov = gv.ov[SHOTS[gv.sel].t0], k = ov?.keys[gv.selKey]; if (!k) return;
+    if (!k.bz) { k.bz = curveOf(k).slice(); delete k.ease; applyOv(gv.sel); resampleShot(gv.sel); renderInspector(); }
+    const [x, y] = cvXY(e), b = k.bz, d1 = Math.hypot(x - b[0], (y - b[1]) / 2), d2 = Math.hypot(x - b[2], (y - b[3]) / 2); cvDrag = d1 <= d2 ? 0 : 2; $g('kCurve').setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  $g('gvIShot').addEventListener('pointermove', (e) => {
+    if (cvDrag < 0 || e.target.id !== 'kCurve') return; const k = gv.ov[SHOTS[gv.sel].t0]?.keys[gv.selKey]; if (!k || !k.bz) return; const [x, y] = cvXY(e);
+    k.bz[cvDrag] = round3(x); k.bz[cvDrag + 1] = round3(y); const q = $g('gvIShot').querySelectorAll('[data-bz]'); q.forEach((el, n) => { el.value = k.bz[n]; });
+    if (!cvRaf) cvRaf = requestAnimationFrame(cvApply);
+  });
+  const cvEnd = () => { if (cvDrag < 0) return; cvDrag = -1; saveEdits(); renderExport(); renderInspector(); };
+  $g('gvIShot').addEventListener('pointerup', cvEnd); $g('gvIShot').addEventListener('pointercancel', cvEnd);
   const LENSES = [18, 24, 35, 50, 85, 135];
   const mmToFov = (mm) => +(2 * THREE.MathUtils.radToDeg(Math.atan(12 / mm))).toFixed(2);
   function enterEdit(i) {
@@ -423,6 +484,7 @@ function godViewInstall(film) {
   }
   const render0 = post.render.bind(post);
   const hideDuring = [god, helperPos, helperTgt, editG];
+  gv.wipe = { on: false, x: 0.5 };
   function renderMonitor(t, time, o) {
     const gp = _gp.copy(camera.position), gq = _gq.copy(camera.quaternion), gfov = camera.fov, vis = hideDuring.map((h) => h.visible), clips = renderer.clippingPlanes, fog = scene.fog.density;
     camera.position.copy(pv.pos); camera.quaternion.copy(pv.quat); camera.fov = pv.fov; camera.aspect = MON_ASPECT; camera.updateProjectionMatrix(); camera.updateMatrixWorld(true);
@@ -431,6 +493,11 @@ function godViewInstall(film) {
     render0(t, time, { ...o, letter: clamp((1 - MON_ASPECT / 2.2) / 2, 0, 0.12), cinematic: true });
     const src = renderer.domElement;
     mctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, monitor.width, monitor.height);
+    if (gv.wipe.on && !xp.active && !cap.active && !G.bypass) { // compare: the ungraded picture over the left part of the monitor
+      post.setPreset('default'); render0(t, time, { ...o, letter: clamp((1 - MON_ASPECT / 2.2) / 2, 0, 0.12), cinematic: true });
+      mctx.save(); mctx.beginPath(); mctx.rect(0, 0, monitor.width * gv.wipe.x, monitor.height); mctx.clip(); mctx.drawImage(renderer.domElement, 0, 0, renderer.domElement.width, renderer.domElement.height, 0, 0, monitor.width, monitor.height); mctx.restore();
+      post.setPreset('gvcustom');
+    }
     if (cap.active) captureThumb();
     if (xp.active && xp.want) { xp.want = false; setPlaying(false); xp.ready && xp.ready(); }
     hideDuring.forEach((h, n) => { h.visible = vis[n]; }); renderer.clippingPlanes = clips; scene.fog.density = fog;
@@ -615,7 +682,8 @@ function godViewInstall(film) {
       h += `<div class="btns"><button class="btn sm" id="iAddKey">+ Key at playhead</button><button class="btn sm" id="iDupKey" title="Copy this key to halfway to the next one">Duplicate key</button><button class="btn sm warn" id="iDelKey" ${ov.keys.length <= 1 ? 'disabled' : ''}>Delete key</button><button class="btn sm" id="iGoKey">Go to key</button></div>`;
       h += `<div class="sect">${pf}</div><div class="xyz"><label>Camera</label>${['px', 'py', 'pz'].map((f, n) => `<input class="num" data-f="${f}" type="number" step="0.05" value="${num(k.pos[n])}">`).join('')}</div>`;
       h += `<div class="xyz"><label>Aim</label>${['tx', 'ty', 'tz'].map((f, n) => `<input class="num" data-f="${f}" type="number" step="0.05" value="${num(k.target[n])}">`).join('')}</div>`;
-      h += `<div class="rg mo"><label for="kEase">Into next key</label><select class="sel" id="kEase" ${gv.selKey >= ov.keys.length - 1 ? 'disabled' : ''}>${[['', 'Motion setting (default)'], ['smooth', 'Smooth'], ['linear', 'Linear, constant speed'], ['in', 'Ease in'], ['out', 'Ease out'], ['slow', 'Slow, fast, slow'], ['hold', 'Hold, then cut to the next']].map(([v, l]) => `<option value="${v}" ${(k.ease || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select><span></span></div>`;
+      h += `<div class="rg mo"><label for="kEase">Into next key</label><select class="sel" id="kEase" ${gv.selKey >= ov.keys.length - 1 ? 'disabled' : ''}>${[['', 'Motion setting (default)'], ['smooth', 'Smooth'], ['linear', 'Linear, constant speed'], ['in', 'Ease in'], ['out', 'Ease out'], ['slow', 'Slow, fast, slow'], ['bz', 'Custom curve (drag below)'], ['hold', 'Hold, then cut to the next']].map(([v, l]) => `<option value="${v}" ${(k.bz ? 'bz' : k.ease || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select><span></span></div>`;
+      if (gv.selKey < ov.keys.length - 1 && k.ease !== 'hold') h += curveHTML(k);
       h += `<div class="rg"><label for="kFov">Lens</label><input type="range" id="kFov" data-f="fov" min="12" max="90" step="0.5" value="${num(k.fov, 1)}"><output id="kFovV">${num(k.fov, 0)}° · ${(12 / Math.tan(THREE.MathUtils.degToRad(k.fov / 2))).toFixed(0)} mm</output></div>`;
       h += `<div class="lenses">${LENSES.map((mm) => `<button class="chipbtn" data-mm="${mm}" title="${mm} mm lens">${mm}</button>`).join('')}<span>mm</span></div>`;
       h += `<div class="rg"><label for="kRoll">Dutch</label><input type="range" id="kRoll" data-f="roll" min="-15" max="15" step="0.25" value="${num((k.roll || 0) * 57.2958, 2)}"><output id="kRollV">${num((k.roll || 0) * 57.2958, 1)}°</output></div>`;
@@ -627,8 +695,8 @@ function godViewInstall(film) {
       h += `<div class="btns"><button class="btn" id="iDone">${gv.editOn ? 'Done editing' : 'Show gizmos'}</button></div>`;
     }
     h += `<div class="sect">Notes</div><textarea class="notebox" id="iNote" placeholder="Director's notes for this shot…" spellcheck="true">${gvEsc(gv.notes[s.t0] || '')}</textarea>`;
-    h += `<div class="btns"><button class="btn sm" id="iCopyCam" ${ov ? '' : 'disabled'} title="Ctrl+C">Copy camera</button><button class="btn sm" id="iPasteCam" ${gv.clip.cam ? '' : 'disabled'} title="Ctrl+V">Paste camera</button></div>`;
-    const top = box.scrollTop; box.innerHTML = h; box.scrollTop = top;
+    h += `<div class="btns tail"><button class="btn sm" id="iCopyCam" ${ov ? '' : 'disabled'} title="Ctrl+C">Copy camera</button><button class="btn sm" id="iPasteCam" ${gv.clip.cam ? '' : 'disabled'} title="Ctrl+V">Paste camera</button></div>`;
+    const top = box.scrollTop; box.innerHTML = h; foldSections(box, 'shot', ['Whole move', 'Aim helpers']); box.scrollTop = top; drawCurve();
   }
   function syncKeyFields() {
     const ov = gv.ov[SHOTS[gv.sel].t0], k = ov?.keys[gv.selKey]; if (!k) return; const box = $g('gvIShot');
@@ -639,6 +707,7 @@ function godViewInstall(film) {
   insp.addEventListener('click', (e) => {
     const t = e.target.closest('button'); if (!t) return; const i = gv.sel;
     if (t.dataset.key !== undefined) return selectKey(+t.dataset.key, true);
+    if (t.dataset.cv !== undefined) { const k0 = gv.ov[SHOTS[i].t0]?.keys[gv.selKey]; if (k0) { k0.bz = CURVES[+t.dataset.cv][1].slice(); delete k0.ease; applyOv(i); saveEdits(); resampleShot(i); renderExport(); renderInspector(); } return; }
     if (t.dataset.mm) { const kk = gv.ov[SHOTS[i].t0]?.keys[gv.selKey]; if (kk) { kk.fov = mmToFov(+t.dataset.mm); applyOv(i); saveEdits(); resampleShot(i); renderInspector(); rebuildEdit(); } return; }
     const ov = gv.ov[SHOTS[i].t0], k = ov?.keys[gv.selKey];
     switch (t.id) {
@@ -667,8 +736,9 @@ function godViewInstall(film) {
     const el = e.target, f = el.dataset.f, i = gv.sel, ov = gv.ov[SHOTS[i].t0], k = ov?.keys[gv.selKey];
     if (el.id === 'iRel') return toggleRel(el.checked), rebuildEdit();
     if (el.id === 'iNote') { const t0 = SHOTS[i].t0; if (el.value.trim()) gv.notes[t0] = el.value; else delete gv.notes[t0]; saveEdits(); return; }
+    if (el.dataset.bz !== undefined) { if (k && k.bz && el.value !== '') { const n = +el.dataset.bz, v = parseFloat(el.value); if (Number.isFinite(v)) { k.bz[n] = n % 2 === 0 ? clamp(v, 0, 1) : clamp(v, -1, 2); applyOv(i); saveEdits(); resampleShot(i); drawCurve(); } } return; }
     if (el.id === 'iAim') return setAim(el.value);
-    if (el.id === 'kEase') { if (k) { if (el.value) k.ease = el.value; else delete k.ease; applyOv(i); saveEdits(); resampleShot(i); renderExport(); } return; }
+    if (el.id === 'kEase') { if (k) { if (el.value === 'bz') { k.bz = k.bz || curveOf(k).slice(); delete k.ease; } else { delete k.bz; if (el.value) k.ease = el.value; else delete k.ease; } applyOv(i); saveEdits(); resampleShot(i); renderExport(); renderInspector(); } return; }
     if (el.id === 'iEase') { if (ov) { if (el.value === 'smooth') delete ov.ease; else ov.ease = el.value; applyOv(i); saveEdits(); resampleShot(i); renderExport(); } return; }
     if (!f || !k) return;
     const v = parseFloat(el.value); if (Number.isNaN(v)) return;
@@ -722,6 +792,7 @@ function godViewInstall(film) {
       const v = gVal(k), d = gdec(k), ov = gIsOv(k); a = Math.min(a, v); b = Math.max(b, v); // a typed value beyond the slider widens it
       return `<div class="rg ${ov ? 'ov' : ''}"><label title="${k}: double-click to reset">${l}</label><input type="range" data-gv="${k}" min="${a}" max="${b}" step="${st}" value="${v}"><output>${(+v).toFixed(d)}</output>${sc ? `<button class="gundo" data-undo="${k}" title="Use the film value" ${ov ? '' : 'disabled'}>↺</button>` : ''}</div>`;
     };
+    h += `<div class="sect">Colour wheels <span class="hint">drag the dot · double-click resets</span></div><div class="wheels">${[['sh', 'Shadows'], ['mid', 'Midtones'], ['hi', 'Highlights']].map(([k, l]) => `<div class="wheel"><canvas data-wh="${k}" width="132" height="132"></canvas><span>${l}</span></div>`).join('')}</div>`;
     h += GRADE_GROUPS.map(([title, rows]) => `<div class="sect">${title}</div>` + rows.map(row).join('')).join('');
     const lut = G.vals.lut;
     h += `<div class="sect">Colour LUT <span class="hint">.cube, 3D or 1D</span></div>`;
@@ -729,11 +800,44 @@ function godViewInstall(film) {
     else h += `<div class="note">Import a look from your colourist or a LUT pack. It runs after the grade, on the final image, and is baked into the film on export.</div>`;
     if (!sc) h += `<div class="btns"><button class="btn" id="gLutImport">${lut ? 'Replace LUT…' : 'Import LUT (.cube)…'}</button></div>`;
     h += `<div class="sect">Tint</div>` + [['sh', 'Shadows'], ['mid', 'Midtones'], ['hi', 'Highlights']].map(([k, l]) => { const o = sc ? gtg(false) : null, ov = !!(o && o[k]), s0 = en ? shotGrade(false) : null; return `<div class="tint ${ov ? 'ov' : ''}"><label>${l}</label><div class="cols"><input type="color" data-gt="${k}" value="${tintHex(ov ? o[k] : s0 && s0[k] ? s0[k] : G.vals[k])}">${sc ? `<button class="gundo" data-undo="${k}" title="Use the film value" ${ov ? '' : 'disabled'}>↺</button>` : ''}</div></div>`; }).join('');
-    if (sc) h += `<div class="btns"><button class="btn sm" id="gCopy" title="Ctrl+Shift+C">Copy shot grade</button><button class="btn sm" id="gPaste" ${gv.clip.grade ? '' : 'disabled'} title="Ctrl+Shift+V">Paste</button><button class="btn sm" id="gPasteChap" ${gv.clip.grade ? '' : 'disabled'}>Paste to chapter</button></div>`;
-    h += `<div class="btns">${sc ? `<button class="btn" id="gShotReset" ${shotGrade(false) && Object.keys(shotGrade(false)).length ? '' : 'disabled'}>Reset S${i + 1}'s grade</button>` : `<button class="btn" id="gReset">Reset to ${gvEsc(gradeNames[G.base] || G.base)}</button>`}${shotsGraded().length ? '<button class="btn warn" id="gShotsClear">Clear all shot grades</button>' : ''}</div>`;
-    const box = $g('gvIGrade'), top = box.scrollTop; box.innerHTML = h; box.scrollTop = top;
+    if (sc) h += `<div class="btns tail"><button class="btn sm" id="gCopy" title="Ctrl+Shift+C">Copy shot grade</button><button class="btn sm" id="gPaste" ${gv.clip.grade ? '' : 'disabled'} title="Ctrl+Shift+V">Paste</button><button class="btn sm" id="gPasteChap" ${gv.clip.grade ? '' : 'disabled'}>Paste to chapter</button></div>`;
+    h += `<div class="btns tail">${sc ? `<button class="btn" id="gShotReset" ${shotGrade(false) && Object.keys(shotGrade(false)).length ? '' : 'disabled'}>Reset S${i + 1}'s grade</button>` : `<button class="btn" id="gReset">Reset to ${gvEsc(gradeNames[G.base] || G.base)}</button>`}${shotsGraded().length ? '<button class="btn warn" id="gShotsClear">Clear all shot grades</button>' : ''}</div>`;
+    const box = $g('gvIGrade'), top = box.scrollTop; box.innerHTML = h; foldSections(box, 'grade', ['Texture', 'Frame', 'Tint', 'Colour LUT']); box.scrollTop = top; drawWheels();
   }
   gv.renderGrade = renderGrade;
+  // --- colour wheels: shadows, midtones and highlights tints as a chroma vector (centre = neutral) ---
+  const WH_SCALE = 0.9, WH_R = 56;
+  let whBase = null;
+  const whBg = () => { if (whBase) return whBase; const c = document.createElement('canvas'); c.width = c.height = 132; const g = c.getContext('2d'), im = g.createImageData(132, 132);
+    for (let y = 0; y < 132; y++) for (let x = 0; x < 132; x++) { const dx = (x - 66) / WH_R, dy = (66 - y) / WH_R, r = Math.hypot(dx, dy); if (r > 1.02) continue; const h = ((Math.atan2(dy, dx) / (2 * Math.PI)) + 1) % 1, f = h * 6, q = f | 0, m = f - q, v = [[1, m, 0], [1 - m, 1, 0], [0, 1, m], [0, 1 - m, 1], [m, 0, 1], [1, 0, 1 - m]][q % 6], sat = Math.min(1, r), o = (y * 132 + x) * 4;
+      for (let n = 0; n < 3; n++) im.data[o + n] = Math.round(((1 - sat) * 0.16 + sat * v[n]) * 150 + 22); im.data[o + 3] = r > 1 ? Math.round((1.02 - r) / 0.02 * 255) : 255; }
+    g.putImageData(im, 0, 0); return (whBase = c); };
+  const whToXY = (v) => { const R = (v[0] - 1) / WH_SCALE, Gc = (v[1] - 1) / WH_SCALE, B = (v[2] - 1) / WH_SCALE, cx = R - 0.5 * (Gc + B) , cy = (Math.sqrt(3) / 2) * (Gc - B); return [cx * 1.5, cy * 1.5]; };
+  const xyToWh = (x, y) => { const cx = x / 1.5, cy = y / 1.5; return [1 + WH_SCALE * (2 / 3) * cx, 1 + WH_SCALE * (-cx / 3 + cy / Math.sqrt(3)), 1 + WH_SCALE * (-cx / 3 - cy / Math.sqrt(3))].map((q) => Math.round(q * 1000) / 1000); };
+  function drawWheels() {
+    document.querySelectorAll('#gvIGrade canvas[data-wh]').forEach((cv) => {
+      const g = cv.getContext('2d'), k = cv.dataset.wh, v = gVal(k) || [1, 1, 1]; g.clearRect(0, 0, 132, 132); g.drawImage(whBg(), 0, 0);
+      g.strokeStyle = 'rgba(255,255,255,.2)'; g.lineWidth = 1; g.beginPath(); g.moveTo(66, 66 - WH_R); g.lineTo(66, 66 + WH_R); g.moveTo(66 - WH_R, 66); g.lineTo(66 + WH_R, 66); g.stroke();
+      let [x, y] = whToXY(v); const r = Math.hypot(x, y); if (r > 1) { x /= r; y /= r; }
+      g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 1.5; g.beginPath(); g.arc(66 + x * WH_R, 66 - y * WH_R, 5.5, 0, 7); g.fill(); g.stroke();
+    });
+  }
+  let whDrag = null;
+  function whSet(e) {
+    const cv = whDrag, r = cv.getBoundingClientRect(), x = ((e.clientX - r.left) / r.width * 132 - 66) / WH_R, y = (66 - (e.clientY - r.top) / r.height * 132) / WH_R, n = Math.hypot(x, y), k = n > 1 ? 1 / n : 1;
+    const v = Math.hypot(x * k, y * k) < 0.03 ? [1, 1, 1] : xyToWh(x * k, y * k); gSet(cv.dataset.wh, v);
+    const inp = document.querySelector(`#gvIGrade [data-gt="${cv.dataset.wh}"]`); if (inp) inp.value = tintHex(v);
+    gradeChanged(); drawWheels();
+  }
+  gradeBox_wheelInit();
+  function gradeBox_wheelInit() {
+    const box = $g('gvIGrade');
+    box.addEventListener('pointerdown', (e) => { const cv = e.target.closest('canvas[data-wh]'); if (!cv) return; whDrag = cv; cv.setPointerCapture(e.pointerId); whSet(e); e.preventDefault(); });
+    box.addEventListener('pointermove', (e) => { if (whDrag) whSet(e); });
+    const end = () => { whDrag = null; };
+    box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
+    box.addEventListener('dblclick', (e) => { const cv = e.target.closest('canvas[data-wh]'); if (!cv) return; const k = cv.dataset.wh; if (G.scope === 'film') G.vals[k] = [1, 1, 1]; else gDrop(k); gradeChanged(); renderGrade(); });
+  }
   const gradeBox = $g('gvIGrade');
   const gradeChanged = () => { G.touched = true; pv.dirty = true; saveGrade(); renderExport(); };
   gradeBox.addEventListener('input', (e) => {
@@ -1090,7 +1194,7 @@ function godViewInstall(film) {
     el.addEventListener('dblclick', () => { move(0, 0, null, true); applyLay(); saveLay(); fitStage(); });
   }
   gripDrag($g('gvLGrip'), () => $g('gvLeft').getBoundingClientRect().width, (dx, dy, w0, reset) => { if (reset) { delete lay.lw; $g('gv').style.removeProperty('--gv-lw'); } else lay.lw = clamp(Math.round(w0 + dx), 200, 480); });
-  gripDrag($g('gvRGrip'), () => $g('gvRight').getBoundingClientRect().width, (dx, dy, w0, reset) => { if (reset) { delete lay.rw; $g('gv').style.removeProperty('--gv-rw'); } else lay.rw = clamp(Math.round(w0 - dx), 280, 640); });
+  gripDrag($g('gvRGrip'), () => $g('gvRight').getBoundingClientRect().width, (dx, dy, w0, reset) => { if (reset) { delete lay.rw; $g('gv').style.removeProperty('--gv-rw'); } else lay.rw = clamp(Math.round(w0 - dx), 280, Math.max(640, Math.round(innerWidth * 0.72))); });
   gripDrag($g('gvMonGrip'), () => ({ w: document.querySelector('#gvMonCard .monwrap').getBoundingClientRect().width, c: $g('gvMonCard').getBoundingClientRect().width }), (dx, dy, s0, reset) => { if (reset) { delete lay.monw; $g('gv').style.removeProperty('--gv-monw'); } else { lay.monw = clamp(Math.round(((s0.w + dy * 16 / 9) / s0.c) * 100), 30, 100); lay.fold = false; } });
   $g('gvMonFold').onclick = () => { lay.fold = !lay.fold; applyLay(); saveLay(); fitStage(); };
   applyLay();

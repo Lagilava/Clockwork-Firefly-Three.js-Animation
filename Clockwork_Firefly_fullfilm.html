@@ -5914,6 +5914,15 @@ const SHOT_OVERRIDES = /*OVERRIDES-BEGIN*/{"0":{"rel":true,"keys":[{"u":0,"pos":
 const _ovP = V(), _ovT = V();
 const SHOT_EASE = { smooth: (k) => smooth(k), linear: (k) => k, in: (k) => k * k, out: (k) => 1 - (1 - k) * (1 - k), slow: (k) => k * k * k * (k * (6 * k - 15) + 10) };
 const SHOT_EASE_ALL = ['smooth', 'linear', 'in', 'out', 'slow', 'hold'];
+// A key can carry its own cubic-bezier curve (like CapCut): bz = [x1, y1, x2, y2], with y free to overshoot for back-easing.
+const BZ_CACHE = new Map();
+function bezFn(b) {
+  const id = b.join(','); let f = BZ_CACHE.get(id); if (f) return f;
+  const x1 = clamp(b[0], 0, 1), y1 = b[1], x2 = clamp(b[2], 0, 1), y2 = b[3];
+  const X = (t) => 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t, Y = (t) => 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+  f = (x) => { if (x <= 0) return 0; if (x >= 1) return 1; let lo = 0, hi = 1; for (let i = 0; i < 22; i++) { const m = (lo + hi) / 2; if (X(m) < x) lo = m; else hi = m; } return Y((lo + hi) / 2); };
+  BZ_CACHE.set(id, f); return f;
+}
 function overrideShotFn(ov) {
   const baseEase = ov.ease || 'smooth', aim = ov.aim || (ov.rel ? 'robot' : 'world'); // aim: what the target offsets are measured from
   const ks = ov.keys.slice().sort((a, b) => a.u - b.u), n = ks.length;
@@ -5925,8 +5934,10 @@ function overrideShotFn(ov) {
     if (n === 1) for (let c = 0; c < 9; c++) out[c] = vec(ks[0], c);
     else {
       const a = ks[i], b = ks[i + 1], span = b.u - a.u, k = span > 1e-6 ? clamp((u - a.u) / span) : 1, segEase = a.ease || baseEase; // a key's own ease shapes the move into the next key
+      const bzf = a.bz && a.bz.length === 4 && segEase !== 'hold' ? bezFn(a.bz)(k) : null; // a custom curve beats the named eases
       for (let c = 0; c < 9; c++) {
         if (segEase === 'hold') out[c] = vec(a, c);
+        else if (bzf !== null) out[c] = lerp(vec(a, c), vec(b, c), bzf);
         else if (n === 2 || segEase !== 'smooth') out[c] = lerp(vec(a, c), vec(b, c), (SHOT_EASE[segEase] || SHOT_EASE.smooth)(k));
         else out[c] = cr(vec(ks[Math.max(0, i - 1)], c), vec(a, c), vec(b, c), vec(ks[Math.min(n - 1, i + 2)], c), k);
       }
@@ -6315,7 +6326,7 @@ const GRADE_PRESETS = {
   coppola:    { sh: [1.14, 1.02, 1.25], hi: [1.20, 1.06, 1.11], mid: [1.11, 0.99, 1.12], sat: 0.89, contrast: 0.82, warm: 1.12, grain: 0.72, lift: 0.018, vig: 0.72 },
 };
 /* Director's grade: written by the Sculptor editor through tools/apply-overrides.cjs (null until baked). */
-const DIRECTOR_GRADE = /*GRADE-BEGIN*/{"sh":[1,1,1],"hi":[1,1,1],"mid":[1,1,1],"sat":2.5,"contrast":0.62,"warm":1.56,"grain":0.9,"lift":0,"vig":1.17,"aberr":0,"streak":0,"halation":0,"sharpen":0.09,"grainSize":0.9,"tint":-0.61,"hue":4,"matte":0.12,"pivot":0.6,"gamma":0.79,"bloom":1.97,"exposure":2.24,"temp":0.32,"shadows":0.1,"highlights":0.35}/*GRADE-END*/;
+const DIRECTOR_GRADE = /*GRADE-BEGIN*/{"sh":[1,1,1],"hi":[1,1,1],"mid":[1.045,1.163,1.037],"sat":2.03,"contrast":0.79,"warm":1.56,"grain":0.9,"lift":0,"vig":1.11,"aberr":0,"streak":0,"halation":0,"sharpen":0.09,"grainSize":0.9,"tint":-0.61,"hue":4,"matte":0.05,"pivot":0.6,"gamma":0.79,"bloom":1.69,"exposure":1.36,"temp":0.32,"shadows":0.34,"highlights":0.01,"vigAmt":0.33,"vigSoft":0.9,"letterbox":0}/*GRADE-END*/;
 if (DIRECTOR_GRADE) GRADE_PRESETS.directorgrade = DIRECTOR_GRADE;
 if (PROJECT && PROJECT.grade) GRADE_PRESETS.project = PROJECT.grade;
 /* A colour LUT (a .cube file imported in the Sculptor) lives in the grade as { name, n, data }: n^3 RGB bytes, red fastest, as base64.

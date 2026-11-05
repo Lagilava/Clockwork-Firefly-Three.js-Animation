@@ -32,6 +32,7 @@ const ok = (name, cond, extra = '') => { console.log((cond ? 'PASS ' : 'FAIL ') 
   // ----- camera -----
   await p.evaluate((i) => window.__godview.selectShot(i, true), SHOT); await p.waitForTimeout(400);
   await p.click('#iEdit', { force: true }); await p.waitForTimeout(800);
+  await p.click('#gvIShot [data-fold="1"]', { force: true }); await p.waitForTimeout(300);
   let ov = await getOv(); ok('Edit camera bakes the shot into keyframes', !!ov && ov.keys.length >= 2, ov && String(ov.keys.length));
   const n0 = ov.keys.length;
   await p.click('#iDupKey', { force: true }); await p.waitForTimeout(500);
@@ -102,6 +103,66 @@ const ok = (name, cond, extra = '') => { console.log((cond ? 'PASS ' : 'FAIL ') 
   const ex2 = await p.evaluate(() => window.__film.effectiveGrade(window.__film.gradePresets.gvcustom, 2).exposure);
   ok('double-clicking the name resets it', Math.abs(ex2 - 3.5) > 0.2, String(ex2));
 
+
+  // ----- speed curves between keyframes (bezier, like CapCut) -----
+  await p.click('[data-itab=shot]', { force: true }); await p.waitForTimeout(300);
+  await p.evaluate((i) => window.__godview.selectShot(i, true), SHOT); await p.waitForTimeout(300);
+  await p.click('#gvIShot [data-fold="1"]', { force: true }); await p.waitForTimeout(300);
+  await p.click('[data-key="0"]', { force: true }); await p.waitForTimeout(300);
+  ok('the curve editor appears for a key that has a next key', await p.evaluate(() => !!document.getElementById('kCurve')));
+  await p.selectOption('#kEase', 'bz'); await p.waitForTimeout(500);
+  ov = await getOv(); ok('choosing Custom curve stores a bezier on the key', Array.isArray(ov.keys[0].bz) && ov.keys[0].bz.length === 4 && !ov.keys[0].ease, JSON.stringify(ov.keys[0].bz));
+  const segU = (ov.keys[0].u + ov.keys[1].u) / 2, k0c = await probe([SHOT, ov.keys[0].u + 0.0005]), k1c = await probe([SHOT, ov.keys[1].u - 0.0005]);
+  const frac = (m) => { const d = [k1c.cam[0] - k0c.cam[0], k1c.cam[1] - k0c.cam[1], k1c.cam[2] - k0c.cam[2]], q = [m.cam[0] - k0c.cam[0], m.cam[1] - k0c.cam[1], m.cam[2] - k0c.cam[2]], dd = d[0] * d[0] + d[1] * d[1] + d[2] * d[2]; return dd > 1e-6 ? (q[0] * d[0] + q[1] * d[1] + q[2] * d[2]) / dd : NaN; };
+  await p.click('[data-cv="1"]', { force: true }); await p.waitForTimeout(500); // Linear
+  const fLin = frac(await probe([SHOT, segU]));
+  await p.click('[data-cv="2"]', { force: true }); await p.waitForTimeout(500); // Ease in: starts slow
+  const fIn = frac(await probe([SHOT, segU]));
+  await p.click('[data-cv="3"]', { force: true }); await p.waitForTimeout(500); // Ease out: starts fast
+  const fOut = frac(await probe([SHOT, segU]));
+  ok('a preset curve changes the speed across the segment', Math.abs(fLin - 0.5) < 0.04 && fIn < 0.4 && fOut > 0.6, [fLin, fIn, fOut].map((x) => x.toFixed(2)).join(' / '));
+  // drag a handle on the canvas
+  await p.evaluate(() => document.getElementById('kCurve').scrollIntoView({ block: 'center' })); await p.waitForTimeout(300);
+  const box = await p.evaluate(() => { const r = document.getElementById('kCurve').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+  const bz0 = (await getOv()).keys[0].bz.slice();
+  const hx = box.x + box.w * ((18 + bz0[2] * 264) / 300), hy = box.y + box.h * ((170 - 18 - ((bz0[3] + 0.5) / 2) * 134) / 170);
+  await p.mouse.move(hx, hy); await p.mouse.down(); await p.mouse.move(hx - box.w * 0.2, hy - box.h * 0.25, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(600);
+  const bz1 = (await getOv()).keys[0].bz;
+  ok('dragging a handle edits the curve', Math.abs(bz1[2] - bz0[2]) > 0.1 || Math.abs(bz1[3] - bz0[3]) > 0.1, JSON.stringify([bz0, bz1]));
+  await p.fill('[data-bz="1"]', '1.5'); await p.waitForTimeout(500);
+  ok('curve values can also be typed, and overshoot is allowed', Math.abs((await getOv()).keys[0].bz[1] - 1.5) < 0.001);
+  await p.click('[data-cv="0"]', { force: true }); await p.selectOption('#kEase', ''); await p.waitForTimeout(400);
+  ov = await getOv(); ok('going back to the default removes the custom curve', !ov.keys[0].bz && !ov.keys[0].ease);
+
+  // ----- colour wheels -----
+  await p.click('[data-itab=grade]', { force: true }); await p.waitForTimeout(300);
+  await p.click('[data-scope=film]', { force: true }); await p.waitForTimeout(200);
+  await p.evaluate(() => document.querySelector('#gvIGrade canvas[data-wh=sh]').scrollIntoView({ block: 'center' })); await p.waitForTimeout(300);
+  const wb = await p.evaluate(() => { const r = document.querySelector('#gvIGrade canvas[data-wh=sh]').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+  await p.mouse.move(wb.x + wb.w / 2, wb.y + wb.h / 2); await p.mouse.down(); await p.mouse.move(wb.x + wb.w * 0.5 + wb.w * 0.3, wb.y + wb.h * 0.5, { steps: 3 }); await p.mouse.up(); await p.waitForTimeout(300);
+  const shTint = await p.evaluate(() => window.__godview.grade.vals.sh);
+  ok('dragging a wheel towards red tints the shadows red', shTint[0] > 1.05 && shTint[1] < 1 && shTint[2] < 1, JSON.stringify(shTint));
+  await p.evaluate(() => document.querySelector('#gvIGrade canvas[data-wh=sh]').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))); await p.waitForTimeout(300);
+  ok('double-click resets a wheel', (await p.evaluate(() => window.__godview.grade.vals.sh)).every((v) => v === 1));
+
+  // ----- workspace pages, folding, compare, full screen -----
+  const lay = () => p.evaluate(() => ({ page: document.getElementById('gv').dataset.page, left: getComputedStyle(document.getElementById('gvLeft')).display, scope: window.__godview.scopes.mode(), itab: document.querySelector('#gvITabs .on').dataset.itab, hint: document.getElementById('gvPageHint').textContent }));
+  await p.keyboard.press('Shift+Digit3'); await p.waitForTimeout(800);
+  let L = await lay(); ok('Shift+3 opens the Color page: shot list hidden, scopes on, Grade tab', L.page === 'color' && L.left === 'none' && L.scope !== 'off' && L.itab === 'grade', JSON.stringify(L));
+  const geo = await p.evaluate(() => { const m = document.getElementById('gvMonCard').getBoundingClientRect(), i = document.querySelector('#gvRight>section.gsp').getBoundingClientRect(); return { mr: m.right, il: i.left, ib: i.bottom, wh: innerHeight }; });
+  ok('on the Color page the monitor and the grade controls sit side by side', geo.il >= geo.mr - 2 && geo.ib <= geo.wh, JSON.stringify(geo));
+  await p.evaluate(() => { if (!window.__godview.pv.on) document.getElementById('gvMonOn').click(); document.activeElement && document.activeElement.blur(); }); await p.waitForTimeout(800);
+  await p.keyboard.press('w'); await p.waitForTimeout(800);
+  ok('W turns on the compare wipe with its divider', await p.evaluate(() => window.__godview.wipe.on && !document.getElementById('gvWipeLine').classList.contains('hidden')));
+  await p.keyboard.press('w'); await p.waitForTimeout(300);
+  await p.keyboard.press('Shift+Digit4'); await p.waitForTimeout(600); L = await lay(); ok('Shift+4 opens Review: versions tab, shot list back', L.page === 'review' && L.itab === 'versions' && L.left !== 'none', JSON.stringify(L));
+  await p.keyboard.press('Shift+Digit2'); await p.waitForTimeout(600); L = await lay(); ok('Shift+2 opens Camera: shot tab', L.page === 'camera' && L.itab === 'shot', JSON.stringify(L));
+  await p.keyboard.press('Shift+Digit1'); await p.waitForTimeout(600); L = await lay(); ok('Shift+1 returns to the standard Cut layout', L.page === 'cut' && L.left !== 'none' && /Overview/.test(L.hint));
+  const secs = await p.evaluate(() => { const d = document.querySelector('#gvIShot details.fold'); const key = d.dataset.sec, was = d.open; d.querySelector('summary').click(); return new Promise((r) => setTimeout(() => r({ key, was, now: d.open, saved: JSON.parse(localStorage.getItem('clockwork.sculptor.sections.v1') || '{}')[key] }), 200)); });
+  ok('clicking a section header folds it and remembers that', secs.was !== secs.now && secs.saved === secs.now, JSON.stringify(secs));
+  const strays = await p.evaluate(() => [...document.querySelectorAll('#gv canvas')].filter((c) => { const s = getComputedStyle(c); return s.position === 'fixed'; }).map((c) => c.id || c.className));
+  ok('no stray full-window canvases cover the desk', strays.length === 0, JSON.stringify(strays));
+
   // ----- multi-select -----
   await p.click('[data-ltab=shots]', { force: true });
   await p.evaluate(() => window.__godview.selectShot(10, true)); await p.waitForTimeout(200);
@@ -116,7 +177,7 @@ const ok = (name, cond, extra = '') => { console.log((cond ? 'PASS ' : 'FAIL ') 
   ok('Esc clears the selection', await p.evaluate(() => window.__godview.multi.size === 0));
 
   // ----- scopes -----
-  await p.evaluate(() => { document.getElementById('gvMonOn').click(); }); await p.waitForTimeout(800);
+  await p.evaluate(() => { if (!window.__godview.pv.on) document.getElementById('gvMonOn').click(); }); await p.waitForTimeout(800);
   await p.click('#gvScopeBtn', { force: true }); await p.waitForTimeout(600);
   const draw = (mode) => p.evaluate((m) => { document.querySelector(`#gvScopeMode [data-sc=${m}]`).click(); window.__godview.scopes.draw(); const cv = document.getElementById('gvScope'), d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let lit = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 60) lit++; return lit; }, mode);
   for (const m of ['hist', 'wave', 'parade', 'vec']) { const lit = await draw(m); ok(`the ${m} scope draws the picture`, lit > 150, String(lit)); }

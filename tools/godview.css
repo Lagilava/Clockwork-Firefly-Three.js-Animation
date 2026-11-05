@@ -11,7 +11,7 @@ body.godview{background:var(--gv-bg)}
 body.godview #titleCard,body.godview #chapterCard,body.godview #end,body.godview #start,body.godview #loader,body.godview #chrome,body.godview #notes,body.godview #toast{display:none!important}
 #gv,#gvBoot,#gvMap,#gvHelp,#gvTip{font:13px/1.4 var(--gv-font);color:var(--gv-text)}
 #gv *{box-sizing:border-box}
-#gv{position:fixed;inset:0;z-index:20;display:grid;grid-template-columns:var(--gv-lw,268px) minmax(0,1fr) var(--gv-rw,360px);grid-template-rows:46px minmax(0,1fr) var(--gv-tlh,min(284px,28vh));grid-template-areas:"top top top" "left stage right" "tl tl tl";background:var(--gv-bg)}
+#gv{position:fixed;inset:0;z-index:20;display:grid;grid-template-columns:var(--gv-lw,268px) minmax(0,1fr) var(--gv-rw,360px);grid-template-rows:46px minmax(0,1fr) var(--gv-tlh,min(284px,28vh)) 34px;grid-template-areas:"top top top" "left stage right" "tl tl tl" "pg pg pg";background:var(--gv-bg)}
 #gv button,#gv select,#gv input,#gv textarea{font:inherit}
 :where(#gv) button,:where(#gv) select,:where(#gv) input,:where(#gv) textarea{color:var(--gv-text)}
 #gv button{cursor:pointer}
@@ -171,7 +171,7 @@ textarea.num{height:120px;resize:vertical}
 /* narrow screens: panels become drawers, the viewport and timeline keep the room */
 @media (max-width:1100px){#gv{grid-template-columns:230px minmax(0,1fr) 300px}}
 @media (max-width:900px){
-  #gv{grid-template-columns:minmax(0,1fr);grid-template-rows:46px minmax(0,1fr) var(--gv-tlh,210px);grid-template-areas:"top" "stage" "tl"}
+  #gv{grid-template-columns:minmax(0,1fr);grid-template-rows:46px minmax(0,1fr) var(--gv-tlh,210px) 34px;grid-template-areas:"top" "stage" "tl" "pg"}
   #gvLeft,#gvRight{position:fixed;top:46px;bottom:0;z-index:40;width:min(340px,92vw);transition:transform .2s;box-shadow:0 0 40px #000a}
   #gvLeft{left:0;transform:translateX(-102%)}#gvRight{right:0;transform:translateX(102%)}
   #gv.openL #gvLeft,#gv.openR #gvRight{transform:none}
@@ -376,3 +376,69 @@ kbd{font:600 11px var(--gv-mono);padding:1px 6px;border:1px solid var(--gv-line2
 .scopebar button.on{color:var(--gv-text);border-color:var(--gv-cyan)}
 #gvScope{display:block;width:calc(100% - 16px);margin:6px 8px 8px;aspect-ratio:3/1;border-radius:6px;border:1px solid var(--gv-line);background:#05070a}
 #gvScope.hidden,.scopebar.hidden,#gvBatch.hidden{display:none}
+
+/* --- speed curve editor --- */
+.curvebox{margin:6px 0 8px}
+#kCurve{display:block;width:100%;aspect-ratio:300/170;border-radius:8px;border:1px solid var(--gv-line);cursor:crosshair;touch-action:none;background:#080b10}
+.curvebox .chips{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.curvebox .chips button{background:var(--gv-panel2);border:1px solid var(--gv-line2);color:var(--gv-text);border-radius:999px;padding:2px 9px;font-size:11px;cursor:pointer}
+.curvebox .chips button.on{background:var(--gv-cyan);color:#06121c;border-color:var(--gv-cyan)}
+.bzin{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.bzin .num{width:100%;min-width:0}
+
+/* --- workspace pages, compare wipe, wheels --- */
+#gvWipeLine{position:absolute;top:0;bottom:0;width:0;z-index:4;pointer-events:none}
+#gvWipeLine i{position:absolute;left:-14px;width:28px;top:0;bottom:0;cursor:ew-resize;pointer-events:auto}
+#gvWipeLine i::after{content:"";position:absolute;left:13px;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+#gvWipeLine i::before{content:"⇔";position:absolute;left:3px;top:50%;width:22px;height:22px;margin-top:-11px;border-radius:50%;background:#fff;color:#111;font:700 13px/22px system-ui;text-align:center;z-index:1}
+#gvWipeLine span{position:absolute;top:6px;font:600 10px var(--gv-mono);padding:2px 6px;border-radius:5px;background:rgba(0,0,0,.6);color:#fff;white-space:nowrap}
+#gvWipeLine .wl{right:10px}#gvWipeLine .wr{left:10px}
+#gvWipeBtn.on{background:var(--gv-cyan);color:#06121c}
+.monwrap:fullscreen{width:100vw!important;height:100vh!important;aspect-ratio:auto}
+.monwrap:fullscreen #gvMon{object-fit:contain}
+.monwrap:fullscreen #gvGuides,.monwrap:fullscreen #gvWipeLine i{display:none}
+.wheels{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 8px}
+.wheel{display:grid;justify-items:center;gap:3px;font-size:11px;color:var(--gv-dim)}
+.wheel canvas{width:100%;max-width:132px;aspect-ratio:1;border-radius:50%;cursor:crosshair;touch-action:none}
+/* the film's own page style makes every canvas fixed and full-window: the desk's small canvases must stay in flow */
+#gvScope,#kCurve,.wheel canvas{position:static!important;inset:auto!important}
+
+/* --- workspace page bar (bottom, like a grading suite) --- */
+#gvPageBar{grid-area:pg;display:flex;align-items:center;justify-content:center;gap:14px;background:var(--gv-bg);border-top:1px solid var(--gv-line);position:relative;min-width:0}
+#gvPageBar .pbl{position:absolute;left:12px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gv-faint)}
+#gvPageBar .pbr{position:absolute;right:12px;font-size:11px;color:var(--gv-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34%}
+#gvPages{display:flex;gap:2px}
+#gvPages button{background:transparent;border:0;border-radius:8px 8px 0 0;color:var(--gv-dim);padding:7px 18px 6px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:7px;border-bottom:2px solid transparent}
+#gvPages button b{font:600 10px var(--gv-mono);color:var(--gv-faint);border:1px solid var(--gv-line2);border-radius:4px;padding:0 4px}
+#gvPages button:hover{color:var(--gv-text);background:var(--gv-panel2)}
+#gvPages button.on{color:var(--gv-gold);border-bottom-color:var(--gv-gold);background:var(--gv-panel)}
+#gvPages button.on b{color:var(--gv-gold);border-color:var(--gv-gold)}
+@media (max-width:1100px){#gvPageBar .pbl,#gvPageBar .pbr{display:none}}
+@media (max-width:560px){#gvPages button{padding:7px 9px}#gvPages button b{display:none}}
+/* monitor tools sit in a row of their own so the card header never overflows */
+.montools{display:flex;gap:6px;padding:6px 8px;border-bottom:1px solid var(--gv-line);flex-wrap:wrap}
+.montools .tbtn{flex:1 1 auto;justify-content:center;padding:4px 8px;font-size:12px}
+.montools .tbtn.on{background:var(--gv-cyan);color:#06121c}
+.hud.tl{max-width:calc(100% - 230px)}
+/* a page can hide the shot list to give the space to the picture */
+#gv[data-page=color]{--gv-lw:0px}
+#gv[data-page=color] #gvLeft,#gv[data-page=color] #gvLGrip{display:none}
+#gv[data-page=color] #gvStage{border-left:0}
+/* collapsible inspector sections (the same way a grading suite folds its panels) */
+details.fold{border-top:1px solid var(--gv-line);margin:2px 0}
+details.fold:first-of-type{border-top:0}
+details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;padding:7px 2px;user-select:none}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"▸";color:var(--gv-faint);font-size:10px;width:10px;transition:transform .12s}
+details.fold[open]>summary::before{transform:rotate(90deg)}
+details.fold>summary.sect{margin:0}
+details.fold>summary:hover{color:var(--gv-text)}
+.foldbar{display:flex;justify-content:flex-end;gap:8px;margin:0 0 2px}
+.foldbar button{background:transparent;border:0;color:var(--gv-faint);font-size:11px;cursor:pointer;padding:2px 4px}
+.foldbar button:hover{color:var(--gv-text)}
+
+/* Color page: the monitor and scopes on the left of the column, the grade controls on the right */
+#gv[data-page=color] #gvRight{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,1fr);grid-template-rows:auto minmax(0,1fr);align-content:start}
+#gv[data-page=color] #gvMonCard{grid-column:1;grid-row:1 / span 2;align-self:start}
+#gv[data-page=color] #gvMonGrip{display:none}
+#gv[data-page=color] #gvRight>section.gcard.gsp{grid-column:2;grid-row:1 / span 2;min-height:0}

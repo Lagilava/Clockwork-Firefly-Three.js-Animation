@@ -87,10 +87,11 @@
 
   <aside id="gvRight">
     <section class="gcard" id="gvMonCard">
-      <div class="gcardhead"><b>Director's cut</b><span class="sub" id="gvMonShot"></span><span class="gsp"></span><button class="tbtn sm" id="gvScopeBtn" title="Histogram, waveform, RGB parade and vectorscope of the monitor" aria-expanded="false">Scopes ▸</button><button class="tbtn sm" id="gvGuideBtn" title="Frame guides: crop shapes, thirds, safe areas">Guides ▾</button><button class="tbtn sm" id="gvStill" title="Save the current monitor frame as a PNG">Save still</button><button class="tbtn iconbtn sm" id="gvMonFold" title="Collapse the monitor"><svg class="ic ln" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button></div>
+      <div class="gcardhead"><b>Director's cut</b><span class="sub" id="gvMonShot"></span><span class="gsp"></span><button class="tbtn iconbtn sm" id="gvFsBtn" title="Full-screen monitor (Shift+F)">⛶</button><button class="tbtn iconbtn sm" id="gvMonFold" title="Collapse the monitor"><svg class="ic ln" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button></div>
+      <div class="montools"><button class="tbtn sm" id="gvGuideBtn" title="Frame guides: crop shapes, thirds, safe areas">Guides ▾</button><button class="tbtn sm" id="gvScopeBtn" title="Histogram, waveform, RGB parade and vectorscope of the monitor" aria-expanded="false">Scopes ▸</button><button class="tbtn sm" id="gvWipeBtn" title="Compare: original on the left, graded on the right (W). Drag the divider.">Compare</button><button class="tbtn sm" id="gvStill" title="Save the current monitor frame as a PNG">Still</button></div>
       <div class="monwrap">
         <canvas id="gvMon" width="800" height="450"></canvas>
-        <div id="gvGuides"></div>
+        <div id="gvGuides"></div><div id="gvWipeLine" class="hidden"><i></i><span class="wl">Original</span><span class="wr">Graded</span></div>
         <div id="gvMonOff">Monitor is off</div>
         <div id="gvMonHud"><span id="gvMonTc"></span><span id="gvMonLens"></span></div>
       </div>
@@ -131,6 +132,11 @@
     </div>
     <div id="gvTLWrap"><canvas id="gvTLCanvas"></canvas></div>
   </section>
+  <nav id="gvPageBar" aria-label="Workspace pages">
+    <span class="pbl">Workspace</span>
+    <div id="gvPages" role="tablist"><button data-page="cut" title="Overview: shot list, viewport, monitor and a short inspector (Shift+1)"><b>1</b>Cut</button><button data-page="camera" title="Big inspector and a tall timeline for camera work (Shift+2)"><b>2</b>Camera</button><button data-page="color" title="Big monitor, scopes, colour wheels and grade controls (Shift+3)"><b>3</b>Color</button><button data-page="review" title="Big monitor, markers and versions for reviewing the cut (Shift+4)"><b>4</b>Review</button><button data-page="deliver" title="Export a clip or stills (Ctrl+E)"><b>5</b>Deliver</button></div>
+    <span class="pbr" id="gvPageHint"></span>
+  </nav>
 <div id="gvDlg" class="hidden"><form class="dlg" id="gvDlgForm">
   <h3 id="gvDlgTitle"></h3><p id="gvDlgText"></p>
   <input type="text" id="gvDlgInput" maxlength="60" autocomplete="off" spellcheck="false">
@@ -214,6 +220,8 @@
       <tr><td>\</td><td>Flip between version A and B</td></tr>
       <tr><td>/</td><td>Find a shot</td></tr>
       <tr><td>Ctrl/Shift + click</td><td>Select several shots, then grade or paste to all of them</td></tr>
+      <tr><td>Shift + 1 2 3 4 5</td><td>Workspace page: Cut, Camera, Color, Review, Deliver</td></tr>
+      <tr><td>W / Shift+F</td><td>Compare original and graded; full-screen monitor</td></tr>
       <tr><td>B / [ / ]</td><td>Add a marker, jump to the previous or next marker</td></tr>
       <tr><td>Double-click a slider name</td><td>Reset it; click a value to type any number</td></tr>
     </table></div>

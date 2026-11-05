@@ -493,6 +493,41 @@
   setInterval(() => { if (SC.mode !== 'off' && !document.hidden) drawScope(); }, 250);
   gv.scopes = { draw: drawScope, mode: () => SC.mode };
 
+  /* --- compare wipe and the full-screen monitor --- */
+  const wipeEl = $g('gvWipeLine');
+  function wipeUI() { wipeEl.classList.toggle('hidden', !gv.wipe.on); wipeEl.style.left = gv.wipe.x * 100 + '%'; $g('gvWipeBtn').classList.toggle('on', gv.wipe.on); pv.dirty = true; gv.dirty = true; }
+  function toggleWipe() { if (G.bypass && !gv.wipe.on) return gvToast('Turn off Bypass in the Grade tab first', true); if (!pv.on && !gv.wipe.on) return gvToast('Turn the monitor on first (View tab)', true); gv.wipe.on = !gv.wipe.on; wipeUI(); }
+  $g('gvWipeBtn').onclick = toggleWipe;
+  { let on = false; const wrap = () => document.querySelector('#gvMonCard .monwrap');
+    wipeEl.addEventListener('pointerdown', (e) => { if (!e.target.closest('i')) return; on = true; wipeEl.setPointerCapture(e.pointerId); e.preventDefault(); });
+    wipeEl.addEventListener('pointermove', (e) => { if (!on) return; const r = wrap().getBoundingClientRect(); gv.wipe.x = clamp((e.clientX - r.left) / r.width, 0.02, 0.98); wipeUI(); });
+    const end = () => { on = false; }; wipeEl.addEventListener('pointerup', end); wipeEl.addEventListener('pointercancel', end); }
+  const toggleFs = () => { const w = document.querySelector('#gvMonCard .monwrap'); if (document.fullscreenElement) document.exitFullscreen(); else if (w.requestFullscreen) w.requestFullscreen().catch(() => gvToast('This browser would not go full screen', true)); };
+  $g('gvFsBtn').onclick = toggleFs;
+  document.addEventListener('fullscreenchange', () => { pv.dirty = true; fitStage(); });
+
+  /* --- workspace pages (like the pages of a grading suite): each rearranges the desk for one job --- */
+  const PAGES = {
+    cut: { itab: 'shot', ltab: 'shots', hint: 'Overview of the whole cut' },
+    camera: { lw: 250, rw: 420, tlh: 290, monw: 56, itab: 'shot', ltab: 'shots', scope: 'off', hint: 'Place cameras, set keys and speed curves' },
+    color: { rwf: 0.56, tlh: 150, monw: 100, itab: 'grade', scope: 'hist', hint: 'Grade with wheels, scopes and compare (W)' },
+    review: { lw: 240, rwf: 0.6, tlh: 150, monw: 100, itab: 'versions', ltab: 'markers', scope: 'off', hint: 'Watch the cut, compare versions, leave markers' },
+  };
+  function pageUI() { const cur = lay.page || 'cut'; $g('gv').dataset.page = cur; $g('gvPages').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.page === cur)); $g('gvPageHint').textContent = (PAGES[cur] || {}).hint || ''; }
+  function setPage(name) {
+    if (name === 'deliver') { openExport(); return; }
+    const P = PAGES[name]; if (!P) return;
+    for (const k of ['lw', 'rw', 'monw', 'tlh']) { delete lay[k]; $g('gv').style.removeProperty('--gv-' + k); }
+    if (P.lw) lay.lw = P.lw; if (P.rw) lay.rw = P.rw; if (P.rwf) lay.rw = clamp(Math.round(innerWidth * P.rwf), 280, Math.max(640, Math.round(innerWidth * 0.72))); if (P.monw) lay.monw = P.monw; if (P.tlh) lay.tlh = P.tlh;
+    lay.page = name; applyLay(); saveLay(); pageUI();
+    const it = P.itab && document.querySelector(`#gvITabs [data-itab=${P.itab}]`); if (it) it.click();
+    const lt = P.ltab && document.querySelector(`#gvLTabs [data-ltab=${P.ltab}]`); if (lt) lt.click();
+    if (P.scope) { SC.mode = P.scope === 'off' ? 'off' : (lay.scopeLast || P.scope); lay.scope = SC.mode; saveLay(); scopeUI(); }
+    fitStage(); pv.dirty = true; gv.dirty = true;
+  }
+  $g('gvPages').addEventListener('click', (e) => { const b = e.target.closest('[data-page]'); if (b) setPage(b.dataset.page); });
+  gv.pages = { set: setPage, now: () => lay.page || 'cut' };
+
   /* --- markers: director's bookmarks on the timeline --- */
   function renderMarkers() {
     const box = $g('gvLMarkers'); if (!box) return; const list = gv.markers.map((m, i) => ({ m, i })).sort((a, b) => a.m.t - b.m.t);
@@ -510,11 +545,11 @@
   $g('gvLMarkers').addEventListener('input', (e) => { const i = e.target.dataset.mtx; if (i !== undefined && gv.markers[+i]) { gv.markers[+i].text = e.target.value; saveEdits(); gv.dirty = true; } });
   $g('gvLMarkers').addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter' || e.key === 'Escape') e.target.blur(); });
   const prevStudioKey = gv.studioKey;
-  gv.studioKey = (k, e) => { if (k === 'b') { addMarker(); return true; } if (k === '[') { jumpMarker(-1); return true; } if (k === ']') { jumpMarker(1); return true; } return prevStudioKey(k, e); };
+  gv.studioKey = (k, e) => { if (e.shiftKey && /^Digit[1-5]$/.test(e.code)) { setPage(['cut', 'camera', 'color', 'review', 'deliver'][+e.code.slice(5) - 1]); return true; } if (e.shiftKey && k === 'f') { toggleFs(); return true; } if (k === 'w' && !e.shiftKey) { toggleWipe(); return true; } if (k === 'b') { addMarker(); return true; } if (k === '[') { jumpMarker(-1); return true; } if (k === ']') { jumpMarker(1); return true; } return prevStudioKey(k, e); };
   gv.markerApi = { add: addMarker, jump: jumpMarker };
 
   /* --- start-up for the studio tools --- */
-  setQuality(lay.q || 'auto', false); renderGuides(); rangeUI(); renderVersions(); renderMarkers(); renderBatch(); scopeUI();
+  setQuality(lay.q || 'auto', false); renderGuides(); rangeUI(); renderVersions(); renderMarkers(); renderBatch(); scopeUI(); pageUI(); wipeUI();
   { const w = $g('gvWelcome'); let seen = false; try { seen = !!localStorage.getItem('clockwork.sculptor.welcome.v1'); } catch (e) { /* storage blocked */ }
     const dismiss = () => { w.classList.add('hidden'); try { localStorage.setItem('clockwork.sculptor.welcome.v1', '1'); } catch (e) { /* storage blocked */ } };
     if (!seen) w.classList.remove('hidden');
