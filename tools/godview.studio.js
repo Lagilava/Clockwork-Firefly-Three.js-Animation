@@ -123,8 +123,11 @@
     const ag = (a.grade && a.grade.vals) || {}, bg = (b.grade && b.grade.vals) || {}, as = ag.shots || {}, bs = bg.shots || {};
     const filmKeys = [...new Set([...Object.keys(ag), ...Object.keys(bg)])].filter((k) => k !== 'shots' && J(ag[k]) !== J(bg[k]));
     for (const t0 of new Set([...Object.keys(as), ...Object.keys(bs)])) if (J(as[t0]) !== J(bs[t0])) grades.push(+t0);
+    const ae = (a.env && a.env.edits) || {}, be = (b.env && b.env.edits) || {}, aa = (a.env && a.env.added) || [], ba = (b.env && b.env.added) || []; let envN = 0;
+    for (const k of new Set([...Object.keys(ae), ...Object.keys(be)])) if (J(ae[k]) !== J(be[k])) envN++;
+    if (J(aa) !== J(ba)) envN += Math.max(aa.length, ba.length, 1);
     const an = a.notes || {}, bn = b.notes || {}; let notes = 0; for (const k of new Set([...Object.keys(an), ...Object.keys(bn)])) if ((an[k] || '') !== (bn[k] || '')) notes++;
-    return { cams, grades, filmKeys, notes };
+    return { cams, grades, filmKeys, notes, env: envN };
   }
   const shotIdx = (t0) => SHOTS.findIndex((s) => s.t0 === t0);
   async function loadFast(w) { // switch the whole cut, re-sampling only the shots whose cameras changed
@@ -179,6 +182,7 @@
       if (d.cams.length) bits.push(`cameras in ${d.cams.length} shot${d.cams.length === 1 ? '' : 's'}`);
       if (d.filmKeys.length) bits.push(`${d.filmKeys.length} film-wide grade value${d.filmKeys.length === 1 ? '' : 's'}`);
       if (d.grades.length) bits.push(`grade in ${d.grades.length} shot${d.grades.length === 1 ? '' : 's'}`);
+      if (d.env) bits.push(`${d.env} map element${d.env === 1 ? '' : 's'}`);
       if (d.notes) bits.push(`${d.notes} note${d.notes === 1 ? '' : 's'}`);
       const jump = [...new Set([...d.cams, ...d.grades])].sort((p, q) => p - q).slice(0, 24);
       h += `<div class="note">${bits.length ? 'They differ in ' + bits.join(', ') + '.' : 'These two are identical.'}${jump.length ? `<div class="chips jump">${jump.map((t0) => `<button data-jump="${shotIdx(t0)}">S${shotIdx(t0) + 1}</button>`).join('')}</div>` : ''}</div>`;
@@ -512,6 +516,7 @@
     camera: { lw: 250, rw: 420, tlh: 290, monw: 56, itab: 'shot', ltab: 'shots', scope: 'off', hint: 'Place cameras, set keys and speed curves' },
     color: { rwf: 0.56, tlh: 150, monw: 100, itab: 'grade', scope: 'hist', hint: 'Grade with wheels, scopes and compare (W)' },
     review: { lw: 240, rwf: 0.6, tlh: 150, monw: 100, itab: 'versions', ltab: 'markers', scope: 'off', hint: 'Watch the cut, compare versions, leave markers' },
+    map: { rwf: 0.34, tlh: 150, monw: 60, fold: true, itab: 'env', scope: 'off', hint: 'Click, drag and recolour trees, houses and landmarks' },
   };
   function pageUI() { const cur = lay.page || 'cut'; $g('gv').dataset.page = cur; $g('gvPages').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.page === cur)); $g('gvPageHint').textContent = (PAGES[cur] || {}).hint || ''; }
   function setPage(name) {
@@ -519,6 +524,7 @@
     const P = PAGES[name]; if (!P) return;
     for (const k of ['lw', 'rw', 'monw', 'tlh']) { delete lay[k]; $g('gv').style.removeProperty('--gv-' + k); }
     if (P.lw) lay.lw = P.lw; if (P.rw) lay.rw = P.rw; if (P.rwf) lay.rw = clamp(Math.round(innerWidth * P.rwf), 280, Math.max(640, Math.round(innerWidth * 0.72))); if (P.monw) lay.monw = P.monw; if (P.tlh) lay.tlh = P.tlh;
+    if (P.fold) { if (lay.foldBefore === undefined) lay.foldBefore = !!lay.fold; lay.fold = true; } else if (lay.foldBefore !== undefined) { lay.fold = lay.foldBefore; delete lay.foldBefore; }
     lay.page = name; applyLay(); saveLay(); pageUI();
     const it = P.itab && document.querySelector(`#gvITabs [data-itab=${P.itab}]`); if (it) it.click();
     const lt = P.ltab && document.querySelector(`#gvLTabs [data-ltab=${P.ltab}]`); if (lt) lt.click();
@@ -545,7 +551,7 @@
   $g('gvLMarkers').addEventListener('input', (e) => { const i = e.target.dataset.mtx; if (i !== undefined && gv.markers[+i]) { gv.markers[+i].text = e.target.value; saveEdits(); gv.dirty = true; } });
   $g('gvLMarkers').addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter' || e.key === 'Escape') e.target.blur(); });
   const prevStudioKey = gv.studioKey;
-  gv.studioKey = (k, e) => { if (e.shiftKey && /^Digit[1-5]$/.test(e.code)) { setPage(['cut', 'camera', 'color', 'review', 'deliver'][+e.code.slice(5) - 1]); return true; } if (e.shiftKey && k === 'f') { toggleFs(); return true; } if (k === 'w' && !e.shiftKey) { toggleWipe(); return true; } if (k === 'b') { addMarker(); return true; } if (k === '[') { jumpMarker(-1); return true; } if (k === ']') { jumpMarker(1); return true; } return prevStudioKey(k, e); };
+  gv.studioKey = (k, e) => { if (e.shiftKey && /^Digit[1-6]$/.test(e.code)) { setPage(['cut', 'camera', 'color', 'review', 'deliver', 'map'][+e.code.slice(5) - 1]); return true; } if (e.shiftKey && k === 'f') { toggleFs(); return true; } if (k === 'w' && !e.shiftKey) { toggleWipe(); return true; } if (k === 'b') { addMarker(); return true; } if (k === '[') { jumpMarker(-1); return true; } if (k === ']') { jumpMarker(1); return true; } return prevStudioKey(k, e); };
   gv.markerApi = { add: addMarker, jump: jumpMarker };
 
   /* --- start-up for the studio tools --- */

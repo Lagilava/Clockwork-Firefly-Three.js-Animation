@@ -106,11 +106,12 @@
     </section>
     <div class="rgrip" id="gvMonGrip" title="Drag to resize the monitor"></div>
     <section class="gcard gsp">
-      <div class="itabs" id="gvITabs"><button data-itab="shot" class="on">Shot</button><button data-itab="grade">Grade</button><button data-itab="versions">Versions</button><button data-itab="export">Project</button></div>
+      <div class="itabs" id="gvITabs"><button data-itab="shot" class="on">Shot</button><button data-itab="grade">Grade</button><button data-itab="versions">Versions</button><button data-itab="export">Project</button><button data-itab="env" title="Move, turn, resize and recolour trees, houses and landmarks">Environment</button></div>
       <div class="ibody" id="gvIShot"></div>
       <div class="ibody hidden" id="gvIGrade"></div>
       <div class="ibody hidden" id="gvIVers"></div>
       <div class="ibody hidden" id="gvIExport"></div>
+      <div class="ibody hidden" id="gvIEnv"></div>
     </section>
   </aside>
 
@@ -134,7 +135,7 @@
   </section>
   <nav id="gvPageBar" aria-label="Workspace pages">
     <span class="pbl">Workspace</span>
-    <div id="gvPages" role="tablist"><button data-page="cut" title="Overview: shot list, viewport, monitor and a short inspector (Shift+1)"><b>1</b>Cut</button><button data-page="camera" title="Big inspector and a tall timeline for camera work (Shift+2)"><b>2</b>Camera</button><button data-page="color" title="Big monitor, scopes, colour wheels and grade controls (Shift+3)"><b>3</b>Color</button><button data-page="review" title="Big monitor, markers and versions for reviewing the cut (Shift+4)"><b>4</b>Review</button><button data-page="deliver" title="Export a clip or stills (Ctrl+E)"><b>5</b>Deliver</button></div>
+    <div id="gvPages" role="tablist"><button data-page="cut" title="Overview: shot list, viewport, monitor and a short inspector (Shift+1)"><b>1</b>Cut</button><button data-page="camera" title="Big inspector and a tall timeline for camera work (Shift+2)"><b>2</b>Camera</button><button data-page="color" title="Big monitor, scopes, colour wheels and grade controls (Shift+3)"><b>3</b>Color</button><button data-page="review" title="Big monitor, markers and versions for reviewing the cut (Shift+4)"><b>4</b>Review</button><button data-page="deliver" title="Export a clip or stills (Ctrl+E)"><b>5</b>Deliver</button><button data-page="map" title="Rearrange trees, houses and landmarks, with a roomy panel (Shift+6)"><b>6</b>Map</button></div>
     <span class="pbr" id="gvPageHint"></span>
   </nav>
 <div id="gvDlg" class="hidden"><form class="dlg" id="gvDlgForm">
@@ -192,6 +193,7 @@
     <li><b>Edit its camera</b> with <kbd>E</kbd>: drag the gizmos in the viewport, or on the map (<kbd>M</kbd>) for the big picture.</li>
     <li><b>Grade the picture</b> in the Grade tab. Use the shot scope to colour one shot, or load a <code>.cube</code> LUT.</li>
     <li><b>Try ideas safely.</b> Save a version in the Versions tab, then flip between A and B with <kbd>\</kbd>.</li>
+    <li><b>Rearrange the map.</b> Open the Environment tab, click a tree, house or landmark in the viewport, then drag its gizmo, type numbers, or copy its code and paste it onto another element.</li>
     <li><b>Share it.</b> Export a clip or stills of any range, or press Play in film to watch the whole cut.</li>
   </ol>
   <div class="cols">
@@ -215,12 +217,17 @@
     </table></div>
     <div><h4>Edit</h4><table>
       <tr><td>Ctrl Z / Ctrl Shift Z</td><td>Undo / redo</td></tr>
+      <tr><td>Map: Shift-click</td><td>Add or remove an element from the selection</td></tr>
+      <tr><td>Map: P</td><td>Plant copies of the selected tree, rock or fern by clicking the ground</td></tr>
+      <tr><td>Map: hold V</td><td>See the original map while held</td></tr>
+      <tr><td>Map: D / H / Delete</td><td>Duplicate / hide / delete the selection</td></tr>
       <tr><td>Ctrl C / Ctrl V</td><td>Copy / paste the shot's camera (Shift: its grade)</td></tr>
       <tr><td>Ctrl S</td><td>Save the project</td></tr>
       <tr><td>\</td><td>Flip between version A and B</td></tr>
       <tr><td>/</td><td>Find a shot</td></tr>
       <tr><td>Ctrl/Shift + click</td><td>Select several shots, then grade or paste to all of them</td></tr>
-      <tr><td>Shift + 1 2 3 4 5</td><td>Workspace page: Cut, Camera, Color, Review, Deliver</td></tr>
+      <tr><td>Shift + 1 … 6</td><td>Workspace page: Cut, Camera, Color, Review, Deliver, Map</td></tr>
+      <tr><td>Map page: D / H / Delete</td><td>Duplicate, hide or remove the selected tree, house or landmark (Ctrl+C / Ctrl+V copy and paste its code)</td></tr>
       <tr><td>W / Shift+F</td><td>Compare original and graded; full-screen monitor</td></tr>
       <tr><td>B / [ / ]</td><td>Add a marker, jump to the previous or next marker</td></tr>
       <tr><td>Double-click a slider name</td><td>Reset it; click a value to type any number</td></tr>

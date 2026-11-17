@@ -16,7 +16,9 @@
     "test:desk": "node tools/desktest.cjs .validation/desk",
     "test:map": "node tools/maptest.cjs .validation/map",
     "test:studio": "node tools/studiotest.cjs .validation/studio",
-    "test:controls": "node tools/controltest.cjs .validation/controls"
+    "test:env": "node tests/env-browser.cjs .validation/env",
+    "test:envdesk": "node tools/envtest.cjs .validation/envdesk",
+    "test:envdesk2": "node tools/envtest2.cjs .validation/envdesk2"
   },
   "devDependencies": {
     "playwright": "1.63.0",

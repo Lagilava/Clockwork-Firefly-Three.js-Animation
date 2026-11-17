@@ -282,9 +282,10 @@ function godViewInstall(film) {
   /* older saves kept exposure and bloom beside the values; fold them in */
   const legacyVals = (gs) => { const v = clone(gs.vals); if (gs.exposure != null && gs.exposure !== 1 && v.exposure == null) v.exposure = gs.exposure; if (gs.bloom != null && gs.bloom !== 1 && v.bloom == null) v.bloom = gs.bloom; return v; };
   const setVals = (v) => { G.vals = v; GRADE_PRESETS.gvcustom = v; };
-  const snapshot = () => ({ overrides: clone(gv.ov), grade: G.touched ? clone(gradeState()) : null, notes: clone(gv.notes), markers: clone(gv.markers) });
-  const baseline = () => ({ overrides: clone(SHOT_OVERRIDES), grade: null, notes: {}, markers: [] });
-  const sameWork = (a, b) => JSON.stringify([a.overrides || {}, a.grade ? a.grade.vals : null, a.notes || {}, a.markers || []]) === JSON.stringify([b.overrides || {}, b.grade ? b.grade.vals : null, b.notes || {}, b.markers || []]);
+  const snapshot = () => ({ overrides: clone(gv.ov), grade: G.touched ? clone(gradeState()) : null, notes: clone(gv.notes), markers: clone(gv.markers), env: film.env.serialize() });
+  const baseline = () => ({ overrides: clone(SHOT_OVERRIDES), grade: null, notes: {}, markers: [], env: clone(ENV_EDITS) });
+  const envOf = (w) => (w.env === undefined ? ENV_EDITS : w.env) || null;
+  const sameWork = (a, b) => JSON.stringify([a.overrides || {}, a.grade ? a.grade.vals : null, a.notes || {}, a.markers || [], envOf(a)]) === JSON.stringify([b.overrides || {}, b.grade ? b.grade.vals : null, b.notes || {}, b.markers || [], envOf(b)]);
   const curProject = () => (PFROM && PS.projects[PFROM]) || null;
   function projState() { // clean: matches the saved project, dirty: changed since saving, draft: edits with no project, empty: nothing yet
     const w = snapshot(), p = curProject();
@@ -872,11 +873,12 @@ function godViewInstall(film) {
   });
 
   /* inspector: export tab */
-  const editsJSON = () => JSON.stringify({ version: 1, name: curProject()?.name, overrides: gv.ov, ...(Object.keys(gv.notes).length ? { notes: gv.notes } : {}), ...(gv.markers.length ? { markers: gv.markers } : {}), ...(G.touched ? { grade: G.vals } : {}) }, null, 1);
+  const editsJSON = () => JSON.stringify({ version: 1, name: curProject()?.name, overrides: gv.ov, ...(Object.keys(gv.notes).length ? { notes: gv.notes } : {}), ...(gv.markers.length ? { markers: gv.markers } : {}), ...(G.touched ? { grade: G.vals } : {}), ...(film.env.serialize() || ENV_EDITS ? { env: film.env.serialize() } : {}) }, null, 1);
   function renderExport() {
     const keys = Object.keys(gv.ov);
     let h = `<div class="note">Your work autosaves as a draft in this browser. Press Save project (top bar) to keep it under Custom projects, or export a file to bake it into the film itself.</div><div class="sect">Edited shots <span class="hint">${keys.length}</span></div>`;
     h += keys.length ? keys.map((t0) => { const idx = SHOTS.findIndex((s) => s.t0 === +t0); return `<div class="srow" data-goshot="${idx}"><div class="tx"><div class="nm">S${idx + 1} · ${gvEsc(gvShotTitle(+t0, idx))}</div><div class="sb">${gv.ov[t0].keys.length} keys${gv.ov[t0].rel ? ' · follows robot' : ''}</div></div><button class="btn sm warn" data-rm="${idx}">Reset</button></div>`; }).join('') : '<div class="note">No camera edits yet. Pick a shot and press Edit camera.</div>';
+    h += gv.envSummary ? gv.envSummary() : '';
     h += `<div class="sect">Colour grade</div><div class="note">${G.touched ? `Custom grade based on ${gvEsc(gradeNames[G.base] || G.base)} will be exported.` : 'Unchanged, nothing to export.'}</div>`;
     h += `<div class="btns"><button class="btn pri" id="xDown">Download edits.json</button><button class="btn" id="xCopy">Copy JSON</button></div><div class="sect">Import</div><textarea class="num" id="xText" placeholder="Paste exported JSON here"></textarea><div class="btns"><button class="btn" id="xImport">Import pasted JSON</button><button class="btn warn" id="xClear">Clear all edits</button></div><div class="note">To bake into the film: <code>node tools/apply-overrides.cjs edits.json</code> then <code>npm run build:godview</code>.</div><div id="xMsg" class="lens"></div>`;
     $g('gvIExport').innerHTML = h;
@@ -884,6 +886,7 @@ function godViewInstall(film) {
   const xbox = $g('gvIExport');
   xbox.addEventListener('click', async (e) => {
     const t = e.target.closest('button'); const row = e.target.closest('[data-goshot]'); const msg = (m) => { const x = $g('xMsg'); if (x) x.textContent = m; };
+    if (t?.id === 'xEnvReset') { film.env.load(null); gv.envRefresh(); saveEdits(); gv.dirty = true; pv.dirty = true; renderExport(); return; }
     if (t?.dataset.rm !== undefined) { selectShot(+t.dataset.rm, false); resetShot(+t.dataset.rm); return; }
     if (row && !t) { gv.pinned = false; selectShot(+row.dataset.goshot, true); return; }
     if (!t) return;
@@ -895,9 +898,10 @@ function godViewInstall(film) {
         for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); }
         for (const [t0, ov] of Object.entries(d.overrides)) { gv.ov[t0] = ov; applyShotOverride(+t0, ov); }
         if (d.grade) { setVals(d.grade); G.touched = true; renderGrade(); }
+        if ('env' in d) { film.env.load(d.env); gv.envRefresh(); }
         saveEdits(); saveGrade(); await resampleAll(); msg(`Imported ${Object.keys(gv.ov).length} shot edit(s).`);
       } catch (err) { msg('Could not import: ' + err.message); }
-    } else if (t.id === 'xClear') { for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); } saveEdits(); gv.editOn = false; gv.pinned = false; await resampleAll(); msg('Cleared.'); }
+    } else if (t.id === 'xClear') { for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); } film.env.load(null); gv.envRefresh(); saveEdits(); gv.editOn = false; gv.pinned = false; await resampleAll(); msg('Cleared.'); }
   });
   async function resampleAll() {
     const T0 = st.T, was = st.playing; sampleRange(0, FILM); seekTo(T0); setPlaying(was); computeBounds();
@@ -906,7 +910,8 @@ function godViewInstall(film) {
   }
   document.querySelectorAll('#gvITabs button').forEach((b) => b.onclick = () => {
     document.querySelectorAll('#gvITabs button').forEach((x) => x.classList.toggle('on', x === b));
-    for (const [t, id] of [['shot', 'gvIShot'], ['grade', 'gvIGrade'], ['versions', 'gvIVers'], ['export', 'gvIExport']]) $g(id).classList.toggle('hidden', b.dataset.itab !== t);
+    for (const [t, id] of [['shot', 'gvIShot'], ['grade', 'gvIGrade'], ['versions', 'gvIVers'], ['export', 'gvIExport'], ['env', 'gvIEnv']]) $g(id).classList.toggle('hidden', b.dataset.itab !== t);
+    if (gv.envTab) gv.envTab(b.dataset.itab === 'env');
     if (b.dataset.itab === 'versions' && gv.renderVersions) gv.renderVersions();
   });
 
@@ -957,7 +962,7 @@ function godViewInstall(film) {
     return best;
   }
   renderer.domElement.addEventListener('pointermove', (e) => {
-    if (e.buttons || dragging) { tip.classList.add('hidden'); return; }
+    if (e.buttons || dragging || gv.envMode) { if (!gv.envMode) tip.classList.add('hidden'); return; }
     const n = nearestSample(e.clientX, e.clientY);
     if (!n) { tip.classList.add('hidden'); renderer.domElement.style.cursor = ''; return; }
     const t = sm.t[n.i], b = BEATS[beatAt(t)], a = sm[n.kind];
@@ -969,7 +974,7 @@ function godViewInstall(film) {
   let downAt = null;
   renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
   renderer.domElement.addEventListener('pointerup', (e) => {
-    if (!downAt || dragging || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
+    if (!downAt || dragging || gv.envMode || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
     const n = nearestSample(e.clientX, e.clientY); if (n) { gv.pinned = false; seekTo(sm.t[n.i]); setPlaying(false); }
   });
 
@@ -1145,6 +1150,7 @@ function godViewInstall(film) {
     const tag = e.target.tagName; if (tag === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') return; if (tag === 'TEXTAREA' || tag === 'SELECT') return;
     if ((e.metaKey || e.ctrlKey) && !e.altKey) {
       const ck = e.key.toLowerCase(); let hit = true;
+      if (gv.envMode && (ck === 'c' || ck === 'v' || ck === 'x') && !e.shiftKey) { e.stopImmediatePropagation(); return; } // the browser's copy and paste events carry the element's code
       if (ck === 'z') histGo(e.shiftKey ? 1 : -1); else if (ck === 'y') histGo(1);
       else if (ck === 'c') (e.shiftKey ? copyGrade() : copyCam()); else if (ck === 'v') (e.shiftKey ? pasteGrade(false) : pasteCam()); else hit = false;
       if (hit) { e.preventDefault(); e.stopImmediatePropagation(); } return;
@@ -1343,6 +1349,7 @@ function godViewInstall(film) {
     for (const t0 of Object.keys(gv.ov)) { delete gv.ov[t0]; applyShotOverride(+t0, null); }
     for (const [t0, ov] of Object.entries(clone(w.overrides || {}))) if (applyShotOverride(+t0, ov)) gv.ov[t0] = ov;
     gv.notes = clone(w.notes || {}); gv.markers = clone(w.markers || []); if (gv.renderMarkers) gv.renderMarkers();
+    film.env.load(clone(envOf(w))); if (gv.envRefresh) gv.envRefresh(); gv.dirty = true;
     const gs = w.grade; G.bypass = false;
     if (gs && gs.vals) { Object.assign(G, { base: gs.base || G_BASE0, applyGod: !!gs.applyGod, touched: gs.touched !== false }); G.vals = legacyVals(gs); }
     else { G.base = G_BASE0; G.vals = gradeDefaults(); G.applyGod = false; G.touched = false; }
@@ -1384,7 +1391,7 @@ function godViewInstall(film) {
       const d = JSON.parse(await file.text()); if (!d.overrides) throw new Error('no cameras in this file');
       const grade = d.grade ? (d.grade.vals ? d.grade : { base: G_BASE0, vals: d.grade, touched: true }) : null;
       const id = gvId(), name = (d.name || file.name.replace(/\.json$/i, '')).slice(0, 60) || nextName();
-      PS.projects[id] = { id, name, created: Date.now(), updated: Date.now(), overrides: d.overrides, grade, notes: d.notes || {}, markers: d.markers || [] };
+      PS.projects[id] = { id, name, created: Date.now(), updated: Date.now(), overrides: d.overrides, grade, notes: d.notes || {}, markers: d.markers || [], env: d.env === undefined ? null : d.env };
       await loadWork(PS.projects[id], id);
     } catch (err) { await gvAsk({ title: 'Could not import', text: String(err.message || err), ok: 'OK' }); }
   }
@@ -1419,6 +1426,7 @@ function godViewInstall(film) {
   };
 
   /*__GV_STUDIO__*/
+  /*__GV_ENV__*/
 
   /* ---------- 9. restore saved work, build panels, start ---------- */
   try {

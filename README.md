@@ -102,6 +102,32 @@ An overridden shot drops its automatic camera drift and follows your keyframes; 
 
 The editor is generated, never edited by hand: `npm run build:godview` reads `Clockwork_Firefly_fullfilm.html` and injects `tools/godview.inject.js` (with `godview.studio.js` spliced in), `godview.timeline.js`, `godview.ui.html` and `godview.css` into a copy. `npm run test:godview` boots it in headless Chromium and saves screenshots (set `GV_FILE`, `THREE_ROOT`, `PLAYWRIGHT_MODULE`, `GV_STEPS`, `GV_VIEWPORT` for custom runs). `npm run test:projects` checks the whole save, list and play-in-film flow.
 
+## Environment: rearranging the map
+
+The **Environment** tab of the Sculptor (or the **Map** workspace page, `Shift+6`, which gives the panel more room) lets a director change the sets themselves, live, with no code. It covers the **Rooftops** (houses, pine trees, street lamps, and four landmarks: the clock tower, observatory, fountain and plaza, and the terrace lamp post) and **The Glade** (trees with their crowns, rocks and ferns). The Atrium is moving clockwork, so it is not editable here.
+
+- **Pick something.** Click a tree, house or landmark in the viewport (hover shows its name), or choose it from the list (grouped, searchable, with a *Changed* filter). Double-click a row to fly to it.
+- **Change it.** Drag the gizmo (**Move**, **Turn** or **Size**, with an optional snap), or type exact numbers: position in metres, turn in degrees, width, height and depth in metres (with *Keep the proportions*). Colour pickers set wall and roof colour for houses, leaf and trunk colour for trees, one colour for the rest. *Original* puts a colour back.
+- **Add, hide, reset.** `D` duplicates (the copy appears beside it), `H` hides or shows, `Delete` hides an original or deletes a copy, *Reset* puts one element back as authored. *Reset the whole map* is under *Everything at once*.
+- **Several at once.** Shift-click (viewport) or Ctrl-click (list) adds or removes an element; *Select all like this* takes every tree, pine or rock in the scene. A group moves and turns together around its middle, can be recoloured in one go, lined up (*In a row*, *In a line*, *Space evenly*), duplicated, hidden or reset.
+- **Drop to ground.** Sits an element back on the terrain after moving it sideways, keeping how it stood when authored.
+- **Plant.** Select a tree, pine, rock or fern and press `P` (or *Plant*): click the ground to plant a copy, or drag to paint several, with adjustable spacing and optional random turn and size. The right mouse button still orbits while planting. `Esc` stops.
+- **See the original.** Hold `V` (or hold the *Hold to see the original* button) to look at the map as authored, then let go to bring your changes back. Nothing is lost, and saving meanwhile still keeps your changes.
+- **Quick looks.** *Autumn*, *Frost* and *Original colours* recolour every tree, fern, pine and rock in the scene at once (one undo step).
+- **Code you can copy and paste.** Every element has a short, readable description at the bottom of the panel, for example:
+
+  ```json
+  { "clockwork": "map-element", "what": "House", "id": "roof/house/40",
+    "position": [-49.2, -20, 14.1], "turn": 45, "size": [5.4, 20, 5.1],
+    "wallColor": "#d04030", "roofColor": "#203040" }
+  ```
+
+  *Copy code* (or `Ctrl+C` with something selected) puts it on the clipboard. Edit it in the box and the map changes **as you type**; mistakes get a plain sentence, and every problem is listed at once. *Paste* (or `Ctrl+V`) on a different element copies its look (size and colours) and leaves it where it is; tick *Paste also moves it* to take the position too. *Add as new* places the code as a new element. *Everything at once* copies or applies every change in one go.
+- **It is part of your work.** Map changes are saved in the draft and in saved projects, are covered by undo and redo (`Ctrl+Z`), versions (A/B flip) and project export, and show in the director's-cut monitor. **Play in film** and `?project=<id>` play them too.
+- **Making it permanent:** the project export gains an `env` list. `node tools/apply-overrides.cjs edits.json` bakes it into the film as `ENV_EDITS` (with the cameras and the grade), and `npm run build:godview` regenerates the editor. With no changes `ENV_EDITS` is `null` and the film is exactly as authored (checked pixel for pixel on the rooftops and the glade).
+
+How it works: the film (`class EnvMap` in `Clockwork_Firefly_fullfilm.html`) lists the elements from the instanced meshes the sets already use, so moving a house moves its roof, chimneys and lit windows, the camera's collision boxes follow, and houses carrying the weathervane or the pigeons only take colour. A change is a small object per element (`p` position, `r` turn, `s` size multipliers, `c` and `c2` colours, `hide`); copies are listed under `added`. The panel is `tools/godview.env.js`. `npm run test:env` checks the runtime in the film, `npm run test:envdesk` drives the whole panel (picking, numbers, gizmo, live code, copy and paste, undo, reload, play in film).
+
 ## World viewing rig and town plan
 
 `npm run view:world -- <outDir> [tag]` renders every set from a map (top-down), aerial and ground camera and saves PNGs. It serves the pinned Three.js locally, so it needs no CDN. Set `VIEWS` to a JSON list of `[set, time, name, cameraPos, target, fov, options]` entries to render your own views, and `BROWSER_EXECUTABLE` to use an existing Chromium.
@@ -170,7 +196,7 @@ Edited camera shots also get a **Motion** setting: smooth (default), linear, eas
 - **Scopes.** The Scopes button under the monitor shows a histogram, waveform, RGB parade or vectorscope of what the monitor renders, to grade by measurement.
 - **Markers.** `B` drops a marker at the playhead (gold flag on the timeline); `[` and `]` jump between markers; the Markers tab names them. They are saved with the project.
 - **Speed curves (like CapCut).** Between any two keyframes, *Into next key* can be set to **Custom curve**: a cubic-bezier speed graph you shape by dragging its two handles, typing the four numbers, or picking a preset (Smooth, Linear, Ease in, Ease out, Slow-fast-slow, Snap, Back out, Back in). The curve can overshoot (values past 0 or 1) for anticipation and settle. It is stored as `bz: [x1, y1, x2, y2]` on the key and baked into the film. A pink dot shows where the playhead is on the curve.
-- **Workspace pages (like a grading suite).** The bar along the bottom switches the whole desk for the job in hand: **Cut** (overview), **Camera** (big inspector, tall timeline), **Color** (monitor, scopes and grade side by side, shot list hidden), **Review** (big monitor, markers and versions) and **Deliver** (opens Export). `Shift+1` to `Shift+5`. Dragging a panel edge still works inside a page.
+- **Workspace pages (like a grading suite).** The bar along the bottom switches the whole desk for the job in hand: **Cut** (overview), **Camera** (big inspector, tall timeline), **Color** (monitor, scopes and grade side by side, shot list hidden), **Review** (big monitor, markers and versions) and **Deliver** (opens Export) and **Map** (the Environment panel with room to work, see below). `Shift+1` to `Shift+6`. Dragging a panel edge still works inside a page.
 - **Folding panels.** Every section of the Shot and Grade inspectors folds (click its title, or Collapse all / Expand all) and remembers its state, so the rarely used controls stay out of the way.
 - **Colour wheels.** Shadows, midtones and highlights each have a chroma wheel in the Grade tab (drag the dot, double-click to reset); they follow the same Whole film / shot / → end scopes as the sliders.
 - **Compare and full screen.** *Compare* (`W`) shows the original on the left of a draggable divider and the graded picture on the right; `Shift+F` makes the monitor full screen. Exports never include the divider.

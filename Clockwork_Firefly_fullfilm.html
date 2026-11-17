@@ -2593,6 +2593,7 @@ class RoofSet {
     this.M = M;
     this.group = new THREE.Group(); this.group.visible = false; this.group.name = 'Rooftops'; scene.add(this.group);
     this.rnd = mulberry32(2024);
+    this.envLand = []; // map elements the Environment editor can move: { id, label, obj, pivot, ob }
     this.buildLights(); this.buildTerrace(); this.buildTown(); this.buildTower(); this.buildVane(); this.buildBirds(); this.buildSmoke(); this.buildFar(); this.buildLife();
   }
   ground(x, z) { const r = Math.hypot(x, z); return r < 5.0 && r > 1.3 ? 1 : 0; }
@@ -2646,7 +2647,7 @@ class RoofSet {
     posts.castShadow = true; g.add(posts);
     const rail = new THREE.Mesh(new THREE.TorusGeometry(5.0, 0.09, 8, 96), stucco); rail.rotation.x = Math.PI / 2; rail.position.y = 0.88; rail.castShadow = true; g.add(rail);
     // a lamp post that wakes at dusk
-    const lp = new THREE.Group(); lp.position.set(2.6, 0, 2.4); g.add(lp);
+    const lp = new THREE.Group(); lp.position.set(2.6, 0, 2.4); g.add(lp); this.envLand.push({ id: 'terrace-lamp', label: 'Terrace lamp post', obj: lp, pivot: [2.6, 0, 2.4] });
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 2.1, 10), M.darkSteel); pole.position.y = 1.05; pole.castShadow = true; lp.add(pole);
     const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.12, 0.34, 6, 1, true), M.brass); cage.position.y = 2.25; lp.add(cage);
     const cap = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.18, 6), M.darkSteel); cap.position.y = 2.5; lp.add(cap);
@@ -2684,20 +2685,22 @@ class RoofSet {
     const beads = new THREE.InstancedMesh(beadGeo, this.avenueLampMat, lampPts.length);
     const m4 = new THREE.Matrix4();
     lampPts.forEach(([x, z], i) => { posts.setMatrixAt(i, m4.makeTranslation(x, -20, z)); beads.setMatrixAt(i, m4.makeTranslation(x, -16.6, z)); });
-    g.add(posts, beads);
+    g.add(posts, beads); this.envLamps = { posts, beads, pts: lampPts };
+    const fg = new THREE.Group(); fg.name = 'Fountain plaza'; g.add(fg); this.envLand.push({ id: 'fountain', label: 'Fountain and plaza', obj: fg, pivot: [PLAZA.x, -20, PLAZA.z] });
+    const og = new THREE.Group(); og.name = 'Observatory'; g.add(og); this.envLand.push({ id: 'observatory', label: 'Observatory', obj: og, pivot: [OBS.x, -20, OBS.z], ob: 'obs' });
     // fountain plaza: paved disc, basin, column and a bowl of water that catches the sky
-    const plaza = new THREE.Mesh(new THREE.CylinderGeometry(PLAZA.r, PLAZA.r, 0.3, 40), stone); plaza.position.set(PLAZA.x, -19.9, PLAZA.z); plaza.receiveShadow = true; g.add(plaza);
-    const basin = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.5, 1.1, 32), stone); basin.position.set(PLAZA.x, -19.3, PLAZA.z); basin.castShadow = true; g.add(basin);
+    const plaza = new THREE.Mesh(new THREE.CylinderGeometry(PLAZA.r, PLAZA.r, 0.3, 40), stone); plaza.position.set(PLAZA.x, -19.9, PLAZA.z); plaza.receiveShadow = true; fg.add(plaza);
+    const basin = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.5, 1.1, 32), stone); basin.position.set(PLAZA.x, -19.3, PLAZA.z); basin.castShadow = true; fg.add(basin);
     this.fountainWater = new THREE.Mesh(new THREE.CircleGeometry(2.9, 32), new THREE.MeshStandardMaterial({ color: 0x5f8fa8, roughness: 0.06, metalness: 0.2, emissive: 0x16303c, emissiveIntensity: 0.6 }));
-    this.fountainWater.rotation.x = -Math.PI / 2; this.fountainWater.position.set(PLAZA.x, -18.72, PLAZA.z); g.add(this.fountainWater);
-    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.45, 3.4, 12), stone); col.position.set(PLAZA.x, -17.4, PLAZA.z); col.castShadow = true; g.add(col);
-    const bowl = new THREE.Mesh(new THREE.SphereGeometry(1.1, 18, 10, 0, TAU, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xb08a4a, metalness: 0.5, roughness: 0.4, side: THREE.DoubleSide })); bowl.rotation.x = Math.PI; bowl.position.set(PLAZA.x, -15.6, PLAZA.z); g.add(bowl);
+    this.fountainWater.rotation.x = -Math.PI / 2; this.fountainWater.position.set(PLAZA.x, -18.72, PLAZA.z); fg.add(this.fountainWater);
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.45, 3.4, 12), stone); col.position.set(PLAZA.x, -17.4, PLAZA.z); col.castShadow = true; fg.add(col);
+    const bowl = new THREE.Mesh(new THREE.SphereGeometry(1.1, 18, 10, 0, TAU, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xb08a4a, metalness: 0.5, roughness: 0.4, side: THREE.DoubleSide })); bowl.rotation.x = Math.PI; bowl.position.set(PLAZA.x, -15.6, PLAZA.z); fg.add(bowl);
     // observatory: stucco drum, slit windows, copper dome, finial
     const drumMat = new THREE.MeshStandardMaterial({ color: 0xc4a888, roughness: 0.92 });
-    const drum = new THREE.Mesh(new THREE.CylinderGeometry(3.7, 4.1, 17, 28), drumMat); drum.position.set(OBS.x, -11.5, OBS.z); drum.castShadow = true; drum.receiveShadow = true; g.add(drum);
-    const band = new THREE.Mesh(new THREE.TorusGeometry(3.75, 0.16, 8, 40), M.brass); band.rotation.x = Math.PI / 2; band.position.set(OBS.x, -3.1, OBS.z); g.add(band);
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(3.7, 4.1, 17, 28), drumMat); drum.position.set(OBS.x, -11.5, OBS.z); drum.castShadow = true; drum.receiveShadow = true; og.add(drum);
+    const band = new THREE.Mesh(new THREE.TorusGeometry(3.75, 0.16, 8, 40), M.brass); band.rotation.x = Math.PI / 2; band.position.set(OBS.x, -3.1, OBS.z); og.add(band);
     const copper = new THREE.MeshStandardMaterial({ color: 0x5f9484, roughness: 0.5, metalness: 0.45 });
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(3.9, 32, 16, 0, TAU, 0, Math.PI / 2), copper); dome.position.set(OBS.x, -3.0, OBS.z); dome.castShadow = true; g.add(dome);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(3.9, 32, 16, 0, TAU, 0, Math.PI / 2), copper); dome.position.set(OBS.x, -3.0, OBS.z); dome.castShadow = true; og.add(dome);
     // two rings of arched slit windows around the drum; the lamps share the dusk switch
     const slitGeo = new THREE.BoxGeometry(0.55, 1.7, 0.3);
     const slits = new THREE.InstancedMesh(slitGeo, new THREE.MeshStandardMaterial({ color: 0x20180f, roughness: 1 }), 20);
@@ -2707,9 +2710,9 @@ class RoofSet {
       q4.setFromAxisAngle(up, -a + Math.PI / 2);
       slits.setMatrixAt(k, m4.compose(new THREE.Vector3(OBS.x + Math.cos(a) * rad, ring ? -5.6 : -11.2, OBS.z + Math.sin(a) * rad), q4, sc));
     }
-    g.add(slits);
-    const fin = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 1.8, 8), M.brass); fin.position.set(OBS.x, 1.8, OBS.z); g.add(fin);
-    const finBall = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8), M.brass); finBall.position.set(OBS.x, 2.8, OBS.z); g.add(finBall);
+    og.add(slits);
+    const fin = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 1.8, 8), M.brass); fin.position.set(OBS.x, 1.8, OBS.z); og.add(fin);
+    const finBall = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8), M.brass); finBall.position.set(OBS.x, 2.8, OBS.z); og.add(finBall);
   }
 
   // Buildings are lowered wherever the chase passes, carving a canyon along the flight path.
@@ -2731,11 +2734,11 @@ class RoofSet {
         if (top < -17.5) return;
       }
       const H = top + 20;
-      boxes.push({ cx, cz, w, d, top, H, col: [0xc9a98a, 0xb88a6a, 0xd8c0a0, 0x9c7a62, 0xc0b0a0, 0xa8806a][Math.floor(r() * 6)] });
+      boxes.push({ cx, cz, w, d, top, H, special, col: [0xc9a98a, 0xb88a6a, 0xd8c0a0, 0x9c7a62, 0xc0b0a0, 0xa8806a][Math.floor(r() * 6)] });
       const along = w > d, rh = 0.9 + r() * 1.4;
       roofs.push({ cx, cz, w: w + 0.3, d: d + 0.3, top, rh, along, slate: r() < 0.3 });
       const nc = r() < 0.75 ? 1 + (r() < 0.4 ? 1 : 0) : 0;
-      for (let i = 0; i < nc; i++) chimneys.push({ x: cx + (r() - 0.5) * w * 0.6, z: cz + (r() - 0.5) * d * 0.6, top: top + rh * 0.8 + 0.6 + r() * 0.8, base: top });
+      for (let i = 0; i < nc; i++) chimneys.push({ x: cx + (r() - 0.5) * w * 0.6, z: cz + (r() - 0.5) * d * 0.6, top: top + rh * 0.8 + 0.6 + r() * 0.8, base: top, hi: boxes.length - 1 });
     };
     /* Town plan. Two avenues cross at the terrace: the east avenue runs straight to the
        woods (the road Ember takes), the cross street frames the clock tower. A fountain
@@ -2809,11 +2812,13 @@ class RoofSet {
     };
     for (const b of boxes) {
       if (b.H < 3) continue;
+      b.w0 = wp.length / 3;
       for (const [nx, nz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         const toC = -(b.cx * nx + b.cz * nz) / Math.max(1, Math.hypot(b.cx, b.cz));
         if (toC < -0.35) continue;
         face(b.cx, b.cz, nx, nz, nx ? b.d / 2 : b.w / 2, nx ? b.w / 2 : b.d / 2, b.top);
       }
+      b.w1 = wp.length / 3;
     }
     const wg = new THREE.BufferGeometry();
     wg.setAttribute('position', new THREE.Float32BufferAttribute(wp, 3));
@@ -2841,6 +2846,7 @@ class RoofSet {
       fog: true,
     });
     const win = new THREE.Mesh(wg, this.winMat); win.frustumCulled = false; g.add(win);
+    this.envHouses = { boxes, bodies, roofMesh, chMesh, chimneys, winGeo: wg, winPos0: Float32Array.from(wp) };
     // the street below and the woods to the east
     const street = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: 0x2a2420, roughness: 1, side: THREE.DoubleSide }));
     street.rotation.x = -Math.PI / 2; street.position.y = -20; g.add(street);
@@ -2851,7 +2857,7 @@ class RoofSet {
       if (!isForest(x, z)) { trees.setMatrixAt(i, m4.makeScale(0, 0, 0)); continue; }
       const h = 9 + r() * 9; m4.compose(tmp.set(x, -20.5, z), q.identity(), s.set(2 + r() * 1.6, h, 2 + r() * 1.6)); trees.setMatrixAt(i, m4);
     }
-    g.add(trees);
+    g.add(trees); this.envPines = { mesh: trees };
     // distant fireflies over the woods
     const n = 46, fp = new Float32Array(n * 3), fs = new Float32Array(n);
     for (let i = 0; i < n; i++) { fp.set([48 + r() * 30, -9 + r() * 5, 40 + r() * 30], i * 3); fs[i] = r(); }
@@ -2871,7 +2877,7 @@ class RoofSet {
     const g = this.group, M = this.M;
     const towerMap = masonryTexture(); towerMap.repeat.set(1, 5);
     const stone = new THREE.MeshStandardMaterial({ map: towerMap, normalMap: reliefNormal(towerMap, 2.2), normalScale: new THREE.Vector2(0.52, 0.52), roughness: 0.9 });
-    const T = new THREE.Group(); T.position.set(-17, 0, -24); g.add(T);
+    const T = new THREE.Group(); T.position.set(-17, 0, -24); g.add(T); this.envLand.push({ id: 'clock-tower', label: 'Clock tower', obj: T, pivot: [-17, 0, -24], ob: 'tower' });
     const shaft = new THREE.Mesh(new THREE.BoxGeometry(5.4, 30, 5.4), stone); shaft.position.y = -5; shaft.castShadow = true; shaft.receiveShadow = true; T.add(shaft);
     const upper = new THREE.Mesh(new THREE.BoxGeometry(4.8, 6.2, 4.8), stone); upper.position.y = 13.1; upper.castShadow = true; T.add(upper);
     const ledge = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.4, 6.0), stone); ledge.position.y = 10.1; T.add(ledge);
@@ -2942,10 +2948,12 @@ class RoofSet {
   }
 
   buildSmoke() {
-    const tops = [this.terraceChimneyTop, ...this.chimneys.filter((c) => Math.hypot(c.x, c.z) < 34).slice(0, 18).map((c) => V(c.x, c.top, c.z))];
+    const smokeSel = this.chimneys.filter((c) => Math.hypot(c.x, c.z) < 34).slice(0, 18);
+    const tops = [this.terraceChimneyTop, ...smokeSel.map((c) => V(c.x, c.top, c.z))];
     const per = 12, n = tops.length * per, pos = new Float32Array(n * 3), seed = new Float32Array(n * 2);
     tops.forEach((p, i) => { for (let k = 0; k < per; k++) { pos.set([p.x, p.y, p.z], (i * per + k) * 3); seed.set([k / per, (i * 0.37) % 1], (i * per + k) * 2); } });
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 2));
+    this.envSmoke = { geo, per, sel: smokeSel };
     this.smokeMat = new THREE.ShaderMaterial({
       uniforms: { uTime: { value: 0 }, uScale: { value: 600 }, uColor: { value: new THREE.Color() } },
       vertexShader: `uniform float uTime, uScale; attribute vec2 aSeed; varying float vA;
@@ -3235,7 +3243,7 @@ class ForestSet {
       const y = this.heightAt(x, z) - 0.2;
       q.setFromEuler(_e1.set(r() * 3, r() * 3, r() * 3)); m4.compose(_v1.set(x, y, z), q, s.set(0.5 + r() * 1.1, 0.4 + r() * 0.7, 0.5 + r() * 1.1)); rocks.setMatrixAt(i, m4);
     }
-    rocks.castShadow = true; rocks.receiveShadow = true; g.add(rocks);
+    rocks.castShadow = true; rocks.receiveShadow = true; g.add(rocks); this.envRocks = rocks;
     const valley = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshStandardMaterial({ color: 0x1a2a20, roughness: 1, side: THREE.DoubleSide }));
     valley.rotation.x = -Math.PI / 2; valley.position.y = -28; g.add(valley);
   }
@@ -3266,7 +3274,7 @@ class ForestSet {
         // The homeward route is a real opening in the canopy, not only a gap in the trunks.
         // This keeps the wide departure camera and the flying silhouette visible through it.
         if (bx < -7 && Math.abs(bz - 1.4) < 8.5) continue;
-        blobs.push({ x: bx, y: 14 + r() * 12, z: bz, s: 3 + r() * 3.6 });
+        blobs.push({ x: bx, y: 14 + r() * 12, z: bz, s: 3 + r() * 3.6, ti: trunks.length - 1 });
       }
     }
     this.cameraTrunks = trunks.map((t) => ({ x: t.x, z: t.z, r: 0.64 * t.sc, y0: t.y - 0.5, y1: t.y + 30.5 }));
@@ -3280,6 +3288,7 @@ class ForestSet {
     blobs.forEach((b, i) => { m4.compose(_v1.set(b.x, b.y, b.z), q.setFromEuler(_e1.set(r(), r(), r())), s.set(b.s, b.s * 0.7, b.s)); bm.setMatrixAt(i, m4); });
     crowns.forEach((b, i) => { m4.compose(_v1.set(b.x, b.y, b.z), q.setFromEuler(_e1.set(...b.rot)), s.set(b.s, b.s * 0.7, b.s)); bm.setMatrixAt(blobs.length + i, m4); });
     bm.castShadow = true; g.add(bm); this.canopy = bm;
+    this.envTrees = { trunks: tm, canopy: bm, nTrunk: trunks.length, blobs, nBlob: blobs.length, nCrown: crowns.length };
     // a fallen log with glowing mushrooms
     const log = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.52, 6.5, 14), new THREE.MeshStandardMaterial({ map: bark.clone(), roughness: 1, color: 0x8a7a6a }));
     log.rotation.set(0, 0.62, Math.PI / 2); log.position.set(-5.4, 0.42, -3.6); log.castShadow = true; log.receiveShadow = true; g.add(log);
@@ -3884,6 +3893,364 @@ class World {
     if (name === 'roof') { this.roof.update(t, L, S); this.roof.twinkleMat.uniforms.uScale.value = scale; this.roof.smokeMat.uniforms.uScale.value = scale; this.roof.moths.mat.uniforms.uScale.value = scale; }
     if (name === 'forest') this.forest.update(t, L, S, camera, scale, dt);
     return L;
+  }
+}
+
+/* ==========================================================================
+   04C  ENVIRONMENT EDITS
+   The map elements a director can move and recolour: houses, pines, street lamps and landmarks on the
+   rooftops, trees, rocks and ferns in the glade. Each element is a few instances (or one group) of the
+   set, described by a small state { p: position, r: turn in degrees, s: size multipliers, c, c2: colours,
+   hide }. The film applies a saved list of changes (ENV_EDITS, a project, or the Sculptor's live edits)
+   with EnvMap.load(); with no changes it touches nothing, so the film is exactly as authored.
+   ========================================================================== */
+const ENV_EDITS = /*ENV-BEGIN*/null/*ENV-END*/;
+const ENV_KINDS = {
+  house: { set: 'roof', title: 'Houses', one: 'House', add: true },
+  pine: { set: 'roof', title: 'Pine trees', one: 'Pine tree', add: true },
+  lamp: { set: 'roof', title: 'Street lamps', one: 'Street lamp', add: true },
+  landmark: { set: 'roof', title: 'Landmarks', one: 'Landmark', add: false },
+  tree: { set: 'forest', title: 'Trees', one: 'Tree', add: true },
+  rock: { set: 'forest', title: 'Rocks', one: 'Rock', add: true },
+  fern: { set: 'forest', title: 'Ferns', one: 'Fern', add: true },
+};
+class EnvMap {
+  constructor(world) {
+    this.world = world; this.els = []; this.byId = new Map(); this.instIdx = new Map(); this.objIdx = new Map();
+    this.extras = new Map(); this.addedObs = []; this.seq = {}; this.facCache = new Map(); this.rev = 0; this.CAP = 96;
+    this.collectRoof(world.roof); this.collectForest(world.forest);
+    for (const el of this.els) { el.base = JSON.parse(JSON.stringify(el.st)); el.touched = false; }
+  }
+  /* ----- building the element list ----- */
+  make(set, kind, num, label, o) {
+    const el = Object.assign({ id: num == null ? `${set}/${kind}` : `${set}/${kind}/${num}`, set, kind, label, parts: [], slots: {}, pivot0: new THREE.Vector3(), size0: [1, 1, 1], mode: 'rigid', locked: false, added: false, canAdd: !!ENV_KINDS[kind].add, st: null, base: null, touched: false }, o || {});
+    this.els.push(el); this.byId.set(el.id, el); return el;
+  }
+  instPart(mesh, i) {
+    const m0 = new THREE.Matrix4(); mesh.getMatrixAt(i, m0);
+    const c0 = new THREE.Color(1, 1, 1); if (mesh.instanceColor) mesh.getColorAt(i, c0);
+    return { m: mesh, i, m0, c0, painted: false };
+  }
+  link(el) {
+    el.parts.forEach((pt) => { if (pt.m) { let a = this.instIdx.get(pt.m); if (!a) { a = []; this.instIdx.set(pt.m, a); } a[pt.i] = el; } else this.objIdx.set(pt.o, el); });
+    for (const key of Object.keys(el.slots)) { const s = el.slots[key]; s.base = this.effHex(el.parts[s.pi[0]]); }
+  }
+  effHex(pt) { const f = this.fac(pt.m); return '#' + new THREE.Color(pt.c0.r * f.r, pt.c0.g * f.g, pt.c0.b * f.b).getHexString(); }
+  fac(mesh) {
+    const m = mesh.material; let f = this.facCache.get(m); if (f) return f;
+    f = new THREE.Color(1, 1, 1);
+    try {
+      if (m.color) f.copy(m.color);
+      if (m.map && m.map.image && !m.alphaTest) { const c = document.createElement('canvas'); c.width = c.height = 1; const x = c.getContext('2d'); x.drawImage(m.map.image, 0, 0, 1, 1); const d = x.getImageData(0, 0, 1, 1).data; f.multiply(new THREE.Color().setRGB(d[0] / 255, d[1] / 255, d[2] / 255, THREE.SRGBColorSpace)); }
+    } catch (e) { /* keep the material colour */ }
+    this.facCache.set(m, f); return f;
+  }
+  finish(el, pivot, size, p) {
+    el.pivot0.set(pivot[0], pivot[1], pivot[2]); el.size0 = size;
+    el.st = { p: p || pivot.slice(), r: 0, s: [1, 1, 1], c: null, c2: null, hide: false };
+    this.link(el); return el;
+  }
+  restBox(el) {
+    const b = new THREE.Box3(), t = new THREE.Box3();
+    for (const pt of el.parts) {
+      if (pt.m) { const g = pt.m.geometry; if (!g.boundingBox) g.computeBoundingBox(); t.copy(g.boundingBox).applyMatrix4(pt.m0); b.union(t); }
+      else { pt.o.updateWorldMatrix(true, true); b.union(t.setFromObject(pt.o)); }
+    }
+    return b;
+  }
+  sizeOf(el) { const s = new THREE.Vector3(); this.restBox(el).getSize(s); return [Math.max(s.x, 0.05), Math.max(s.y, 0.05), Math.max(s.z, 0.05)]; }
+  collectRoof(roof) {
+    const H = roof.envHouses, P = roof.envPines, L = roof.envLamps, v = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+    H.boxes.forEach((b, i) => {
+      const el = this.make('roof', 'house', i, `House ${i + 1}`, { mode: 'house', locked: !!b.special, note: b.special ? 'This house carries the weathervane or the pigeons, so it can only be recoloured.' : '' });
+      el.parts.push(this.instPart(H.bodies, i), this.instPart(H.roofMesh, i));
+      el.parts[1].m0.decompose(v, q, sc);
+      const chs = []; H.chimneys.forEach((c, ci) => { if (c.hi === i) chs.push({ c, pi: el.parts.push(this.instPart(H.chMesh, ci)) - 1, fx: (c.x - b.cx) / b.w, fz: (c.z - b.cz) / b.d, top0: c.top, base0: c.base, x0: c.x, z0: c.z }); });
+      el.house = { b, i, rh0: sc.y, chs, ob: roof.cameraObstacles[i], noWin: false };
+      el.slots = { c: { key: 'wallColor', label: 'Wall colour', pi: [0] }, c2: { key: 'roofColor', label: 'Roof colour', pi: [1] } };
+      this.finish(el, [b.cx, -20, b.cz], [b.w, b.H, b.d]);
+    });
+    let n = 0; const pm = P.mesh;
+    for (let i = 0; i < pm.count; i++) {
+      const m = new THREE.Matrix4(); pm.getMatrixAt(i, m); m.decompose(v, q, sc);
+      if (sc.x * sc.y * sc.z === 0) continue;
+      const el = this.make('roof', 'pine', i, `Pine tree ${++n}`); el.parts.push(this.instPart(pm, i));
+      el.slots = { c: { key: 'color', label: 'Colour', pi: [0] } };
+      this.finish(el, [v.x, v.y, v.z], this.sizeOf(el));
+    }
+    L.pts.forEach(([x, z], i) => {
+      const el = this.make('roof', 'lamp', i, `Street lamp ${i + 1}`); el.parts.push(this.instPart(L.posts, i), this.instPart(L.beads, i));
+      this.finish(el, [x, -20, z], this.sizeOf(el));
+    });
+    const nb = H.boxes.length;
+    for (const d of roof.envLand) {
+      d.obj.updateMatrix();
+      const el = this.make('roof', 'landmark', d.id, d.label); el.parts.push({ o: d.obj, m0: d.obj.matrix.clone() });
+      if (d.ob) { const ob = roof.cameraObstacles[nb + (d.ob === 'obs' ? 1 : 0)]; if (ob) el.ob = { ob, ob0: { ...ob } }; }
+      this.finish(el, d.pivot, this.sizeOf(el));
+    }
+  }
+  collectForest(forest) {
+    const T = forest.envTrees, v = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+    for (let i = 0; i < T.nTrunk; i++) {
+      const el = this.make('forest', 'tree', i, `Tree ${i + 1}`);
+      const trunk = this.instPart(T.trunks, i), crown = this.instPart(T.canopy, T.nBlob + i);
+      el.parts.push(trunk, crown);
+      const blobs = []; T.blobs.forEach((b, j) => { if (b.ti === i) { blobs.push(j); el.parts.push(this.instPart(T.canopy, j)); } });
+      el.tree = { i, blobs, ct: forest.cameraTrunks[i], ct0: { ...forest.cameraTrunks[i] }, cc: [forest.cameraCanopies[T.nBlob + i], ...blobs.map((j) => forest.cameraCanopies[j])] };
+      el.tree.cc0 = el.tree.cc.map((c) => ({ ...c }));
+      el.slots = { c: { key: 'leafColor', label: 'Leaf colour', pi: el.parts.map((_, k) => k).slice(1) }, c2: { key: 'trunkColor', label: 'Trunk colour', pi: [0] } };
+      trunk.m0.decompose(v, q, sc);
+      this.finish(el, [v.x, v.y, v.z], this.sizeOf(el));
+    }
+    const rm = forest.envRocks;
+    for (let i = 0; i < rm.count; i++) {
+      const el = this.make('forest', 'rock', i, `Rock ${i + 1}`); el.parts.push(this.instPart(rm, i)); el.slots = { c: { key: 'color', label: 'Colour', pi: [0] } };
+      el.parts[0].m0.decompose(v, q, sc); this.finish(el, [v.x, v.y, v.z], this.sizeOf(el));
+    }
+    const fm = forest.fernMesh;
+    for (let i = 0; i < fm.count; i++) {
+      const el = this.make('forest', 'fern', i, `Fern ${i + 1}`); el.parts.push(this.instPart(fm, i)); el.slots = { c: { key: 'color', label: 'Colour', pi: [0] } };
+      el.parts[0].m0.decompose(v, q, sc); this.finish(el, [v.x, v.y, v.z], this.sizeOf(el));
+    }
+  }
+  /* ----- queries ----- */
+  list(set) { return this.els.filter((e) => e.set === set); }
+  kinds(set) { return Object.keys(ENV_KINDS).filter((k) => ENV_KINDS[k].set === set); }
+  get(id) { return this.byId.get(id) || null; }
+  isEdited(el) { return el.added || el.touched; }
+  count() { return this.els.filter((e) => this.isEdited(e)).length; }
+  pick(raycaster, set, filter) {
+    const grp = this.world.sets[set] && this.world.sets[set].group; if (!grp) return null;
+    for (const h of raycaster.intersectObject(grp, true)) {
+      let el = null;
+      if (h.object.isInstancedMesh) { const a = this.instIdx.get(h.object); el = a && a[h.instanceId]; }
+      else for (let o = h.object; o && o !== grp; o = o.parent) { el = this.objIdx.get(o); if (el) break; }
+      if (el && !el.st.hide && (!filter || filter(h, el))) return { el, point: h.point };
+    }
+    return null;
+  }
+  boundsOf(el) {
+    if (el.st.hide) return null;
+    const b = new THREE.Box3(), t = new THREE.Box3(), m = new THREE.Matrix4();
+    for (const pt of el.parts) {
+      if (pt.m) { const g = pt.m.geometry; if (!g.boundingBox) g.computeBoundingBox(); pt.m.getMatrixAt(pt.i, m); b.union(t.copy(g.boundingBox).applyMatrix4(m)); }
+      else { pt.o.updateWorldMatrix(true, true); b.union(t.setFromObject(pt.o)); }
+    }
+    return b.isEmpty() ? null : b;
+  }
+  /* ----- applying a state ----- */
+  touchMesh(m) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; m.frustumCulled = false; m.boundingSphere = null; m.boundingBox = null; }
+  apply(el) {
+    if (el.mode === 'house') this.applyHouse(el); else this.applyRigid(el);
+    this.paint(el); this.rev++;
+  }
+  frame(el, out) { // T(p) R(turn) S(size) T(-pivot): moves the element as it was authored to its new place
+    const st = el.st, p0 = el.pivot0, R = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), st.r * Math.PI / 180);
+    out.compose(new THREE.Vector3(st.p[0], st.p[1], st.p[2]), R, new THREE.Vector3(1, 1, 1));
+    out.multiply(new THREE.Matrix4().makeScale(st.s[0], st.s[1], st.s[2])).multiply(new THREE.Matrix4().makeTranslation(-p0.x, -p0.y, -p0.z));
+    return out;
+  }
+  applyRigid(el) {
+    const st = el.st, F = this.frame(el, new THREE.Matrix4()), m = new THREE.Matrix4();
+    for (const pt of el.parts) {
+      if (pt.m) { if (st.hide) m.makeScale(0, 0, 0); else m.multiplyMatrices(F, pt.m0); pt.m.setMatrixAt(pt.i, m); this.touchMesh(pt.m); }
+      else { pt.o.visible = !st.hide; m.multiplyMatrices(F, pt.m0); pt.o.matrixAutoUpdate = true; m.decompose(pt.o.position, pt.o.quaternion, pt.o.scale); pt.o.updateMatrix(); }
+    }
+    const rot = (x, z) => { const a = st.r * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), X = (x - el.pivot0.x) * st.s[0], Z = (z - el.pivot0.z) * st.s[2]; return [st.p[0] + X * c + Z * s, st.p[2] - X * s + Z * c]; };
+    const turn = st.r * Math.PI / 180, ac = Math.abs(Math.cos(turn)), as = Math.abs(Math.sin(turn)), ys = (y) => st.p[1] + (y - el.pivot0.y) * st.s[1];
+    if (el.tree) { // keep the camera's tree collision in step
+      const t = el.tree, c0 = t.ct0, c = t.ct, [x, z] = rot(c0.x, c0.z); c.x = x; c.z = z; c.r = c0.r * Math.max(st.s[0], st.s[2]); c.y0 = ys(c0.y0); c.y1 = ys(c0.y1);
+      t.cc.forEach((cc, k) => { const o = t.cc0[k], [px, pz] = rot(o.x, o.z); cc.x = px; cc.z = pz; cc.y = ys(o.y); cc.r = o.r * Math.max(st.s[0], st.s[2]); cc.ry = o.ry * st.s[1]; });
+      if (st.hide) { c.r = 0; t.cc.forEach((cc) => { cc.r = 0; cc.ry = 0; }); }
+    }
+    if (el.ob) { // landmarks block the free camera
+      const o0 = el.ob.ob0, o = el.ob.ob, cx = (o0.minX + o0.maxX) / 2, cz = (o0.minZ + o0.maxZ) / 2, hx = (o0.maxX - o0.minX) / 2 * st.s[0], hz = (o0.maxZ - o0.minZ) / 2 * st.s[2], [x, z] = rot(cx, cz);
+      const ex = ac * hx + as * hz, ez = as * hx + ac * hz;
+      o.minX = x - ex; o.maxX = x + ex; o.minZ = z - ez; o.maxZ = z + ez; o.minY = ys(o0.minY); o.maxY = ys(o0.maxY);
+      if (st.hide) { o.minX = o.maxX = o.minZ = o.maxZ = 1e6; }
+    }
+  }
+  applyHouse(el) {
+    const st = el.st, h = el.house, b = h.b, roof = this.world.roof, H = roof.envHouses, a = st.r * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+    const w = b.w * st.s[0], D = b.d * st.s[2], Ht = b.H * st.s[1], X = st.p[0], Y = st.p[1], Z = st.p[2];
+    const m = new THREE.Matrix4(), q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), a), q2 = new THREE.Quaternion();
+    const setPart = (pt, mat) => { pt.m.setMatrixAt(pt.i, mat); this.touchMesh(pt.m); };
+    const body = el.parts[0], rf = el.parts[1];
+    if (st.hide) { m.makeScale(0, 0, 0); setPart(body, m); setPart(rf, m); } else {
+      setPart(body, m.compose(new THREE.Vector3(X, Y, Z), q, new THREE.Vector3(w, Ht, D)));
+      const along = w > D; q2.copy(q); if (!along) q2.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2));
+      setPart(rf, m.compose(new THREE.Vector3(X, Y + Ht, Z), q2, new THREE.Vector3(along ? w + 0.3 : D + 0.3, h.rh0, along ? D + 0.3 : w + 0.3)));
+    }
+    for (const ch of h.chs) {
+      const pt = el.parts[ch.pi], c = ch.c, fx = ch.fx * w, fz = ch.fz * D;
+      c.x = X + fx * ca + fz * sa; c.z = Z - fx * sa + fz * ca; c.base = Y + Ht; c.top = c.base + (ch.top0 - ch.base0);
+      if (st.hide) m.makeScale(0, 0, 0); else m.compose(new THREE.Vector3(c.x, c.base, c.z), new THREE.Quaternion(), new THREE.Vector3(0.55, c.top - c.base, 0.55));
+      setPart(pt, m);
+      const S = roof.envSmoke, j = S ? S.sel.indexOf(c) : -1;
+      if (j >= 0) { const pos = S.geo.attributes.position; for (let k = 0; k < S.per; k++) pos.setXYZ((j + 1) * S.per + k, c.x, c.top, c.z); pos.needsUpdate = true; }
+    }
+    if (!el.added && b.w1 > b.w0) { // the lit windows follow the walls
+      const pos = H.winGeo.attributes.position, o = H.winPos0, px0 = b.cx, pz0 = b.cz, py0 = -20;
+      for (let k = b.w0; k < b.w1; k += 4) {
+        let cx = 0, cy = 0, cz = 0; for (let n = 0; n < 4; n++) { cx += o[(k + n) * 3]; cy += o[(k + n) * 3 + 1]; cz += o[(k + n) * 3 + 2]; } cx /= 4; cy /= 4; cz /= 4;
+        const lx = (cx - px0) * st.s[0], lz = (cz - pz0) * st.s[2], nx = X + lx * ca + lz * sa, ny = Y + (cy - py0) * st.s[1], nz = Z - lx * sa + lz * ca;
+        for (let n = 0; n < 4; n++) {
+          const dx = o[(k + n) * 3] - cx, dy = o[(k + n) * 3 + 1] - cy, dz = o[(k + n) * 3 + 2] - cz;
+          if (st.hide) pos.setXYZ(k + n, nx, ny, nz); else pos.setXYZ(k + n, nx + dx * ca + dz * sa, ny + dy, nz - dx * sa + dz * ca);
+        }
+      }
+      pos.needsUpdate = true;
+    }
+    const ob = h.ob; if (ob) {
+      const ex = Math.abs(ca) * w / 2 + Math.abs(sa) * D / 2, ez = Math.abs(sa) * w / 2 + Math.abs(ca) * D / 2;
+      ob.minX = X - ex; ob.maxX = X + ex; ob.minZ = Z - ez; ob.maxZ = Z + ez; ob.minY = Y - 0.2; ob.maxY = Y + Ht + 2.8;
+      if (st.hide) ob.minX = ob.maxX = ob.minZ = ob.maxZ = 1e6;
+    }
+  }
+  paint(el) {
+    const c = new THREE.Color();
+    for (const key of ['c', 'c2']) {
+      const slot = el.slots[key]; if (!slot) continue; const want = el.st[key];
+      for (const pi of slot.pi) {
+        const pt = el.parts[pi];
+        if (!want) { if (pt.painted || el.added) { pt.m.setColorAt(pt.i, pt.c0); pt.painted = false; this.touchMesh(pt.m); } continue; }
+        const f = this.fac(pt.m); c.set(want);
+        c.setRGB(Math.min(255, c.r / Math.max(f.r, 1e-3)), Math.min(255, c.g / Math.max(f.g, 1e-3)), Math.min(255, c.b / Math.max(f.b, 1e-3)), THREE.LinearSRGBColorSpace);
+        pt.m.setColorAt(pt.i, c); pt.painted = true; this.touchMesh(pt.m);
+      }
+    }
+  }
+  /* ----- changing things ----- */
+  set(el, patch) {
+    if (el.locked) { const keep = {}; for (const k of ['c', 'c2']) if (k in patch) keep[k] = patch[k]; patch = keep; }
+    const st = el.st; for (const k of Object.keys(patch)) st[k] = Array.isArray(patch[k]) ? patch[k].slice() : patch[k];
+    el.touched = !el.added && this.differs(el); this.apply(el); return el;
+  }
+  differs(el) { const a = el.st, b = el.base; return a.p.some((v, i) => Math.abs(v - b.p[i]) > 1e-4) || Math.abs(a.r - b.r) > 1e-4 || a.s.some((v, i) => Math.abs(v - b.s[i]) > 1e-4) || a.c !== b.c || a.c2 !== b.c2 || a.hide !== b.hide; }
+  resetEl(el) { if (el.added) return this.remove(el); el.st = JSON.parse(JSON.stringify(el.base)); el.touched = false; this.apply(el); return el; }
+  getExtra(src) {
+    let m = this.extras.get(src); if (m) return m;
+    m = new THREE.InstancedMesh(src.geometry, src.material, this.CAP); m.count = 0; m.castShadow = src.castShadow; m.receiveShadow = src.receiveShadow; m.renderOrder = src.renderOrder; m.frustumCulled = false; m.name = 'Added ' + (src.name || 'element');
+    (src.parent || this.world.scene).add(m); this.extras.set(src, m); return m;
+  }
+  roomFor(tpl) { return tpl.parts.every((pt) => !pt.m || (this.extras.get(this.srcOf(pt.m)) || { count: 0 }).count < this.CAP); }
+  srcOf(m) { for (const [s, e] of this.extras) if (e === m) return s; return m; }
+  copy(tpl, n, st) { // a new element built like tpl, from the same authored shape
+    if (!tpl.canAdd) return null; const src = tpl.added ? this.byId.get(tpl.tpl) : tpl;
+    if (!this.roomFor(src)) return null;
+    n = n || ((this.seq[tpl.kind] || 0) + 1); this.seq[tpl.kind] = Math.max(this.seq[tpl.kind] || 0, n);
+    const el = Object.assign({}, src, { id: `${src.set}/${src.kind}/+${n}`, label: `New ${ENV_KINDS[src.kind].one.toLowerCase()} ${n}`, added: true, tpl: src.id, n, touched: false, base: JSON.parse(JSON.stringify(src.base)), locked: false, note: '' });
+    el.parts = src.parts.map((pt, k) => {
+      if (!pt.m || (el.mode === 'house' && k > 1)) return null;
+      const ex = this.getExtra(src.parts[k].m); const i = ex.count++; return { m: ex, i, m0: pt.m0, c0: pt.c0, painted: false };
+    }).filter(Boolean);
+    el.slots = JSON.parse(JSON.stringify(src.slots)); el.slots && Object.values(el.slots).forEach((s) => { s.pi = s.pi.filter((k) => k < el.parts.length); });
+    el.st = JSON.parse(JSON.stringify(st || src.st));
+    if (el.mode === 'house') { const h = src.house; const ob = { minX: 0, maxX: 0, minZ: 0, maxZ: 0, minY: -20.2, maxY: 0 }; this.world.roof.cameraObstacles.push(ob); this.addedObs.push(ob); el.house = { b: h.b, i: -1, rh0: h.rh0, chs: [], ob }; el.parts.forEach((pt) => this.touchMesh(pt.m)); }
+    if (el.tree) { // the copy is a tree too, with a camera collision of its own
+      const t = el.tree, ft = this.world.forest; el.tree = { ...t, ct: { x: 0, z: 0, r: 0, y0: 0, y1: 0 }, cc: t.cc0.map((c) => ({ ...c })) };
+      ft.cameraTrunks.push(el.tree.ct); el.tree.cc.forEach((c) => ft.cameraCanopies.push(c)); this.addedTree = (this.addedTree || []).concat([el.tree.ct, ...el.tree.cc]);
+    }
+    el.parts.forEach((pt) => { pt.m.setColorAt(pt.i, pt.c0); });
+    this.els.push(el); this.byId.set(el.id, el); this.link(el); this.apply(el); return el;
+  }
+  duplicate(el) {
+    const st = JSON.parse(JSON.stringify(el.st)); st.hide = false; const off = Math.max(2, el.size0[0] * st.s[0] * 1.15); st.p[0] += off;
+    return this.copy(el, 0, st);
+  }
+  remove(el) {
+    if (!el.added) { return this.set(el, { hide: true }); }
+    el.st.hide = true; this.apply(el); this.els = this.els.filter((e) => e !== el); this.byId.delete(el.id);
+    el.parts.forEach((pt) => { const a = this.instIdx.get(pt.m); if (a) a[pt.i] = null; });
+    return null;
+  }
+  reset() { // back to the film as authored
+    for (const el of this.els.slice()) { if (el.added) { el.st.hide = true; this.apply(el); } }
+    this.els = this.els.filter((e) => !e.added); for (const k of [...this.byId.keys()]) if (this.byId.get(k).added) this.byId.delete(k);
+    for (const [, ex] of this.extras) { ex.count = 0; const a = this.instIdx.get(ex); if (a) a.length = 0; this.touchMesh(ex); }
+    if (this.addedObs.length) { const arr = this.world.roof.cameraObstacles; for (const o of this.addedObs) { const i = arr.indexOf(o); if (i >= 0) arr.splice(i, 1); } this.addedObs = []; }
+    if (this.addedTree) { const f = this.world.forest; for (const o of this.addedTree) for (const arr of [f.cameraTrunks, f.cameraCanopies]) { const i = arr.indexOf(o); if (i >= 0) arr.splice(i, 1); } this.addedTree = null; }
+    this.seq = {};
+    for (const el of this.els) if (el.touched) { el.st = JSON.parse(JSON.stringify(el.base)); el.touched = false; this.apply(el); }
+    this.rev++;
+  }
+  /* ----- saving and loading a list of changes ----- */
+  serialize() {
+    const r3 = (v) => Math.round(v * 1000) / 1000, edits = {}, added = [];
+    const out = (el, full) => {
+      const a = el.st, b = el.base, o = {};
+      if (full || a.p.some((v, i) => Math.abs(v - b.p[i]) > 1e-4)) o.p = a.p.map(r3);
+      if (full || Math.abs(a.r - b.r) > 1e-4) o.r = r3(a.r);
+      if (full || a.s.some((v, i) => Math.abs(v - b.s[i]) > 1e-4)) o.s = a.s.map(r3);
+      if (a.c) o.c = a.c; if (a.c2) o.c2 = a.c2; if (a.hide) o.hide = true;
+      return o;
+    };
+    for (const el of this.els) { if (el.added) added.push({ n: el.n, tpl: el.tpl, ...out(el, true) }); else if (el.touched) edits[el.id] = out(el, false); }
+    return Object.keys(edits).length || added.length ? { v: 1, edits, added } : null;
+  }
+  clean(d) { // keep only well-formed fields
+    const o = {}, num = (x) => typeof x === 'number' && isFinite(x), hex = (x) => typeof x === 'string' && /^#[0-9a-f]{6}$/i.test(x);
+    if (Array.isArray(d.p) && d.p.length === 3 && d.p.every(num)) o.p = d.p.slice();
+    if (num(d.r)) o.r = d.r;
+    if (Array.isArray(d.s) && d.s.length === 3 && d.s.every((x) => num(x) && x > 0.01 && x < 100)) o.s = d.s.slice();
+    if (hex(d.c)) o.c = d.c.toLowerCase(); if (hex(d.c2)) o.c2 = d.c2.toLowerCase(); if (d.hide === true) o.hide = true;
+    return o;
+  }
+  load(data) {
+    this.reset(); if (!data || typeof data !== 'object') return this;
+    for (const a of Array.isArray(data.added) ? data.added : []) { const tpl = a && this.byId.get(a.tpl); if (!tpl || !a.n) continue; const d = this.clean(a), st = Object.assign(JSON.parse(JSON.stringify(tpl.base)), d); if (!d.c) st.c = null; if (!d.c2) st.c2 = null; this.copy(tpl, a.n, st); }
+    for (const [id, d] of Object.entries(data.edits || {})) {
+      const el = this.byId.get(id); if (!el || el.added) continue; const o = this.clean(d || {}); const st = JSON.parse(JSON.stringify(el.base));
+      this.set(el, Object.assign(st, o));
+    }
+    return this;
+  }
+  /* ----- the copy-and-paste snippet: a short, readable description of one element ----- */
+  snippet(el) {
+    const st = el.st, r = (v, n) => +v.toFixed(n), o = { clockwork: 'map-element', what: ENV_KINDS[el.kind].one, id: el.id, position: st.p.map((v) => r(v, 2)), turn: r(((st.r % 360) + 360) % 360, 1), size: st.s.map((v, i) => r(v * el.size0[i], 2)) };
+    for (const key of ['c', 'c2']) { const s = el.slots[key]; if (s) o[s.key] = st[key] || s.base; }
+    if (st.hide) o.hidden = true;
+    return o;
+  }
+  parse(text) { // text -> { ok, data } or { ok: false, error } in plain words
+    let t = String(text || '').trim();
+    if (!t) return { ok: false, error: 'Nothing to apply yet. Copy an element, then paste its code here.' };
+    t = t.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+    t = t.replace(/\/\/[^\n]*$/gm, '').replace(/,\s*([}\]])/g, '$1'); // forgive comments and a trailing comma
+    let d; try { d = JSON.parse(t); } catch (e) {
+      const m = /position (\d+)/.exec(e.message), at = m ? t.slice(0, +m[1]).split('\n') : null;
+      return { ok: false, error: `That is not valid element code${at ? ` (near line ${at.length}, character ${at[at.length - 1].length + 1})` : ''}. Check the commas, quotes and brackets, or copy the element again.` };
+    }
+    if (Array.isArray(d)) d = d[0];
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return { ok: false, error: 'That does not look like a map element. It should start with { and list position, turn, size and colours.' };
+    return { ok: true, data: d };
+  }
+  /* Check a snippet against an element; returns { errors, patch, notes } and changes nothing. */
+  check(el, d, opt) {
+    if (opt && opt.look) { d = { ...d }; delete d.position; delete d.turn; delete d.hidden; }
+    const errors = [], notes = [], patch = {}, num = (x) => typeof x === 'number' && isFinite(x), hex = (x) => typeof x === 'string' && /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.test(x.trim());
+    const fixHex = (x) => { let h = x.trim().replace('#', ''); if (h.length === 3) h = h.split('').map((c) => c + c).join(''); return '#' + h.toLowerCase(); };
+    const known = new Set(['clockwork', 'what', 'id', 'position', 'turn', 'size', 'hidden', 'color', ...Object.values(el.slots).map((s) => s.key)]);
+    if (d.id && d.id !== el.id && d.what && d.what !== ENV_KINDS[el.kind].one) errors.push(`This code is for a ${String(d.what).toLowerCase()}, but ${el.label} is a ${ENV_KINDS[el.kind].one.toLowerCase()}. Use "Add as new" to place it as its own element, or copy a ${ENV_KINDS[el.kind].one.toLowerCase()}.`);
+    if ('position' in d) { if (!Array.isArray(d.position) || d.position.length !== 3 || !d.position.every(num)) errors.push('"position" needs three numbers, like [12.5, -20, 4].'); else if (d.position.some((v) => Math.abs(v) > 2000)) errors.push('"position" is too far away. Keep each number between -2000 and 2000.'); else patch.p = d.position.slice(); }
+    if ('turn' in d) { if (!num(d.turn)) errors.push('"turn" needs a number of degrees, like 90.'); else patch.r = d.turn; }
+    if ('size' in d) {
+      if (!Array.isArray(d.size) || d.size.length !== 3 || !d.size.every(num)) errors.push('"size" needs three numbers (width, height, depth in metres), like [5, 12, 5].');
+      else if (d.size.some((v) => v <= 0)) errors.push('"size" numbers must be bigger than 0.');
+      else { const s = d.size.map((v, i) => v / el.size0[i]); if (s.some((v) => v < 0.02 || v > 60)) errors.push('"size" is far too small or too large compared with the original. Try something between 1/50 and 60 times its original size.'); else patch.s = s; }
+    }
+    const slotKeys = Object.keys(el.slots);
+    slotKeys.forEach((key, n) => {
+      const s = el.slots[key]; let v = d[s.key]; if (v === undefined && n === 0 && 'color' in d) v = d.color;
+      if (v === undefined) return;
+      if (!hex(v)) errors.push(`"${s.key}" needs a hex colour like #c9a98a.`); else { const h = fixHex(v); patch[key] = h === s.base ? null : h; }
+    });
+    if ('hidden' in d) { if (typeof d.hidden !== 'boolean') errors.push('"hidden" must be true or false.'); else patch.hide = d.hidden; }
+    for (const k of Object.keys(d)) if (!known.has(k)) notes.push(`Ignored "${k}" (not something an element understands).`);
+    if (el.locked && ('position' in d || 'turn' in d || 'size' in d || 'hidden' in d)) notes.push('This element is fixed in place; only its colours were applied.');
+    if (!Object.keys(patch).length && !errors.length) errors.push('There was nothing in that code to change. It needs at least a position, turn, size or colour.');
+    return { errors, patch, notes };
   }
 }
 
@@ -5962,7 +6329,7 @@ const PROJECT = (() => {
     const q = new URLSearchParams(location.search).get('project'); if (!q) return null;
     const st = JSON.parse(localStorage.getItem('clockwork.projects.v1') || 'null');
     const p = q === 'draft' ? (st && st.draft && { ...st.draft, id: 'draft', name: 'Draft' }) : st && st.projects && st.projects[q];
-    return p ? { id: p.id, name: p.name, overrides: p.overrides || {}, grade: p.grade && p.grade.vals ? p.grade.vals : null } : { missing: q };
+    return p ? { id: p.id, name: p.name, overrides: p.overrides || {}, grade: p.grade && p.grade.vals ? p.grade.vals : null, env: p.env } : { missing: q };
   } catch (e) { return { missing: 'unreadable' }; }
 })();
 const ACTIVE_OVERRIDES = PROJECT && !PROJECT.missing ? PROJECT.overrides : SHOT_OVERRIDES;
@@ -6558,6 +6925,8 @@ async function boot() {
   const ember = new Ember(scene);
   const anim = new Animator(bot, fx);
   const batching = batchStaticMeshes(scene, [world.atrium, world.roof, world.forest, bot, ember, fx]);
+  // map changes from the Sculptor (baked in, or from the project being played); with none this does nothing
+  const envMap = new EnvMap(world); envMap.load(PROJECT && !PROJECT.missing && PROJECT.env !== undefined ? PROJECT.env : ENV_EDITS);
   // Watch which actor parts really move during the warm-up below, then merge the rest.
   const motion = makeMotionProbe([bot.root, ember.group]);
   const director = new CameraDirector(camera, renderer, anim, world);
@@ -6827,7 +7196,7 @@ async function boot() {
     lastNow = n; frame(n);
     $('loader').classList.add('done'); $('start').classList.remove('hidden');
   });
-  window.__film = { effectiveGrade, gradePresets: GRADE_PRESETS, idle: filmIdle, st, anim, seekTo, setPlaying, S, camera, renderer, post, scene, world, director, warm, ember, fx };
+  window.__film = { env: envMap, effectiveGrade, gradePresets: GRADE_PRESETS, idle: filmIdle, st, anim, seekTo, setPlaying, S, camera, renderer, post, scene, world, director, warm, ember, fx };
 }
 
 setTimeout(() => {

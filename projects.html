@@ -44,7 +44,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const read = () => { try { const x = JSON.parse(localStorage.getItem(KEY) || 'null'); return x && x.projects ? x : { version: 2, draft: null, projects: {} }; } catch (e) { return { version: 2, draft: null, projects: {} }; } };
 const write = (s) => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { alert('This browser is blocking storage, so the change could not be saved.'); } };
 const ago = (t) => { const d = (Date.now() - t) / 1000; return d < 60 ? 'just now' : d < 3600 ? Math.floor(d / 60) + ' min ago' : d < 86400 ? Math.floor(d / 3600) + ' h ago' : new Date(t).toLocaleDateString(); };
-const meta = (p) => { const n = Object.keys(p.overrides || {}).length; return n + ' shot edit' + (n === 1 ? '' : 's') + (p.grade ? ' · colour grade' : '') + ' · ' + ago(p.updated || p.created || Date.now()); };
+const meta = (p) => { const n = Object.keys(p.overrides || {}).length; return n + ' shot edit' + (n === 1 ? '' : 's') + (p.grade ? ' · colour grade' : '') + (p.env ? ' · map changes' : '') + ' · ' + ago(p.updated || p.created || Date.now()); };
 const slug = (n) => (n || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
 function ask({ title, text = '', value = null, ok = 'OK', danger = false }) {
   return new Promise((res) => {
@@ -58,7 +58,7 @@ function ask({ title, text = '', value = null, ok = 'OK', danger = false }) {
 }
 function render() {
   const s = read(), list = Object.values(s.projects).sort((a, b) => (b.updated || 0) - (a.updated || 0));
-  const dr = s.draft, drEdits = dr && Object.keys(dr.overrides || {}).length + (dr.grade ? 1 : 0) > 0 && !(dr.from && s.projects[dr.from] && JSON.stringify([dr.overrides, dr.grade && dr.grade.vals]) === JSON.stringify([s.projects[dr.from].overrides, s.projects[dr.from].grade && s.projects[dr.from].grade.vals]));
+  const dr = s.draft, drEdits = dr && Object.keys(dr.overrides || {}).length + (dr.grade ? 1 : 0) + (dr.env ? 1 : 0) > 0 && !(dr.from && s.projects[dr.from] && JSON.stringify([dr.overrides, dr.grade && dr.grade.vals, dr.env || null]) === JSON.stringify([s.projects[dr.from].overrides, s.projects[dr.from].grade && s.projects[dr.from].grade.vals, s.projects[dr.from].env || null]));
   let h = '';
   if (drEdits) h += '<div class="card draft"><h2>Unsaved draft</h2><div class="meta">' + meta(dr) + (dr.from && s.projects[dr.from] ? ' · changes to "' + esc(s.projects[dr.from].name) + '"' : '') + '</div><div class="row"><a class="btn pri" href="Clockwork_Firefly_fullfilm.html?project=draft">Play in film</a><a class="btn" href="Clockwork_Firefly_godview.html">Continue in Sculptor</a></div></div>';
   h += list.length ? list.map((p) => '<div class="card"><h2>' + esc(p.name) + '</h2><div class="meta">' + meta(p) + '</div><div class="row"><a class="btn pri" href="Clockwork_Firefly_fullfilm.html?project=' + encodeURIComponent(p.id) + '">Play in film</a><a class="btn" href="Clockwork_Firefly_godview.html?open=' + encodeURIComponent(p.id) + '">Edit in Sculptor</a><button class="btn" data-a="dl" data-id="' + p.id + '">Download</button><button class="btn" data-a="rn" data-id="' + p.id + '">Rename</button><button class="btn warn" data-a="rm" data-id="' + p.id + '">Delete</button></div></div>').join('')
@@ -67,7 +67,7 @@ function render() {
 }
 $('list').addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-a]'); if (!b) return; const s = read(), p = s.projects[b.dataset.id]; if (!p) return;
-  if (b.dataset.a === 'dl') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 1, name: p.name, overrides: p.overrides, ...(p.grade && p.grade.vals ? { grade: p.grade.vals } : {}) }, null, 1)], { type: 'application/json' })); a.download = slug(p.name) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+  if (b.dataset.a === 'dl') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify({ version: 1, name: p.name, overrides: p.overrides, ...(p.grade && p.grade.vals ? { grade: p.grade.vals } : {}), ...(p.env ? { env: p.env } : {}) }, null, 1)], { type: 'application/json' })); a.download = slug(p.name) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
   else if (b.dataset.a === 'rn') { const n = await ask({ title: 'Rename project', value: p.name, ok: 'Rename' }); if (n === null) return; p.name = n.trim() || p.name; p.updated = Date.now(); write(s); render(); }
   else if (b.dataset.a === 'rm') { if (!(await ask({ title: 'Delete "' + p.name + '"?', text: 'This removes the saved project from this browser.', ok: 'Delete project', danger: true }))) return; delete s.projects[p.id]; if (s.draft && s.draft.from === p.id) s.draft.from = null; write(s); render(); }
 });
@@ -76,7 +76,7 @@ $('file').onchange = async (e) => {
   try {
     const d = JSON.parse(await f.text()); if (!d.overrides) throw new Error('no cameras in this file');
     const s = read(), id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    s.projects[id] = { id, name: (d.name || f.name.replace(/\.json$/i, '')).slice(0, 60), created: Date.now(), updated: Date.now(), overrides: d.overrides, grade: d.grade ? (d.grade.vals ? d.grade : { base: 'default', vals: d.grade, exposure: 1, bloom: 1, touched: true }) : null };
+    s.projects[id] = { id, name: (d.name || f.name.replace(/\.json$/i, '')).slice(0, 60), created: Date.now(), updated: Date.now(), overrides: d.overrides, grade: d.grade ? (d.grade.vals ? d.grade : { base: 'default', vals: d.grade, exposure: 1, bloom: 1, touched: true }) : null, ...('env' in d ? { env: d.env } : {}) };
     write(s); render();
   } catch (err) { await ask({ title: 'Could not import', text: String(err.message || err), ok: 'OK' }); }
 };

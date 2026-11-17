@@ -421,9 +421,9 @@ kbd{font:600 11px var(--gv-mono);padding:1px 6px;border:1px solid var(--gv-line2
 .montools .tbtn.on{background:var(--gv-cyan);color:#06121c}
 .hud.tl{max-width:calc(100% - 230px)}
 /* a page can hide the shot list to give the space to the picture */
-#gv[data-page=color]{--gv-lw:0px}
-#gv[data-page=color] #gvLeft,#gv[data-page=color] #gvLGrip{display:none}
-#gv[data-page=color] #gvStage{border-left:0}
+#gv[data-page=color],#gv[data-page=map]{--gv-lw:0px}
+#gv[data-page=color] #gvLeft,#gv[data-page=color] #gvLGrip,#gv[data-page=map] #gvLeft,#gv[data-page=map] #gvLGrip{display:none}
+#gv[data-page=color] #gvStage,#gv[data-page=map] #gvStage{border-left:0}
 /* collapsible inspector sections (the same way a grading suite folds its panels) */
 details.fold{border-top:1px solid var(--gv-line);margin:2px 0}
 details.fold:first-of-type{border-top:0}
@@ -442,3 +442,32 @@ details.fold>summary:hover{color:var(--gv-text)}
 #gv[data-page=color] #gvMonCard{grid-column:1;grid-row:1 / span 2;align-self:start}
 #gv[data-page=color] #gvMonGrip{display:none}
 #gv[data-page=color] #gvRight>section.gcard.gsp{grid-column:2;grid-row:1 / span 2;min-height:0}
+
+/* Environment tab: rearrange the map's trees, houses and landmarks */
+.itabs{overflow-x:auto;scrollbar-width:none}.itabs::-webkit-scrollbar{display:none}.itabs button{padding:6px 8px;white-space:nowrap}
+#gvIEnv input[type=search]{width:100%}
+#gvIEnv .envlist{max-height:228px;overflow:auto;border:1px solid var(--gv-line);border-radius:8px;background:var(--gv-bg);padding:2px 4px}
+#gvIEnv .envgrp>summary{cursor:pointer;margin:6px 2px 3px;list-style:none}
+#gvIEnv .envgrp>summary::-webkit-details-marker{display:none}
+#gvIEnv .envgrp>summary::before{content:"▸";color:var(--gv-faint);margin-right:2px}
+#gvIEnv .envgrp[open]>summary::before{content:"▾"}
+#gvIEnv .envrow{padding:3px 6px}
+#gvIEnv .envrow.dim .nm{opacity:.5;text-decoration:line-through}
+#gvIEnv .srow .ed{font-size:10.5px}
+#gvIEnv .shead{margin-top:12px}
+#gvIEnv .ecode{height:auto;min-height:150px;font:11.5px/1.45 var(--gv-mono);white-space:pre;overflow:auto;tab-size:2}
+#gvIEnv .ecol{display:flex;align-items:center;gap:8px}
+#gvIEnv .ecol input[type=color]{width:42px;height:26px;padding:0;border:1px solid var(--gv-line2);border-radius:6px;background:var(--gv-bg);cursor:pointer}
+#gvIEnv .envmsg{min-height:18px;font-size:12px;margin:5px 2px;color:var(--gv-dim)}
+#gvIEnv .envmsg.ok{color:#8fe3b2}#gvIEnv .envmsg.err{color:#ffab9c}
+#gvIEnv .seg.mini{margin:8px 0 2px}
+#gvIEnv details.fold{margin-top:14px}
+#gvIEnv #eAllText{height:auto;min-height:80px;margin-top:6px}
+/* environment: compare, plant, groups */
+.envbar{display:flex;gap:6px;margin:0 0 8px;position:sticky;top:0;z-index:3;background:var(--gv-panel,#0c0f15);padding:4px 0}
+.envbar .btn{flex:1;touch-action:none;user-select:none}
+.envbar .btn.on{background:var(--gv-gold);color:#10131a;border-color:var(--gv-gold)}
+#envCmp{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:20;pointer-events:none;background:rgba(10,12,18,.92);border:1px solid var(--gv-gold);border-radius:999px;padding:6px 16px;font:12.5px var(--gv-font);color:var(--gv-text)}
+#envCmp b{color:var(--gv-gold)}
+#envCmp.hidden{display:none}
+.plantnote .rg{margin-top:8px}
